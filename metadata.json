@@ -1,0 +1,8 @@
+{
+  "name": "UFI - Universal Furniture Industries",
+  "description": "A comprehensive CRM, ERP, and Analytical suite for furniture manufacturing, featuring personas for Sales, Admin, Accounting, and Production.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

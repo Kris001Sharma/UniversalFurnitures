@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Dancing+Script:wght@600&family=Bebas+Neue&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-calligraphy: "Dancing Script", cursive;
+  --font-bebas: "Bebas Neue", sans-serif;
+  
+  --color-brand-primary: #10b981; /* Emerald 500 */
+  --color-brand-dark: #0f172a;    /* Slate 900 */
+  --color-brand-surface: #f8fafc; /* Slate 50 */
+}
+
+@layer base {
+  html {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+  }
+  html::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, and Opera */
+  }
+  body {
+    @apply font-sans bg-brand-surface text-brand-dark;
+  }
+}
