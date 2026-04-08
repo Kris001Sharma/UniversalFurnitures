@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutGrid, 
   Users, 
@@ -57,7 +57,14 @@ import {
   PieChart,
   Coins,
   History,
-  Bell
+  Bell,
+  MessageSquare,
+  Navigation,
+  Maximize,
+  Minimize,
+  Compass,
+  Crosshair,
+  ArrowUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -161,6 +168,17 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 // --- Mock Data ---
+
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
 
 const MOCK_ORGS: Organization[] = [
   {
@@ -348,6 +366,88 @@ const MOCK_SYSTEM_USERS: SystemUser[] = [
   { id: 'U4', name: 'Accountant A', role: 'Accountant', status: 'Inactive', lastLogin: '2 days ago' },
 ];
 
+// --- Supervisor Mock Data ---
+interface InventoryItem {
+  id: string;
+  name: string;
+  category: 'Raw Material' | 'Finished Good';
+  stock: number;
+  minStock: number;
+  unit: string;
+  status: 'In Stock' | 'Low Stock' | 'Out of Stock' | 'To Be Manufactured';
+}
+
+const MOCK_INVENTORY: InventoryItem[] = [
+  { id: 'INV001', name: 'Oak Wood Planks', category: 'Raw Material', stock: 450, minStock: 100, unit: 'sq ft', status: 'In Stock' },
+  { id: 'INV002', name: 'Steel Rods (12mm)', category: 'Raw Material', stock: 85, minStock: 150, unit: 'units', status: 'Low Stock' },
+  { id: 'INV003', name: 'Industrial Glue', category: 'Raw Material', stock: 12, minStock: 10, unit: 'liters', status: 'In Stock' },
+  { id: 'INV004', name: 'Modern Dining Chair', category: 'Finished Good', stock: 24, minStock: 20, unit: 'units', status: 'In Stock' },
+  { id: 'INV005', name: 'Minimalist Desk', category: 'Finished Good', stock: 0, minStock: 5, unit: 'units', status: 'To Be Manufactured' },
+];
+
+interface ProductionRecord {
+  id: string;
+  itemName: string;
+  producedDate: string;
+  deliveredTo: string;
+  status: 'Produced' | 'In Transit' | 'Delivered';
+}
+
+const MOCK_PRODUCTION_LOG: ProductionRecord[] = [
+  { id: 'PRD001', itemName: 'Modern Dining Chair', producedDate: '2026-03-05', deliveredTo: 'Central Warehouse', status: 'Delivered' },
+  { id: 'PRD002', itemName: 'Minimalist Desk', producedDate: '2026-03-06', deliveredTo: 'Showroom A', status: 'In Transit' },
+  { id: 'PRD003', itemName: 'Oak Coffee Table', producedDate: '2026-03-07', deliveredTo: 'Customer: Alice Smith', status: 'In Transit' },
+  { id: 'PRD004', itemName: 'Steel Frame Bed', producedDate: '2026-03-07', deliveredTo: 'Logistics Hub', status: 'Produced' },
+];
+
+interface OrderUnitProgress {
+  unitId: string;
+  status: 'Pending' | 'In Progress' | 'Completed';
+  stage: string;
+}
+
+interface OrderProgress {
+  orderId: string;
+  customer: string;
+  totalUnits: number;
+  completedUnits: number;
+  items: OrderUnitProgress[];
+}
+
+const MOCK_ACTIVE_ORDERS: OrderProgress[] = [
+  {
+    orderId: 'ORD-8829',
+    customer: 'Furniture World',
+    totalUnits: 10,
+    completedUnits: 6,
+    items: [
+      { unitId: 'U1', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U2', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U3', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U4', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U5', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U6', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U7', status: 'In Progress', stage: 'Assembly' },
+      { unitId: 'U8', status: 'In Progress', stage: 'Assembly' },
+      { unitId: 'U9', status: 'Pending', stage: 'Wood Cutting' },
+      { unitId: 'U10', status: 'Pending', stage: 'Metal Forging' },
+    ]
+  },
+  {
+    orderId: 'ORD-8830',
+    customer: 'Design Studio',
+    totalUnits: 5,
+    completedUnits: 1,
+    items: [
+      { unitId: 'U1', status: 'Completed', stage: 'Finishing' },
+      { unitId: 'U2', status: 'In Progress', stage: 'Painting' },
+      { unitId: 'U3', status: 'Pending', stage: 'Assembly' },
+      { unitId: 'U4', status: 'Pending', stage: 'Wood Cutting' },
+      { unitId: 'U5', status: 'Pending', stage: 'Metal Forging' },
+    ]
+  }
+];
+
 // --- Accountant Mock Data ---
 interface Transaction {
   id: string;
@@ -358,11 +458,130 @@ interface Transaction {
   status: 'Completed' | 'Pending';
 }
 
+interface DeliveryTask {
+  id: string;
+  orderId: string;
+  orgId: string;
+  orgName: string;
+  address: string;
+  status: 'Open' | 'In Progress' | 'Delivered';
+  priority: 'Normal' | 'High';
+  itemsExpected: number;
+  itemsReceived?: number;
+  contactName: string;
+  contactPhone: string;
+  dueDate: string;
+  locationTagged?: boolean;
+  taggedLat?: number;
+  taggedLng?: number;
+  proofImage?: string;
+  logs?: string;
+  lat?: number;
+  lng?: number;
+}
+
 const MOCK_TRANSACTIONS: Transaction[] = [
   { id: 'T1', date: 'Mar 07, 2026', description: 'Order #ORD-8829 Payment', amount: 1240.00, type: 'Income', status: 'Completed' },
   { id: 'T2', date: 'Mar 06, 2026', description: 'Raw Material Purchase', amount: 450.00, type: 'Expense', status: 'Completed' },
   { id: 'T3', date: 'Mar 05, 2026', description: 'Electricity Bill', amount: 120.00, type: 'Expense', status: 'Pending' },
   { id: 'T4', date: 'Mar 04, 2026', description: 'Bulk Order #ORD-8825', amount: 3200.00, type: 'Income', status: 'Completed' },
+];
+
+const MOCK_DELIVERY_TASKS: DeliveryTask[] = [
+  {
+    id: 'DT-101',
+    orderId: 'ORD-8821',
+    orgId: '2',
+    orgName: 'Oakwood Academy',
+    address: 'Thamel, Kathmandu',
+    status: 'In Progress',
+    priority: 'High',
+    itemsExpected: 50,
+    itemsReceived: 50,
+    contactName: 'Robert Brown',
+    contactPhone: '+977 9841234567',
+    dueDate: '2026-04-07',
+    locationTagged: false,
+    lat: 27.7172,
+    lng: 85.3240,
+  },
+  {
+    id: 'DT-102',
+    orderId: 'ORD-7712',
+    orgId: '1',
+    orgName: 'City General Hospital',
+    address: 'Maharajgunj, Kathmandu',
+    status: 'Open',
+    priority: 'Normal',
+    itemsExpected: 5,
+    contactName: 'Dr. Sarah Smith',
+    contactPhone: '+977 9851234567',
+    dueDate: '2026-04-08',
+    lat: 27.7336,
+    lng: 85.3303,
+  },
+  {
+    id: 'DT-103',
+    orderId: 'ORD-9934',
+    orgId: '3',
+    orgName: 'TechCorp HQ',
+    address: 'Patan, Lalitpur',
+    status: 'Open',
+    priority: 'High',
+    itemsExpected: 120,
+    contactName: 'Jane Doe',
+    contactPhone: '+977 9801234567',
+    dueDate: '2026-04-07',
+    lat: 27.6766,
+    lng: 85.3123,
+  },
+  {
+    id: 'DT-104',
+    orderId: 'ORD-5542',
+    orgId: '4',
+    orgName: 'Sunrise Cafe',
+    address: 'Durbar Marg, Kathmandu',
+    status: 'Delivered',
+    priority: 'Normal',
+    itemsExpected: 15,
+    itemsReceived: 15,
+    contactName: 'Mike Johnson',
+    contactPhone: '+977 9811234567',
+    dueDate: '2026-04-06',
+    locationTagged: true,
+    lat: 27.7120,
+    lng: 85.3129,
+  },
+  {
+    id: 'DT-105',
+    orderId: 'ORD-3321',
+    orgId: '5',
+    orgName: 'Central Library',
+    address: 'Jamal, Kathmandu',
+    status: 'Open',
+    priority: 'Normal',
+    itemsExpected: 30,
+    contactName: 'Alice Williams',
+    contactPhone: '+977 9821234567',
+    dueDate: '2026-04-09',
+    lat: 27.7025,
+    lng: 85.3166,
+  },
+  {
+    id: 'DT-106',
+    orderId: 'ORD-2210',
+    orgId: '6',
+    orgName: 'Metro Transit',
+    address: 'Kalanki, Kathmandu',
+    status: 'Open',
+    priority: 'High',
+    itemsExpected: 200,
+    contactName: 'Tom Davis',
+    contactPhone: '+977 9861234567',
+    dueDate: '2026-04-10',
+    lat: 27.6936,
+    lng: 85.2805,
+  }
 ];
 
 // --- Analytics Mock Data ---
@@ -446,14 +665,1118 @@ const OrderTracker = ({ status }: { status: OrderStatus }) => {
 
 // --- Main App ---
 
+function MapUpdater({ isFullscreen, lat, lng, trigger }: { isFullscreen: boolean, lat?: number, lng?: number, trigger?: number }) {
+  const map = useMap();
+  
+  // Handle resize
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [isFullscreen, map]);
+
+  // Handle centering ONLY on trigger change
+  const lastTrigger = useRef(0);
+  useEffect(() => {
+    if (trigger !== undefined && trigger !== lastTrigger.current && lat !== undefined && lng !== undefined) {
+      lastTrigger.current = trigger;
+      map.setView([lat, lng], 15); // Zoom in for navigation/location
+    }
+  }, [trigger, lat, lng, map]);
+
+  return null;
+}
+
+function RoutingMachine({ waypoints }: { waypoints: {lat: number, lng: number}[] }) {
+  const [path, setPath] = useState<[number, number][]>([]);
+
+  const waypointsStr = JSON.stringify(waypoints);
+
+  useEffect(() => {
+    if (waypoints.length < 2) {
+      setPath([]);
+      return;
+    }
+
+    const fetchRoute = async () => {
+      try {
+        const coords = waypoints.map(wp => `${wp.lng},${wp.lat}`).join(';');
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`);
+        const data = await res.json();
+        if (data.routes && data.routes.length > 0) {
+          const coordinates = data.routes[0].geometry.coordinates;
+          setPath(coordinates.map((c: [number, number]) => [c[1], c[0]]));
+        } else {
+          setPath(waypoints.map(wp => [wp.lat, wp.lng]));
+        }
+      } catch (err) {
+        console.error("Failed to fetch route", err);
+        setPath(waypoints.map(wp => [wp.lat, wp.lng]));
+      }
+    };
+
+    fetchRoute();
+  }, [waypointsStr]);
+
+  if (path.length === 0) return null;
+
+  return (
+    <Polyline 
+      positions={path} 
+      color="#3b82f6" 
+      weight={6} 
+      opacity={0.8} 
+      dashArray={path.length === waypoints.length ? "10, 10" : undefined}
+    />
+  );
+}
+
+const DeliveryDashboard = ({ onBack }: { onBack: () => void }) => {
+  const [activeTab, setActiveTab] = useState<'Tasks' | 'Active' | 'Route'>('Tasks');
+  const [view, setView] = useState<'List' | 'Add' | 'Detail'>('List');
+  const [tasks, setTasks] = useState<DeliveryTask[]>(MOCK_DELIVERY_TASKS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [receivedInputs, setReceivedInputs] = useState<Record<string, string>>({});
+  const [filter, setFilter] = useState<'All' | 'Open' | 'In Progress' | 'Delivered'>('All');
+  const [sortBy, setSortBy] = useState<'Priority' | 'Date'>('Priority');
+  const [expandedRouteTask, setExpandedRouteTask] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigatingTaskId, setNavigatingTaskId] = useState<string | null>(null);
+  const [mapCenterTrigger, setMapCenterTrigger] = useState(0);
+
+  const [newTask, setNewTask] = useState<Partial<DeliveryTask>>({
+    priority: 'Normal',
+    status: 'Open'
+  });
+
+  const handleHandover = (taskId: string) => {
+    const received = receivedInputs[taskId];
+    if (received) {
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, itemsReceived: parseInt(received, 10) } : t));
+    }
+  };
+
+  const handleTagLocation = (taskId: string) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const loc = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setUserLocation(loc);
+          localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
+          setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLat: loc.lat, taggedLng: loc.lng } : t));
+        },
+        (error) => {
+          console.error("Geolocation Error:", error.message);
+          // Fallback to cached or IP location if GPS fails
+          if (userLocation) {
+            setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLat: userLocation.lat, taggedLng: userLocation.lng } : t));
+          } else {
+            handleGetLocation(); // Try to get IP location
+            setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true } : t));
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true } : t));
+    }
+  };
+
+  const handleUploadProof = (taskId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const imageUrl = URL.createObjectURL(file);
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, proofImage: imageUrl } : t));
+    }
+  };
+
+  const handleMarkDelivered = (taskId: string) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'Delivered' } : t));
+    // If no more active tasks, switch back to Tasks tab
+    if (tasks.filter(t => t.status === 'In Progress' && t.id !== taskId).length === 0) {
+      setActiveTab('Tasks');
+    }
+  };
+
+  const handleStartDelivery = (taskId: string) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'In Progress' } : t));
+    setActiveTab('Active');
+  };
+
+  const handleCancelTask = (taskId: string) => {
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'Open' } : t));
+  };
+
+  const fetchIpLocation = async () => {
+    try {
+      const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
+      const data = await response.json();
+      if (data && data.latitude && data.longitude) {
+        const loc = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+        setUserLocation(loc);
+        localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
+      } else {
+        throw new Error("Invalid IP location data");
+      }
+    } catch (err) {
+      console.error("IP Location fallback failed", err);
+      // Fallback to Kathmandu
+      setUserLocation({ lat: 27.7172, lng: 85.3240 });
+    }
+  };
+
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const loc = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+          setUserLocation(loc);
+          localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
+          setMapCenterTrigger(prev => prev + 1);
+        },
+        (error) => {
+          console.error("Geolocation Error:", error.message, "Code:", error.code);
+          // Fallback to Kathmandu if geolocation fails to keep it focused on Nepal
+          const fallbackLoc = { lat: 27.7172, lng: 85.3240 };
+          setUserLocation(fallbackLoc);
+          setMapCenterTrigger(prev => prev + 1);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+      const fallbackLoc = { lat: 27.7172, lng: 85.3240 };
+      setUserLocation(fallbackLoc);
+      setMapCenterTrigger(prev => prev + 1);
+    }
+  };
+
+  useEffect(() => {
+    const cachedLoc = localStorage.getItem('deliveryUserLocation');
+    if (cachedLoc) {
+      try {
+        setUserLocation(JSON.parse(cachedLoc));
+      } catch (e) {
+        handleGetLocation();
+      }
+    } else {
+      handleGetLocation();
+    }
+  }, []);
+
+  const handleStartNavigation = (taskId?: string) => {
+    setIsNavigating(true);
+    setIsMapFullscreen(true);
+    setActiveTab('Route');
+    if (taskId) {
+      setNavigatingTaskId(taskId);
+    } else {
+      setNavigatingTaskId(null);
+    }
+    
+    // Check if we have a valid cached location, if not, fetch it
+    const cachedLoc = localStorage.getItem('deliveryUserLocation');
+    if (!cachedLoc) {
+      handleGetLocation();
+    } else {
+      setMapCenterTrigger(prev => prev + 1);
+    }
+  };
+
+  const handleAddTask = () => {
+    if (newTask.orderId && newTask.orgName) {
+      const task: DeliveryTask = {
+        id: `DT-${Math.floor(Math.random() * 1000)}`,
+        orderId: newTask.orderId || '',
+        orgId: `ORG-${Math.floor(Math.random() * 100)}`,
+        orgName: newTask.orgName || '',
+        address: newTask.address || 'Pending Address',
+        status: 'Open',
+        priority: newTask.priority as 'Normal' | 'High' || 'Normal',
+        itemsExpected: newTask.itemsExpected || 1,
+        contactName: newTask.contactName || 'Pending Contact',
+        contactPhone: newTask.contactPhone || 'Pending Phone',
+        dueDate: newTask.dueDate || new Date().toISOString().split('T')[0],
+      };
+      setTasks([...tasks, task]);
+      setView('List');
+      setNewTask({ priority: 'Normal', status: 'Open' });
+    }
+  };
+
+  const renderTasksList = () => {
+    let filteredTasks = tasks.filter(t => 
+      (filter === 'All' || t.status === filter) &&
+      (t.orderId.toLowerCase().includes(searchQuery.toLowerCase()) || 
+       t.orgName.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+    
+    if (sortBy === 'Priority') {
+      filteredTasks.sort((a, b) => (a.priority === 'High' ? -1 : 1) - (b.priority === 'High' ? -1 : 1));
+    } else {
+      filteredTasks.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+    }
+
+    const todayDate = new Date();
+    const nextWeekDate = new Date(todayDate);
+    nextWeekDate.setDate(todayDate.getDate() + 7);
+    const todayStr = todayDate.toISOString().split('T')[0];
+    const nextWeekStr = nextWeekDate.toISOString().split('T')[0];
+
+    // Priorities: High priority, sorted by nearest date first
+    const priorities = filteredTasks
+      .filter(t => t.priority === 'High')
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      
+    // Due This Week: Not high priority, due within next 7 days
+    const dueThisWeek = filteredTasks
+      .filter(t => t.priority !== 'High' && t.dueDate >= todayStr && t.dueDate <= nextWeekStr)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+      
+    const otherTasks = filteredTasks.filter(t => !priorities.includes(t) && !dueThisWeek.includes(t));
+
+    return (
+      <div className="space-y-6">
+        <header className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Delivery</h1>
+              <p className="text-sm text-slate-500">Welcome back, Agent 4029</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
+              <Bell size={18} />
+            </button>
+            <div 
+              onClick={() => setShowProfile(true)}
+              className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <img src="https://picsum.photos/seed/agent/100/100" alt="Profile" referrerPolicy="no-referrer" />
+            </div>
+          </div>
+        </header>
+
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-bold text-slate-900">Tasks</h2>
+          <button 
+            onClick={() => setView('Add')}
+            className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-md shadow-orange-200 hover:bg-orange-600 transition-colors"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input 
+            type="text" 
+            placeholder="Search order ID or client..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+          />
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {['All', 'Open', 'In Progress', 'Delivered'].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f as any)}
+              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                filter === f ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-6">
+          {priorities.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <AlertCircle size={14} className="text-rose-500" /> Priorities
+              </h3>
+              {priorities.map(task => renderTaskCard(task))}
+            </div>
+          )}
+
+          {dueThisWeek.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Calendar size={14} className="text-blue-500" /> Due This Week
+              </h3>
+              {dueThisWeek.map(task => renderTaskCard(task))}
+            </div>
+          )}
+
+          {otherTasks.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Other Tasks</h3>
+              {otherTasks.map(task => renderTaskCard(task))}
+            </div>
+          )}
+
+          {filteredTasks.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-3xl border border-slate-100 border-dashed">
+              <ClipboardList size={32} className="mx-auto text-slate-300 mb-3" />
+              <p className="text-sm text-slate-500">No tasks found.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderTaskCard = (task: DeliveryTask) => (
+    <div key={task.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-bold text-slate-900 text-sm">{task.orderId}</h3>
+            {task.priority === 'High' && (
+              <span className="text-[8px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded uppercase tracking-wider">Priority</span>
+            )}
+          </div>
+          <p className="text-xs text-slate-600">{task.orgName}</p>
+        </div>
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${
+          task.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
+          task.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
+          'bg-amber-50 text-amber-600'
+        }`}>
+          {task.status}
+        </span>
+      </div>
+      
+      <div className="flex items-center gap-4 text-[10px] text-slate-500 mb-3">
+        <div className="flex items-center gap-1">
+          <Package size={12} /> {task.itemsExpected} items
+        </div>
+        <div className="flex items-center gap-1">
+          <Calendar size={12} /> {task.dueDate}
+        </div>
+      </div>
+
+      {task.status === 'Open' && (
+        <button 
+          onClick={() => handleStartDelivery(task.id)}
+          className="w-full py-2 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition-colors"
+        >
+          Start Delivery
+        </button>
+      )}
+      {task.status === 'In Progress' && (
+        <button 
+          onClick={() => setActiveTab('Active')}
+          className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
+        >
+          Resume Delivery
+        </button>
+      )}
+    </div>
+  );
+
+  const renderAddTask = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={() => setView('List')}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-50"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="text-2xl font-bold text-slate-900">New Task</h2>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
+        <div>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Order ID</label>
+          <input 
+            type="text" 
+            value={newTask.orderId || ''}
+            onChange={e => setNewTask({...newTask, orderId: e.target.value})}
+            placeholder="e.g. ORD-1234"
+            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Client Name</label>
+          <input 
+            type="text" 
+            value={newTask.orgName || ''}
+            onChange={e => setNewTask({...newTask, orgName: e.target.value})}
+            placeholder="Client Organization"
+            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Delivery Address</label>
+          <input 
+            type="text" 
+            value={newTask.address || ''}
+            onChange={e => setNewTask({...newTask, address: e.target.value})}
+            placeholder="Full Address"
+            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Items Expected</label>
+            <input 
+              type="number" 
+              value={newTask.itemsExpected || ''}
+              onChange={e => setNewTask({...newTask, itemsExpected: parseInt(e.target.value, 10)})}
+              className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Priority</label>
+            <select 
+              value={newTask.priority || 'Normal'}
+              onChange={e => setNewTask({...newTask, priority: e.target.value as 'Normal' | 'High'})}
+              className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            >
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+        </div>
+        
+        <button 
+          onClick={handleAddTask}
+          disabled={!newTask.orderId || !newTask.orgName}
+          className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-200 hover:bg-orange-600 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Create Task
+        </button>
+      </div>
+    </div>
+  );
+
+  const renderActiveTask = () => {
+    const activeTasks = tasks.filter(t => t.status === 'In Progress');
+
+    if (activeTasks.length === 0) {
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-slate-900">Active Tasks</h2>
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-12 text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mx-auto mb-4">
+              <CheckCircle2 size={32} />
+            </div>
+            <h4 className="text-lg font-bold text-slate-900">No Active Tasks</h4>
+            <p className="text-sm text-slate-500 mt-2">Select a task from the Tasks tab to begin delivery.</p>
+            <button 
+              onClick={() => setActiveTab('Tasks')}
+              className="mt-6 px-6 py-3 bg-orange-50 text-orange-600 rounded-xl text-sm font-bold hover:bg-orange-100 transition-colors"
+            >
+              View Tasks
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <header className="flex justify-between items-center mb-2">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setActiveTab('Tasks')}
+              className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-2xl font-bold text-slate-900">Active Tasks</h2>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm">
+            <img src="https://picsum.photos/seed/agent/100/100" alt="Profile" referrerPolicy="no-referrer" />
+          </div>
+        </header>
+        
+        {activeTasks.map(activeTask => (
+          <div key={activeTask.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+            <div className="p-4 border-b border-slate-50 bg-orange-50/30">
+              <div className="flex justify-between items-start mb-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-slate-900 text-base">{activeTask.orderId}</h4>
+                  {activeTask.priority === 'High' && (
+                    <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded uppercase tracking-wider">Priority</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {!activeTask.itemsReceived && (
+                    <button 
+                      onClick={() => handleCancelTask(activeTask.id)}
+                      className="text-[10px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                    {activeTask.status}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">{activeTask.orgName}</p>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Step 1: Handover */}
+              <div className={`p-4 rounded-2xl border ${activeTask.itemsReceived ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
+                <h5 className="font-bold text-slate-900 mb-2 flex items-center gap-2 text-sm">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${activeTask.itemsReceived ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>1</div>
+                  Warehouse Handover
+                </h5>
+                <div className="pl-7">
+                  <p className="text-[11px] text-slate-500 mb-2">Expected Items: <strong className="text-slate-900">{activeTask.itemsExpected}</strong></p>
+                  {!activeTask.itemsReceived ? (
+                    <div className="flex gap-2 items-center">
+                      <input 
+                        type="number" 
+                        placeholder="Items received..." 
+                        className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                        value={receivedInputs[activeTask.id] || ''}
+                        onChange={(e) => setReceivedInputs({...receivedInputs, [activeTask.id]: e.target.value})}
+                      />
+                      <button 
+                        onClick={() => handleHandover(activeTask.id)}
+                        className="shrink-0 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors"
+                      >
+                        Confirm
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                      <CheckCircle2 size={14} /> Confirmed {activeTask.itemsReceived} items received.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Step 2: Client Details & Navigation */}
+              {activeTask.itemsReceived && (
+                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
+                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
+                    <div className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center text-[10px]">2</div>
+                    Client Destination
+                  </h5>
+                  <div className="pl-7">
+                    <div className="space-y-3 mb-4">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><MapPin size={10} /> Address</p>
+                        <p className="text-xs font-medium text-slate-900 mt-0.5">{activeTask.address}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><UserCircle size={10} /> Contact</p>
+                        <p className="text-xs font-medium text-slate-900 mt-0.5">{activeTask.contactName}</p>
+                        <p className="text-[11px] text-slate-500">{activeTask.contactPhone}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleStartNavigation(activeTask.id)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-colors"
+                      >
+                        <Navigation size={14} /> Navigate
+                      </button>
+                      <button className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 transition-colors">
+                        <MessageSquare size={14} /> Admin Chat
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Delivery Confirmation */}
+              {activeTask.itemsReceived && (
+                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
+                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
+                    <div className="w-5 h-5 rounded-full bg-orange-200 text-orange-800 flex items-center justify-center text-[10px]">3</div>
+                    Delivery Confirmation
+                  </h5>
+                  <div className="pl-7">
+                    <div className="flex flex-col gap-2 mb-4">
+                      <button 
+                        onClick={() => handleTagLocation(activeTask.id)}
+                        className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                          activeTask.locationTagged ? 'bg-emerald-100 text-emerald-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <MapPin size={14} /> {activeTask.locationTagged ? `Tagged: ${activeTask.taggedLat?.toFixed(4)}, ${activeTask.taggedLng?.toFixed(4)}` : 'Tag Geolocation'}
+                      </button>
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          capture="environment" 
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          onChange={(e) => handleUploadProof(activeTask.id, e)}
+                        />
+                        <button className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                          activeTask.proofImage ? 'bg-emerald-100 text-emerald-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}>
+                          <Camera size={14} /> {activeTask.proofImage ? 'Proof Uploaded' : 'Upload Proof'}
+                        </button>
+                      </div>
+                      {activeTask.proofImage && (
+                        <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200">
+                          <img src={activeTask.proofImage} alt="Delivery Proof" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => handleMarkDelivered(activeTask.id)}
+                      disabled={!activeTask.locationTagged}
+                      className={`w-full py-3 rounded-xl text-sm font-bold transition-all ${
+                        activeTask.locationTagged 
+                          ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-200 active:scale-[0.98]' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      Mark as Delivered
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Logs / Remarks */}
+              {activeTask.itemsReceived && (
+                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
+                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
+                    <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-[10px]">4</div>
+                    Logs & Remarks (Optional)
+                  </h5>
+                  <div className="pl-7">
+                    <textarea 
+                      placeholder="Add any additional notes or remarks here..."
+                      className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[80px] resize-none"
+                      value={activeTask.logs || ''}
+                      onChange={(e) => setTasks(tasks.map(t => t.id === activeTask.id ? { ...t, logs: e.target.value } : t))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderRouteOptimization = () => {
+    const todayDate = new Date();
+    const nextWeekDate = new Date(todayDate);
+    nextWeekDate.setDate(todayDate.getDate() + 7);
+    const todayStr = todayDate.toISOString().split('T')[0];
+    const nextWeekStr = nextWeekDate.toISOString().split('T')[0];
+
+    const openTasks = tasks.filter(t => 
+      (t.status === 'Open' || t.status === 'In Progress') &&
+      (t.priority === 'High' || (t.dueDate >= todayStr && t.dueDate <= nextWeekStr))
+    );
+    
+    // Minimalistic route optimization: sort by priority then by a mock distance (just using ID for now)
+    const optimizedTasks = [...openTasks].sort((a, b) => {
+      if (a.priority === 'High' && b.priority !== 'High') return -1;
+      if (a.priority !== 'High' && b.priority === 'High') return 1;
+      return a.id.localeCompare(b.id);
+    });
+
+    const inProgressTasks = optimizedTasks.filter(t => t.status === 'In Progress');
+    
+    // If navigating to a specific task, only show route to that task
+    const targetTasks = navigatingTaskId 
+      ? inProgressTasks.filter(t => t.id === navigatingTaskId)
+      : inProgressTasks;
+
+    const routePoints = userLocation 
+      ? [userLocation, ...targetTasks.filter(t => t.lat && t.lng).map(t => ({ lat: t.lat!, lng: t.lng! }))]
+      : targetTasks.filter(t => t.lat && t.lng).map(t => ({ lat: t.lat!, lng: t.lng! }));
+
+    return (
+      <div className={`space-y-6 ${isMapFullscreen ? 'fixed inset-0 z-50 bg-slate-50 p-0 m-0' : ''}`}>
+        {!isMapFullscreen && (
+          <header className="flex items-center gap-4 mb-2">
+            <button 
+              onClick={() => setActiveTab('Tasks')}
+              className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-sm"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-2xl font-bold text-slate-900">Route Optimization</h2>
+          </header>
+        )}
+        
+        <div className={`bg-white border border-slate-100 shadow-sm overflow-hidden relative z-0 ${isMapFullscreen ? 'h-full w-full rounded-none' : 'rounded-3xl'}`}>
+          <div className={`w-full overflow-hidden ${isMapFullscreen ? 'h-full' : 'h-48'}`}>
+            <MapContainer 
+              center={userLocation ? [userLocation.lat, userLocation.lng] : [27.7172, 85.3240]} 
+              zoom={13} 
+              style={{ height: '100%', width: '100%', zIndex: 0 }}
+              zoomControl={isMapFullscreen}
+              attributionControl={false}
+            >
+              <MapUpdater 
+                isFullscreen={isMapFullscreen} 
+                lat={userLocation?.lat ?? 27.7172} 
+                lng={userLocation?.lng ?? 85.3240} 
+                trigger={mapCenterTrigger} 
+              />
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              
+              {/* User Location Marker */}
+              {userLocation && (
+                <Marker position={[userLocation.lat, userLocation.lng]}>
+                  <Popup>Your Location</Popup>
+                </Marker>
+              )}
+
+              {/* Route Polyline for In Progress tasks */}
+              {routePoints.length > 1 && (
+                <RoutingMachine waypoints={routePoints} />
+              )}
+
+              {/* Task Markers */}
+              {(navigatingTaskId ? targetTasks : optimizedTasks).map(task => (
+                task.lat && task.lng && (
+                  <Marker key={task.id} position={[task.lat, task.lng]}>
+                    <Popup>
+                      <div className="text-xs">
+                        <strong>{task.orgName}</strong><br/>
+                        {task.orderId}
+                        {task.status === 'Open' && (
+                          <button 
+                            onClick={() => handleStartDelivery(task.id)}
+                            className="mt-2 w-full py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-bold shadow-sm hover:bg-orange-600 transition-colors"
+                          >
+                            Start Task
+                          </button>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                )
+              ))}
+            </MapContainer>
+          </div>
+          
+          {/* Turn-by-Turn Navigation Overlay */}
+          {isNavigating && isMapFullscreen && (
+            <div className="absolute top-4 left-4 right-4 z-[1000] bg-slate-900 text-white rounded-2xl p-4 shadow-2xl flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+                <ArrowUp size={24} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg">Head North</h3>
+                <p className="text-slate-300 text-sm">
+                  towards {targetTasks[0]?.orgName || 'next destination'}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-xl text-emerald-400">12 min</div>
+                <div className="text-xs text-slate-400">2.4 km</div>
+              </div>
+            </div>
+          )}
+
+          {/* Exit Navigation Button */}
+          {isNavigating && isMapFullscreen && (
+            <button 
+              onClick={() => {
+                setIsNavigating(false);
+                setNavigatingTaskId(null);
+                setIsMapFullscreen(false);
+              }}
+              className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg flex items-center gap-2 hover:bg-rose-600 transition-colors"
+            >
+              <X size={20} /> Exit Navigation
+            </button>
+          )}
+
+          {/* Map Controls Overlay */}
+          <div className="absolute bottom-4 right-4 z-[1000] flex flex-col gap-2">
+            {isMapFullscreen && (
+              <>
+                <button 
+                  onClick={handleGetLocation}
+                  className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-700 hover:text-orange-500 transition-colors"
+                >
+                  <Crosshair size={18} />
+                </button>
+                <button 
+                  onClick={() => setMapCenterTrigger(prev => prev + 1)}
+                  className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-700 hover:text-orange-500 transition-colors"
+                >
+                  <Compass size={18} />
+                </button>
+              </>
+            )}
+            <button 
+              onClick={() => {
+                if (isMapFullscreen) {
+                  setIsMapFullscreen(false);
+                  setIsNavigating(false);
+                  setNavigatingTaskId(null);
+                } else {
+                  setIsMapFullscreen(true);
+                }
+              }}
+              className="w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center text-slate-700 hover:text-orange-500 transition-colors"
+            >
+              {isMapFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {!isMapFullscreen && (
+          <>
+            <div className="bg-orange-50 border border-orange-100 rounded-3xl p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
+                    <MapPin size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-orange-900">Suggested Route</h3>
+                    <p className="text-xs text-orange-700">Optimized for priorities & due dates</p>
+                  </div>
+                </div>
+                {inProgressTasks.length > 0 && (
+                  <button 
+                    onClick={() => handleStartNavigation()}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                      isNavigating ? 'bg-orange-500 text-white shadow-md shadow-orange-200' : 'bg-white text-orange-600 border border-orange-200'
+                    }`}
+                  >
+                    {isNavigating ? 'Navigating...' : 'Start Nav'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="relative pl-4 border-l-2 border-slate-100 space-y-6 mt-6 ml-4">
+              {optimizedTasks.map((task, index) => (
+                <div key={task.id} className="relative">
+                  <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white ${
+                    task.status === 'In Progress' ? 'bg-blue-500' : (index === 0 ? 'bg-orange-500' : 'bg-slate-300')
+                  }`} />
+                  <div 
+                    className={`bg-white p-4 rounded-2xl border shadow-sm cursor-pointer transition-all ${
+                      task.status === 'In Progress' ? 'border-blue-200' : 'border-slate-100 hover:border-orange-200'
+                    }`}
+                    onClick={() => setExpandedRouteTask(expandedRouteTask === task.id ? null : task.id)}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="font-bold text-slate-900">{task.orgName}</h4>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Stop {index + 1}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2">{task.address}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+                        {task.orderId}
+                      </span>
+                      {task.priority === 'High' && (
+                        <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded">
+                          Priority
+                        </span>
+                      )}
+                      {task.status === 'In Progress' && (
+                        <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                          In Progress
+                        </span>
+                      )}
+                    </div>
+
+                    <AnimatePresence>
+                      {expandedRouteTask === task.id && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                          animate={{ height: 'auto', opacity: 1, marginTop: 16 }}
+                          exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                          className="overflow-hidden border-t border-slate-100 pt-3"
+                        >
+                          <div className="space-y-3">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><UserCircle size={12} /> Contact</p>
+                              <p className="text-xs font-medium text-slate-900 mt-1">{task.contactName}</p>
+                              <p className="text-xs text-slate-500">{task.contactPhone}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartDelivery(task.id);
+                                }}
+                                className="flex-1 py-2 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition-colors"
+                              >
+                                {task.status === 'In Progress' ? 'Resume' : 'Start'} Delivery
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              ))}
+              {optimizedTasks.length === 0 && (
+                <p className="text-sm text-slate-500">No pending deliveries to route.</p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans pb-24">
+      <main className="max-w-md mx-auto p-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab + view}
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'Tasks' && (view === 'List' ? renderTasksList() : renderAddTask())}
+            {activeTab === 'Active' && renderActiveTask()}
+            {activeTab === 'Route' && renderRouteOptimization()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 max-w-md mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        {[
+          { id: 'Tasks', icon: ClipboardList, label: 'Tasks', action: () => { setActiveTab('Tasks'); setView('List'); } },
+          { id: 'Active', icon: Truck, label: 'Active', action: () => { setActiveTab('Active'); setView('List'); }, badge: tasks.filter(t => t.status === 'In Progress').length },
+          { id: 'Route', icon: MapPin, label: 'Route', action: () => { setActiveTab('Route'); setView('List'); } },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          
+          return (
+            <button 
+              key={tab.id}
+              onClick={tab.action}
+              className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group"
+            >
+              {isActive && (
+                <motion.div 
+                  layoutId="activeTabDelivery"
+                  className="absolute inset-0 bg-orange-50 rounded-2xl -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="relative">
+                <Icon 
+                  size={isActive ? 22 : 20} 
+                  className={`transition-all duration-300 ${isActive ? 'text-orange-600 scale-110' : 'text-slate-400 group-hover:text-slate-500'}`} 
+                />
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className={`absolute -top-1 -right-1 text-white text-[6px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white transition-colors ${isActive ? 'bg-orange-600' : 'bg-orange-500'}`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider transition-all duration-300 ${isActive ? 'text-orange-700' : 'text-slate-400'}`}>
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+
+      <ProfileModal 
+        isOpen={showProfile} 
+        onClose={() => setShowProfile(false)} 
+        onSignOut={onBack}
+        stats={[
+          { label: 'Deliveries This Month', value: 142 },
+          { label: 'Success Rate', value: '98%' }
+        ]}
+      />
+    </div>
+  );
+};
+
+function ProfileModal({ 
+  isOpen, 
+  onClose, 
+  onSignOut, 
+  stats 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSignOut: () => void;
+  stats: { label: string; value: string | number }[];
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white w-full max-w-sm rounded-3xl p-6 relative shadow-2xl">
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+        >
+          <X size={16} />
+        </button>
+        
+        <div className="flex flex-col items-center mt-4">
+          <div className="relative group cursor-pointer">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg">
+              <img src="https://picsum.photos/seed/agent/200/200" alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
+            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera size={24} className="text-white" />
+            </div>
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 mt-4">Agent 4029</h2>
+          <p className="text-sm text-slate-500">Senior Representative</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-8 mb-8">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="bg-slate-50 rounded-2xl p-4 text-center border border-slate-100">
+              <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <button 
+          onClick={onSignOut}
+          className="w-full py-3.5 bg-rose-50 text-rose-600 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-colors"
+        >
+          <LogIn size={18} className="rotate-180" /> Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>('selection');
-  const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | null>(null);
+  const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showSalesProfile, setShowSalesProfile] = useState(false);
 
-  const [supervisorTab, setSupervisorTab] = useState<'Overview' | 'Production' | 'Team' | 'Alerts'>('Overview');
+  const [supervisorTab, setSupervisorTab] = useState<'Overview' | 'Inventory' | 'Production Log' | 'Active Manufacturing' | 'Team' | 'Alerts' | 'Settings'>('Overview');
   const [adminTab, setAdminTab] = useState<'Overview' | 'Users' | 'System' | 'Logs'>('Overview');
   const [accountantTab, setAccountantTab] = useState<'Overview' | 'Transactions' | 'Invoices' | 'Reports'>('Overview');
   const [activeTab, setActiveTab] = useState<'Home' | 'Leads' | 'Catalog' | 'Orders'>('Home');
@@ -518,8 +1841,17 @@ export default function App() {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-sm text-slate-500">Welcome back, Agent 4029</p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm">
-          <img src="https://picsum.photos/seed/agent/100/100" alt="Profile" referrerPolicy="no-referrer" />
+        <div className="flex items-center gap-3">
+          <button className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
+            <Bell size={18} />
+            <span className="absolute top-0 right-0 w-3 h-3 bg-rose-500 border-2 border-white rounded-full"></span>
+          </button>
+          <div 
+            onClick={() => setShowSalesProfile(true)}
+            className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border-2 border-white shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <img src="https://picsum.photos/seed/agent/100/100" alt="Profile" referrerPolicy="no-referrer" />
+          </div>
         </div>
       </header>
 
@@ -1668,6 +3000,20 @@ export default function App() {
             </div>
             <ChevronRight className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
           </button>
+
+          <button 
+            onClick={() => { setSelectedDashboard('delivery'); setAppView('login'); }}
+            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+          >
+            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+              <Truck size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">Delivery Dashboard</h3>
+              <p className="text-xs text-slate-500">Order handover and client delivery</p>
+            </div>
+            <ChevronRight className="ml-auto text-slate-300 group-hover:text-orange-500 transition-colors" size={20} />
+          </button>
         </div>
 
         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Enterprise Resource Planning v2.4</p>
@@ -1694,18 +3040,21 @@ export default function App() {
             selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
             selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
             selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
+            selectedDashboard === 'delivery' ? 'bg-orange-500 shadow-orange-100' :
             'bg-amber-600 shadow-amber-100'
           }`}>
             {selectedDashboard === 'sales' && <TrendingUp className="text-white" size={32} />}
             {selectedDashboard === 'supervisor' && <ShieldCheck className="text-white" size={32} />}
             {selectedDashboard === 'admin' && <Shield className="text-white" size={32} />}
             {selectedDashboard === 'accountant' && <Wallet className="text-white" size={32} />}
+            {selectedDashboard === 'delivery' && <Truck className="text-white" size={32} />}
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
           <p className="text-slate-500">Login to your {
             selectedDashboard === 'sales' ? 'Sales' : 
             selectedDashboard === 'supervisor' ? 'Supervisor' :
             selectedDashboard === 'admin' ? 'Admin' :
+            selectedDashboard === 'delivery' ? 'Delivery' :
             'Accountant'
           } account</p>
         </div>
@@ -1724,6 +3073,7 @@ export default function App() {
                   selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
                   selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
                   selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
+                  selectedDashboard === 'delivery' ? 'focus:ring-orange-500/20 focus:border-orange-500' :
                   'focus:ring-amber-500/20 focus:border-amber-500'
                 }`}
               />
@@ -1743,6 +3093,7 @@ export default function App() {
                   selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
                   selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
                   selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
+                  selectedDashboard === 'delivery' ? 'focus:ring-orange-500/20 focus:border-orange-500' :
                   'focus:ring-amber-500/20 focus:border-amber-500'
                 }`}
               />
@@ -1761,12 +3112,14 @@ export default function App() {
                 selectedDashboard === 'sales' ? 'group-hover:border-emerald-500' :
                 selectedDashboard === 'supervisor' ? 'group-hover:border-indigo-500' :
                 selectedDashboard === 'admin' ? 'group-hover:border-rose-500' :
+                selectedDashboard === 'delivery' ? 'group-hover:border-orange-500' :
                 'group-hover:border-amber-500'
               }`}>
                 <div className={`w-2 h-2 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity ${
                   selectedDashboard === 'sales' ? 'bg-emerald-500' :
                   selectedDashboard === 'supervisor' ? 'bg-indigo-500' :
                   selectedDashboard === 'admin' ? 'bg-rose-500' :
+                  selectedDashboard === 'delivery' ? 'bg-orange-500' :
                   'bg-amber-500'
                 }`} />
               </div>
@@ -1776,6 +3129,7 @@ export default function App() {
               selectedDashboard === 'sales' ? 'text-emerald-600' :
               selectedDashboard === 'supervisor' ? 'text-indigo-600' :
               selectedDashboard === 'admin' ? 'text-rose-600' :
+              selectedDashboard === 'delivery' ? 'text-orange-600' :
               'text-amber-600'
             }`}>Forgot Password?</button>
           </div>
@@ -1788,6 +3142,7 @@ export default function App() {
               selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
               selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
               selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
+              selectedDashboard === 'delivery' ? 'bg-orange-500 shadow-orange-100' :
               'bg-amber-600 shadow-amber-100'
             }`}
           >
@@ -1799,6 +3154,7 @@ export default function App() {
               selectedDashboard === 'sales' ? 'text-emerald-600' :
               selectedDashboard === 'supervisor' ? 'text-indigo-600' :
               selectedDashboard === 'admin' ? 'text-rose-600' :
+              selectedDashboard === 'delivery' ? 'text-orange-600' :
               'text-amber-600'
             } font-bold`}>Contact Admin</button>
           </p>
@@ -1808,6 +3164,205 @@ export default function App() {
   );
 
   const renderSupervisorDashboard = () => {
+    const renderInventory = () => (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Items</div>
+            <div className="text-3xl font-bold text-slate-900">{MOCK_INVENTORY.length}</div>
+          </div>
+          <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100">
+            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-2">Low Stock Alerts</div>
+            <div className="text-3xl font-bold text-rose-700">2</div>
+          </div>
+          <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100">
+            <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">To Be Manufactured</div>
+            <div className="text-3xl font-bold text-amber-700">1</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+            <h3 className="font-bold text-slate-900">Inventory Details</h3>
+            <div className="flex gap-2">
+              <button className="p-2 hover:bg-slate-50 rounded-xl text-slate-400"><Search size={18} /></button>
+              <button className="p-2 hover:bg-slate-50 rounded-xl text-slate-400"><Filter size={18} /></button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Item Name</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stock Level</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {MOCK_INVENTORY.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-900">{item.name}</div>
+                      <div className="text-[10px] text-slate-400">{item.id}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${
+                        item.category === 'Raw Material' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
+                      }`}>
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-bold text-slate-700">{item.stock} {item.unit}</div>
+                        <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${
+                              item.status === 'Low Stock' ? 'bg-rose-500' : 
+                              item.status === 'Out of Stock' ? 'bg-slate-300' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min((item.stock / (item.minStock * 2)) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${
+                        item.status === 'In Stock' ? 'bg-emerald-100 text-emerald-700' :
+                        item.status === 'Low Stock' ? 'bg-rose-100 text-rose-700' :
+                        item.status === 'To Be Manufactured' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button className="text-indigo-600 font-bold text-xs hover:underline">Update</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderProductionLog = () => (
+      <div className="space-y-8">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+            <h3 className="font-bold text-slate-900">Production & Delivery History</h3>
+            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
+              <FileText size={14} /> Export Log
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50/50">
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Item</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produced Date</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Delivered To</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tracking</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {MOCK_PRODUCTION_LOG.map((record) => (
+                  <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">{record.itemName}</td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{record.producedDate}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700 font-medium">{record.deliveredTo}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${
+                        record.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' :
+                        record.status === 'In Transit' ? 'bg-blue-100 text-blue-700' :
+                        'bg-slate-100 text-slate-500'
+                      }`}>
+                        {record.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button className="p-2 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors">
+                        <Truck size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+
+    const renderActiveManufacturing = () => (
+      <div className="space-y-8">
+        {MOCK_ACTIVE_ORDERS.map((order) => (
+          <div key={order.orderId} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h3 className="font-bold text-slate-900 text-lg">{order.orderId}</h3>
+                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded uppercase tracking-wider">In Manufacturing</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Customer: {order.customer}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-slate-900">{order.completedUnits} / {order.totalUnits} Units Completed</div>
+                <div className="w-48 h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                    style={{ width: `${(order.completedUnits / order.totalUnits) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Unit Level Progress</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                {order.items.map((unit) => (
+                  <div key={unit.unitId} className={`p-4 rounded-2xl border transition-all ${
+                    unit.status === 'Completed' ? 'bg-emerald-50 border-emerald-100' :
+                    unit.status === 'In Progress' ? 'bg-indigo-50 border-indigo-100' :
+                    'bg-slate-50 border-slate-100'
+                  }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] font-bold text-slate-400">Unit {unit.unitId}</span>
+                      {unit.status === 'Completed' ? (
+                        <CheckCircle2 size={14} className="text-emerald-500" />
+                      ) : unit.status === 'In Progress' ? (
+                        <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Clock size={14} className="text-slate-300" />
+                      )}
+                    </div>
+                    <div className={`text-xs font-bold ${
+                      unit.status === 'Completed' ? 'text-emerald-700' :
+                      unit.status === 'In Progress' ? 'text-indigo-700' :
+                      'text-slate-500'
+                    }`}>{unit.stage}</div>
+                    <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">{unit.status}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-50 flex justify-between items-center">
+              <div className="text-xs text-slate-500">
+                <span className="font-bold text-indigo-600">{order.totalUnits - order.completedUnits} units remaining</span> to finish this order.
+              </div>
+              <button className="text-xs font-bold text-indigo-600 hover:underline">View Detailed Timeline</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+
     const renderOverview = () => (
       <div className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1958,7 +3513,9 @@ export default function App() {
           <nav className="flex-1 space-y-2">
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
-              { id: 'Production', icon: Factory, label: 'Production Lines' },
+              { id: 'Inventory', icon: Package, label: 'Inventory Management' },
+              { id: 'Production Log', icon: History, label: 'Production Log' },
+              { id: 'Active Manufacturing', icon: Factory, label: 'Active Manufacturing' },
               { id: 'Team', icon: Users2, label: 'Team Management' },
               { id: 'Alerts', icon: ShieldAlert, label: 'System Alerts' },
               { id: 'Settings', icon: Settings, label: 'Settings' },
@@ -2034,12 +3591,15 @@ export default function App() {
                 transition={{ duration: 0.2 }}
               >
                 {supervisorTab === 'Overview' && renderOverview()}
-                {supervisorTab !== 'Overview' && (
+                {supervisorTab === 'Inventory' && renderInventory()}
+                {supervisorTab === 'Production Log' && renderProductionLog()}
+                {supervisorTab === 'Active Manufacturing' && renderActiveManufacturing()}
+                {['Team', 'Alerts', 'Settings'].includes(supervisorTab) && (
                   <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="w-24 h-24 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600">
-                      {supervisorTab === 'Production' && <Factory size={48} />}
                       {supervisorTab === 'Team' && <Users2 size={48} />}
                       {supervisorTab === 'Alerts' && <ShieldAlert size={48} />}
+                      {supervisorTab === 'Settings' && <Settings size={48} />}
                     </div>
                     <div>
                       <h3 className="text-2xl font-bold text-slate-900">{supervisorTab} Module</h3>
@@ -2056,12 +3616,12 @@ export default function App() {
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] overflow-x-auto no-scrollbar">
           {[
             { id: 'Overview', icon: LayoutGrid, label: 'Home' },
-            { id: 'Production', icon: Factory, label: 'Production' },
-            { id: 'Team', icon: Users2, label: 'Team' },
-            { id: 'Alerts', icon: ShieldAlert, label: 'Alerts' },
+            { id: 'Inventory', icon: Package, label: 'Inventory' },
+            { id: 'Production Log', icon: History, label: 'Log' },
+            { id: 'Active Manufacturing', icon: Factory, label: 'Active' },
           ].map((tab) => {
             const isActive = supervisorTab === tab.id;
             const Icon = tab.icon;
@@ -2829,13 +4389,15 @@ export default function App() {
         })}
       </nav>
       
-      {/* Logout Button (Floating) */}
-      <button 
-        onClick={() => setAppView('selection')}
-        className="fixed top-6 right-6 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors z-50"
-      >
-        <X size={20} />
-      </button>
+      <ProfileModal 
+        isOpen={showSalesProfile} 
+        onClose={() => setShowSalesProfile(false)} 
+        onSignOut={() => { setAppView('selection'); setSelectedDashboard(null); }}
+        stats={[
+          { label: 'Orders This Month', value: 45 },
+          { label: 'Total Revenue', value: '$12.4k' }
+        ]}
+      />
     </div>
   );
 
@@ -2849,6 +4411,7 @@ export default function App() {
           {selectedDashboard === 'supervisor' && renderSupervisorDashboard()}
           {selectedDashboard === 'admin' && renderAdminDashboard()}
           {selectedDashboard === 'accountant' && renderAccountantDashboard()}
+          {selectedDashboard === 'delivery' && <DeliveryDashboard onBack={() => { setAppView('selection'); setSelectedDashboard(null); }} />}
         </motion.div>
       )}
     </AnimatePresence>
