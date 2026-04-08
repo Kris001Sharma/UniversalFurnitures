@@ -30,9 +30,50 @@ import {
   Trash2,
   ShoppingCart,
   ShoppingBasket,
-  X
+  X,
+  ShieldCheck,
+  UserCircle,
+  Lock,
+  Eye,
+  EyeOff,
+  LogIn,
+  Monitor,
+  Activity,
+  AlertCircle,
+  Users2,
+  ClipboardList,
+  BarChart3,
+  Zap,
+  ShieldAlert,
+  Shield,
+  Key,
+  UserPlus,
+  Database,
+  Server,
+  Wallet,
+  Receipt,
+  CreditCard,
+  FileText,
+  PieChart,
+  Coins,
+  History,
+  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  Legend, 
+  AreaChart, 
+  Area 
+} from 'recharts';
 
 // --- Types ---
 
@@ -273,6 +314,92 @@ const MOCK_ORDERS: Order[] = [
   }
 ];
 
+// --- Supervisor Mock Data ---
+interface ProductionLine {
+  id: string;
+  name: string;
+  status: 'Running' | 'Idle' | 'Maintenance';
+  efficiency: number;
+  output: number;
+  target: number;
+  operator: string;
+}
+
+const MOCK_PRODUCTION_LINES: ProductionLine[] = [
+  { id: 'L1', name: 'Metal Forging A', status: 'Running', efficiency: 94, output: 142, target: 150, operator: 'John Doe' },
+  { id: 'L2', name: 'Wood Cutting B', status: 'Running', efficiency: 88, output: 98, target: 110, operator: 'Jane Smith' },
+  { id: 'L3', name: 'Assembly Line 1', status: 'Maintenance', efficiency: 0, output: 0, target: 200, operator: 'Mike Ross' },
+  { id: 'L4', name: 'Painting Station', status: 'Idle', efficiency: 0, output: 45, target: 80, operator: 'Sarah Connor' },
+];
+
+// --- Admin Mock Data ---
+interface SystemUser {
+  id: string;
+  name: string;
+  role: string;
+  status: 'Active' | 'Inactive';
+  lastLogin: string;
+}
+
+const MOCK_SYSTEM_USERS: SystemUser[] = [
+  { id: 'U1', name: 'Sarah Miller', role: 'Supervisor', status: 'Active', lastLogin: '2 mins ago' },
+  { id: 'U2', name: 'John Sales', role: 'Sales Agent', status: 'Active', lastLogin: '1 hour ago' },
+  { id: 'U3', name: 'Admin User', role: 'Administrator', status: 'Active', lastLogin: 'Now' },
+  { id: 'U4', name: 'Accountant A', role: 'Accountant', status: 'Inactive', lastLogin: '2 days ago' },
+];
+
+// --- Accountant Mock Data ---
+interface Transaction {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: 'Income' | 'Expense';
+  status: 'Completed' | 'Pending';
+}
+
+const MOCK_TRANSACTIONS: Transaction[] = [
+  { id: 'T1', date: 'Mar 07, 2026', description: 'Order #ORD-8829 Payment', amount: 1240.00, type: 'Income', status: 'Completed' },
+  { id: 'T2', date: 'Mar 06, 2026', description: 'Raw Material Purchase', amount: 450.00, type: 'Expense', status: 'Completed' },
+  { id: 'T3', date: 'Mar 05, 2026', description: 'Electricity Bill', amount: 120.00, type: 'Expense', status: 'Pending' },
+  { id: 'T4', date: 'Mar 04, 2026', description: 'Bulk Order #ORD-8825', amount: 3200.00, type: 'Income', status: 'Completed' },
+];
+
+// --- Analytics Mock Data ---
+const REVENUE_DATA = [
+  { name: 'Mon', revenue: 4000, orders: 24 },
+  { name: 'Tue', revenue: 3000, orders: 18 },
+  { name: 'Wed', revenue: 2000, orders: 12 },
+  { name: 'Thu', revenue: 2780, orders: 20 },
+  { name: 'Fri', revenue: 1890, orders: 15 },
+  { name: 'Sat', revenue: 2390, orders: 17 },
+  { name: 'Sun', revenue: 3490, orders: 22 },
+];
+
+const PRODUCTION_DATA = [
+  { name: 'Forging', completed: 45, pending: 12 },
+  { name: 'Cutting', completed: 38, pending: 8 },
+  { name: 'Assembly', completed: 52, pending: 15 },
+  { name: 'Painting', completed: 30, pending: 5 },
+  { name: 'Finishing', completed: 25, pending: 10 },
+];
+
+  const AGENT_PERFORMANCE = [
+    { name: 'John Sales', leads: 45, conversions: 12, revenue: 12500 },
+    { name: 'Sarah Miller', leads: 38, conversions: 15, revenue: 18200 },
+    { name: 'Mike Ross', leads: 52, conversions: 10, revenue: 9800 },
+    { name: 'Jane Smith', leads: 30, conversions: 8, revenue: 7500 },
+  ];
+
+  const CASH_FLOW_DATA = [
+    { month: 'Jan', income: 45000, expenses: 32000 },
+    { month: 'Feb', income: 52000, expenses: 34000 },
+    { month: 'Mar', income: 48000, expenses: 31000 },
+    { month: 'Apr', income: 61000, expenses: 38000 },
+    { month: 'May', income: 55000, expenses: 35000 },
+    { month: 'Jun', income: 67000, expenses: 42000 },
+  ];
+
 // --- Components ---
 
 const OrderTracker = ({ status }: { status: OrderStatus }) => {
@@ -320,6 +447,15 @@ const OrderTracker = ({ status }: { status: OrderStatus }) => {
 // --- Main App ---
 
 export default function App() {
+  const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>('selection');
+  const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  const [supervisorTab, setSupervisorTab] = useState<'Overview' | 'Production' | 'Team' | 'Alerts'>('Overview');
+  const [adminTab, setAdminTab] = useState<'Overview' | 'Users' | 'System' | 'Logs'>('Overview');
+  const [accountantTab, setAccountantTab] = useState<'Overview' | 'Transactions' | 'Invoices' | 'Reports'>('Overview');
   const [activeTab, setActiveTab] = useState<'Home' | 'Leads' | 'Catalog' | 'Orders'>('Home');
   const [catalogLevel, setCatalogLevel] = useState<'discover' | 'category' | 'productDetail' | 'cart'>('discover');
   const [selectedMainCategory, setSelectedMainCategory] = useState<string>('Chairs');
@@ -1461,7 +1597,1172 @@ export default function App() {
     </div>
   );
 
-  return (
+  const renderSelection = () => (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md text-center space-y-8"
+      >
+        <div className="space-y-2">
+          <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100 mb-6">
+            <Monitor className="text-white" size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900">Select Dashboard</h1>
+          <p className="text-slate-500">Choose the workspace you want to access</p>
+        </div>
+
+        <div className="grid gap-4">
+          <button 
+            onClick={() => { setSelectedDashboard('sales'); setAppView('login'); }}
+            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+          >
+            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+              <TrendingUp size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">Sales Dashboard</h3>
+              <p className="text-xs text-slate-500">Manage leads, catalog, and orders</p>
+            </div>
+            <ChevronRight className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-colors" size={20} />
+          </button>
+
+          <button 
+            onClick={() => { setSelectedDashboard('supervisor'); setAppView('login'); }}
+            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+          >
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">Supervisor Dashboard</h3>
+              <p className="text-xs text-slate-500">Monitor production and team performance</p>
+            </div>
+            <ChevronRight className="ml-auto text-slate-300 group-hover:text-indigo-500 transition-colors" size={20} />
+          </button>
+
+          <button 
+            onClick={() => { setSelectedDashboard('admin'); setAppView('login'); }}
+            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+          >
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+              <Shield size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">Admin Dashboard</h3>
+              <p className="text-xs text-slate-500">System settings and user management</p>
+            </div>
+            <ChevronRight className="ml-auto text-slate-300 group-hover:text-rose-500 transition-colors" size={20} />
+          </button>
+
+          <button 
+            onClick={() => { setSelectedDashboard('accountant'); setAppView('login'); }}
+            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+          >
+            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+              <Wallet size={24} />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900">Accountant Dashboard</h3>
+              <p className="text-xs text-slate-500">Financial reports and transactions</p>
+            </div>
+            <ChevronRight className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
+          </button>
+        </div>
+
+        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Enterprise Resource Planning v2.4</p>
+      </motion.div>
+    </div>
+  );
+
+  const renderLogin = () => (
+    <div className="min-h-screen bg-white flex flex-col p-8">
+      <button 
+        onClick={() => setAppView('selection')}
+        className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-12"
+      >
+        <ArrowLeft size={20} />
+      </button>
+
+      <motion.div 
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="flex-1 max-w-md mx-auto w-full flex flex-col"
+      >
+        <div className="mb-12">
+          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg ${
+            selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
+            selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
+            selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
+            'bg-amber-600 shadow-amber-100'
+          }`}>
+            {selectedDashboard === 'sales' && <TrendingUp className="text-white" size={32} />}
+            {selectedDashboard === 'supervisor' && <ShieldCheck className="text-white" size={32} />}
+            {selectedDashboard === 'admin' && <Shield className="text-white" size={32} />}
+            {selectedDashboard === 'accountant' && <Wallet className="text-white" size={32} />}
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
+          <p className="text-slate-500">Login to your {
+            selectedDashboard === 'sales' ? 'Sales' : 
+            selectedDashboard === 'supervisor' ? 'Supervisor' :
+            selectedDashboard === 'admin' ? 'Admin' :
+            'Accountant'
+          } account</p>
+        </div>
+
+        <div className="space-y-6 flex-1">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Email Address</label>
+            <div className="relative">
+              <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+              <input 
+                type="email" 
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="agent@company.com"
+                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 transition-all ${
+                  selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
+                  selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
+                  selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
+                  'focus:ring-amber-500/20 focus:border-amber-500'
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+              <input 
+                type={showPassword ? 'text' : 'password'} 
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="••••••••"
+                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-sm focus:outline-none focus:ring-2 transition-all ${
+                  selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
+                  selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
+                  selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
+                  'focus:ring-amber-500/20 focus:border-amber-500'
+                }`}
+              />
+              <button 
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <div className={`w-5 h-5 border-2 border-slate-200 rounded-md flex items-center justify-center transition-colors ${
+                selectedDashboard === 'sales' ? 'group-hover:border-emerald-500' :
+                selectedDashboard === 'supervisor' ? 'group-hover:border-indigo-500' :
+                selectedDashboard === 'admin' ? 'group-hover:border-rose-500' :
+                'group-hover:border-amber-500'
+              }`}>
+                <div className={`w-2 h-2 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity ${
+                  selectedDashboard === 'sales' ? 'bg-emerald-500' :
+                  selectedDashboard === 'supervisor' ? 'bg-indigo-500' :
+                  selectedDashboard === 'admin' ? 'bg-rose-500' :
+                  'bg-amber-500'
+                }`} />
+              </div>
+              <span className="text-xs text-slate-500">Remember me</span>
+            </label>
+            <button className={`text-xs font-bold ${
+              selectedDashboard === 'sales' ? 'text-emerald-600' :
+              selectedDashboard === 'supervisor' ? 'text-indigo-600' :
+              selectedDashboard === 'admin' ? 'text-rose-600' :
+              'text-amber-600'
+            }`}>Forgot Password?</button>
+          </div>
+        </div>
+
+        <div className="mt-8 space-y-4">
+          <button 
+            onClick={() => setAppView('dashboard')}
+            className={`w-full py-4 rounded-2xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+              selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
+              selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
+              selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
+              'bg-amber-600 shadow-amber-100'
+            }`}
+          >
+            <LogIn size={18} />
+            LOGIN TO DASHBOARD
+          </button>
+          <p className="text-center text-xs text-slate-400">
+            Don't have an account? <button className={`${
+              selectedDashboard === 'sales' ? 'text-emerald-600' :
+              selectedDashboard === 'supervisor' ? 'text-indigo-600' :
+              selectedDashboard === 'admin' ? 'text-rose-600' :
+              'text-amber-600'
+            } font-bold`}>Contact Admin</button>
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  const renderSupervisorDashboard = () => {
+    const renderOverview = () => (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Production Efficiency</h3>
+                <p className="text-xs text-slate-500">Completed vs Pending units by line</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Completed</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-slate-200" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Pending</span>
+                </div>
+              </div>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={PRODUCTION_DATA}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+                    dy={10}
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Bar dataKey="completed" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={30} />
+                  <Bar dataKey="pending" fill="#e2e8f0" radius={[6, 6, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                  <ShieldAlert size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Active Alerts</h3>
+                  <p className="text-xs text-slate-500">3 critical issues</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { title: 'Line 3: Maintenance', time: '10m ago', type: 'critical' },
+                  { title: 'Low Stock: Wood Planks', time: '25m ago', type: 'warning' },
+                  { title: 'Shift Change Delay', time: '1h ago', type: 'info' },
+                ].map((alert, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50">
+                    <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                      alert.type === 'critical' ? 'bg-rose-500' :
+                      alert.type === 'warning' ? 'bg-amber-500' :
+                      'bg-blue-500'
+                    }`} />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">{alert.title}</div>
+                      <div className="text-[10px] text-slate-400">{alert.time}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full mt-6 py-3 border border-slate-100 rounded-2xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                View All Alerts
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <section className="space-y-6">
+          <div className="flex justify-between items-end">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Production Lines</h2>
+              <p className="text-sm text-slate-500">Real-time status of all lines</p>
+            </div>
+            <button className="text-sm font-bold text-indigo-600">View All Lines</button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {MOCK_PRODUCTION_LINES.map(line => (
+              <div key={line.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-shadow">
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                  line.status === 'Running' ? 'bg-emerald-50 text-emerald-600' :
+                  line.status === 'Maintenance' ? 'bg-rose-50 text-rose-600' :
+                  'bg-slate-50 text-slate-400'
+                }`}>
+                  <Factory size={32} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-bold text-slate-900 text-lg">{line.name}</h4>
+                    <span className={`text-[10px] font-bold uppercase px-3 py-1 rounded-full ${
+                      line.status === 'Running' ? 'bg-emerald-100 text-emerald-700' :
+                      line.status === 'Maintenance' ? 'bg-rose-100 text-rose-700' :
+                      'bg-slate-100 text-slate-500'
+                    }`}>{line.status}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-1000 ${
+                          line.efficiency > 90 ? 'bg-emerald-500' :
+                          line.efficiency > 70 ? 'bg-amber-500' :
+                          'bg-rose-500'
+                        }`}
+                        style={{ width: `${line.efficiency}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-slate-600">{line.efficiency}%</span>
+                  </div>
+                  <div className="flex justify-between mt-3">
+                    <span className="text-xs text-slate-400 font-medium">Operator: {line.operator}</span>
+                    <span className="text-xs text-slate-400 font-medium">{line.output}/{line.target} units</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    );
+
+    return (
+      <div className="flex min-h-screen bg-slate-50 font-sans">
+        {/* Sidebar */}
+        <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 p-8 fixed h-full z-50">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-none">Supervisor</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operations Control</p>
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2">
+            {[
+              { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
+              { id: 'Production', icon: Factory, label: 'Production Lines' },
+              { id: 'Team', icon: Users2, label: 'Team Management' },
+              { id: 'Alerts', icon: ShieldAlert, label: 'System Alerts' },
+              { id: 'Settings', icon: Settings, label: 'Settings' },
+            ].map((item) => {
+              const isActive = supervisorTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => setSupervisorTab(item.id as any)}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+                    isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
+                  <span className="text-sm font-bold">{item.label}</span>
+                  {isActive && <ChevronRight size={16} className="ml-auto" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto pt-8 border-t border-slate-50">
+            <button 
+              onClick={() => setAppView('selection')}
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all group"
+            >
+              <LogIn size={20} className="text-slate-400 group-hover:text-indigo-600 rotate-180" />
+              <span className="text-sm font-bold">Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 lg:ml-72">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button className="lg:hidden p-2 text-slate-500">
+                <LayoutGrid size={24} />
+              </button>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{supervisorTab}</h2>
+                <p className="text-xs text-slate-500">Welcome back, Sarah Miller</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <button className="relative w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                  <AlertCircle size={20} />
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-bold text-slate-900">Sarah Miller</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Line Supervisor</div>
+                  </div>
+                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100">
+                    SM
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="p-8 max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={supervisorTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {supervisorTab === 'Overview' && renderOverview()}
+                {supervisorTab !== 'Overview' && (
+                  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600">
+                      {supervisorTab === 'Production' && <Factory size={48} />}
+                      {supervisorTab === 'Team' && <Users2 size={48} />}
+                      {supervisorTab === 'Alerts' && <ShieldAlert size={48} />}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">{supervisorTab} Module</h3>
+                      <p className="text-slate-500 mt-2">Detailed analytics for this section are being prepared.</p>
+                    </div>
+                    <button className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-100 hover:scale-105 transition-transform">
+                      Refresh Data
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+
+        {/* Mobile Navigation */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          {[
+            { id: 'Overview', icon: LayoutGrid, label: 'Home' },
+            { id: 'Production', icon: Factory, label: 'Production' },
+            { id: 'Team', icon: Users2, label: 'Team' },
+            { id: 'Alerts', icon: ShieldAlert, label: 'Alerts' },
+          ].map((tab) => {
+            const isActive = supervisorTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} onClick={() => setSupervisorTab(tab.id as any)} className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group">
+                {isActive && <motion.div layoutId="activeSupervisorTabMobile" className="absolute inset-0 bg-indigo-50 rounded-2xl -z-10" />}
+                <Icon size={isActive ? 22 : 20} className={`transition-all duration-300 ${isActive ? 'text-indigo-600 scale-110' : 'text-slate-400'}`} />
+                <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider ${isActive ? 'text-indigo-700' : 'text-slate-400'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  };
+
+  const renderAdminDashboard = () => {
+    const renderOverview = () => (
+      <div className="space-y-8">
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
+                <TrendingUp size={24} />
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12.5%</span>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">$124,500</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Revenue</div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                <ShoppingBasket size={24} />
+              </div>
+              <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">+8%</span>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">1,240</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Orders</div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                <Users size={24} />
+              </div>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">24 Active</span>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">45</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Sales Agents</div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                <ShieldAlert size={24} />
+              </div>
+              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full">3 Critical</span>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">8</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Pending Alerts</div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Revenue Overview</h3>
+                <p className="text-xs text-slate-500">Weekly revenue trends</p>
+              </div>
+              <div className="flex gap-2">
+                <button className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-100">7 Days</button>
+                <button className="px-3 py-1.5 bg-rose-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm shadow-rose-100">30 Days</button>
+              </div>
+            </div>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={REVENUE_DATA}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#e11d48" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#e11d48" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="revenue" stroke="#e11d48" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Production Status</h3>
+                <p className="text-xs text-slate-500">Completed vs Pending by line</p>
+              </div>
+              <button className="p-2 bg-slate-50 text-slate-400 rounded-lg border border-slate-100">
+                <Filter size={16} />
+              </button>
+            </div>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={PRODUCTION_DATA}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 20 }} />
+                  <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                  <Bar dataKey="pending" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Agents and Leads Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Agent Performance</h3>
+                <p className="text-xs text-slate-500">Top performing sales agents</p>
+              </div>
+              <button className="text-xs font-bold text-rose-600">View Detailed Report</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b border-slate-50">
+                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Agent Name</th>
+                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leads</th>
+                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Conversions</th>
+                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Revenue</th>
+                    <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {AGENT_PERFORMANCE.map((agent, idx) => (
+                    <tr key={idx} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-bold text-[10px]">
+                            {agent.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <span className="text-sm font-bold text-slate-900">{agent.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-sm text-slate-600 font-medium">{agent.leads}</td>
+                      <td className="py-4 text-sm text-slate-600 font-medium">{agent.conversions}</td>
+                      <td className="py-4 text-sm font-bold text-slate-900">${agent.revenue.toLocaleString()}</td>
+                      <td className="py-4">
+                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full uppercase tracking-tighter">On Track</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900 mb-6">Active Leads Status</h3>
+            <div className="space-y-6">
+              {[
+                { label: 'New Leads', count: 124, color: 'bg-blue-500', percentage: 45 },
+                { label: 'In Progress', count: 86, color: 'bg-amber-500', percentage: 30 },
+                { label: 'Negotiation', count: 42, color: 'bg-indigo-500', percentage: 15 },
+                { label: 'Closed/Won', count: 28, color: 'bg-emerald-500', percentage: 10 },
+              ].map((lead, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-xs font-bold text-slate-700">{lead.label}</span>
+                    <span className="text-xs font-bold text-slate-900">{lead.count}</span>
+                  </div>
+                  <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${lead.percentage}%` }}
+                      className={`h-full ${lead.color} rounded-full`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 pt-8 border-t border-slate-50">
+              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm">
+                  <PieChart size={20} />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">Conversion Rate</div>
+                  <div className="text-lg font-bold text-rose-600">18.4%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="flex min-h-screen bg-slate-50 font-sans">
+        {/* Sidebar */}
+        <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 p-8 fixed h-full z-50">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
+              <Shield size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-none">Admin</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Enterprise v2.4</p>
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2">
+            {[
+              { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
+              { id: 'Users', icon: Users, label: 'User Management' },
+              { id: 'System', icon: Server, label: 'System Health' },
+              { id: 'Logs', icon: History, label: 'Activity Logs' },
+              { id: 'Settings', icon: Settings, label: 'Settings' },
+            ].map((item) => {
+              const isActive = adminTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => setAdminTab(item.id as any)}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+                    isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
+                  <span className="text-sm font-bold">{item.label}</span>
+                  {isActive && <ChevronRight size={16} className="ml-auto" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto pt-8 border-t border-slate-50">
+            <button 
+              onClick={() => setAppView('selection')}
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+            >
+              <LogIn size={20} className="text-slate-400 group-hover:text-rose-600 rotate-180" />
+              <span className="text-sm font-bold">Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 lg:ml-72">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button className="lg:hidden p-2 text-slate-500">
+                <LayoutGrid size={24} />
+              </button>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{adminTab}</h2>
+                <p className="text-xs text-slate-500">Real-time system insights</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="hidden md:flex relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search analytics..." 
+                  className="bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-12 pr-4 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                />
+              </div>
+              <div className="flex items-center gap-4">
+                <button className="relative w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                  <AlertCircle size={20} />
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-bold text-slate-900">Admin User</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Super Admin</div>
+                  </div>
+                  <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-rose-100">
+                    AD
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="p-8 max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={adminTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {adminTab === 'Overview' && renderOverview()}
+                {adminTab !== 'Overview' && (
+                  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-600">
+                      {adminTab === 'Users' && <Users size={48} />}
+                      {adminTab === 'System' && <Server size={48} />}
+                      {adminTab === 'Logs' && <History size={48} />}
+                      {adminTab === 'Settings' && <Settings size={48} />}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">{adminTab} Module</h3>
+                      <p className="text-slate-500 mt-2">This section is currently being synchronized with real-time data.</p>
+                    </div>
+                    <button className="px-8 py-3 bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-rose-100 hover:scale-105 transition-transform">
+                      Refresh Module
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+
+        {/* Mobile Navigation (Only visible on small screens) */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          {[
+            { id: 'Overview', icon: LayoutGrid, label: 'Home' },
+            { id: 'Users', icon: Users, label: 'Users' },
+            { id: 'System', icon: Server, label: 'System' },
+            { id: 'Logs', icon: History, label: 'Logs' },
+          ].map((tab) => {
+            const isActive = adminTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} onClick={() => setAdminTab(tab.id as any)} className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group">
+                {isActive && <motion.div layoutId="activeAdminTabMobile" className="absolute inset-0 bg-rose-50 rounded-2xl -z-10" />}
+                <Icon size={isActive ? 22 : 20} className={`transition-all duration-300 ${isActive ? 'text-rose-600 scale-110' : 'text-slate-400'}`} />
+                <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider ${isActive ? 'text-rose-700' : 'text-slate-400'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  };
+
+  const renderAccountantDashboard = () => {
+    const renderOverview = () => (
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 opacity-30" />
+            <div className="relative z-10">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total Balance</div>
+              <div className="text-5xl font-bold text-slate-900 mb-8">$42,850.00</div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100/50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-emerald-600 shadow-sm">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Monthly Income</div>
+                  </div>
+                  <div className="text-2xl font-bold text-emerald-700">+$12,400.00</div>
+                  <div className="text-[10px] text-emerald-600/70 mt-1">+15% from last month</div>
+                </div>
+                <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100/50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm">
+                      <TrendingUp size={16} className="rotate-180" />
+                    </div>
+                    <div className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">Monthly Expenses</div>
+                  </div>
+                  <div className="text-2xl font-bold text-rose-700">-$4,200.00</div>
+                  <div className="text-[10px] text-rose-600/70 mt-1">-5% from last month</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-amber-600 p-8 rounded-3xl shadow-lg shadow-amber-100 text-white flex flex-col justify-between">
+            <div>
+              <div className="flex justify-between items-start mb-8">
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <CreditCard size={24} />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest opacity-80">Corporate Card</span>
+              </div>
+              <div className="text-2xl font-mono mb-2 tracking-wider">**** **** **** 8829</div>
+              <div className="text-sm opacity-80">Balance: $12,450.00</div>
+            </div>
+            <div className="flex justify-between items-end mt-8">
+              <div>
+                <div className="text-[10px] uppercase opacity-60 mb-1">Card Holder</div>
+                <div className="text-sm font-bold">FINANCE DEPT</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] uppercase opacity-60 mb-1">Expires</div>
+                <div className="text-sm font-bold">08/28</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Cash Flow Trend</h3>
+                <p className="text-xs text-slate-500">Income vs Expenses (Last 6 Months)</p>
+              </div>
+              <div className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Income</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-rose-500" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Expenses</span>
+                </div>
+              </div>
+            </div>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={CASH_FLOW_DATA}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="month" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }}
+                    dy={10}
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="income" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorIncome)" 
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="expenses" 
+                    stroke="#f43f5e" 
+                    strokeWidth={3}
+                    fill="transparent"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6">
+              <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                <Receipt size={28} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-slate-900">14</div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Invoices</div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6">
+              <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                <PieChart size={28} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-slate-900">84%</div>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Budget Utilization</div>
+              </div>
+            </div>
+            <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex items-center gap-6">
+              <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+                <CheckCircle2 size={28} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-emerald-700">Tax Ready</div>
+                <div className="text-xs font-bold text-emerald-600/70 uppercase tracking-wider">Q1 Audit Complete</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <section className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Recent Transactions</h2>
+              <p className="text-sm text-slate-500">Real-time financial activity log</p>
+            </div>
+            <div className="flex gap-3">
+              <button className="px-4 py-2 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-600 shadow-sm">Export CSV</button>
+              <button className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-100">Add Transaction</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left bg-slate-50/50 border-b border-slate-100">
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transaction ID</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {MOCK_TRANSACTIONS.map(tx => (
+                  <tr key={tx.id} className="group hover:bg-slate-50/50 transition-colors">
+                    <td className="px-8 py-4 text-sm font-bold text-slate-900">{tx.id}</td>
+                    <td className="px-8 py-4 text-sm text-slate-500">{tx.date}</td>
+                    <td className="px-8 py-4 text-sm font-medium text-slate-700">{tx.description}</td>
+                    <td className={`px-8 py-4 text-sm font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {tx.type === 'Income' ? '+' : '-'}${tx.amount.toLocaleString()}
+                    </td>
+                    <td className="px-8 py-4">
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                        tx.type === 'Income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                      }`}>{tx.type}</span>
+                    </td>
+                    <td className="px-8 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${tx.status === 'Completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <span className="text-xs font-medium text-slate-600">{tx.status}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    );
+
+    return (
+      <div className="flex min-h-screen bg-slate-50 font-sans">
+        {/* Sidebar */}
+        <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 p-8 fixed h-full z-50">
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-10 h-10 bg-amber-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-100">
+              <Wallet size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-none">Accountant</h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Financial Control</p>
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2">
+            {[
+              { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
+              { id: 'Transactions', icon: History, label: 'Transactions' },
+              { id: 'Invoices', icon: Receipt, label: 'Invoices' },
+              { id: 'Reports', icon: FileText, label: 'Financial Reports' },
+              { id: 'Settings', icon: Settings, label: 'Settings' },
+            ].map((item) => {
+              const isActive = accountantTab === item.id;
+              const Icon = item.icon;
+              return (
+                <button 
+                  key={item.id}
+                  onClick={() => setAccountantTab(item.id as any)}
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+                    isActive ? 'bg-amber-600 text-white shadow-lg shadow-amber-100' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon size={20} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
+                  <span className="text-sm font-bold">{item.label}</span>
+                  {isActive && <ChevronRight size={16} className="ml-auto" />}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="mt-auto pt-8 border-t border-slate-50">
+            <button 
+              onClick={() => setAppView('selection')}
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all group"
+            >
+              <LogIn size={20} className="text-slate-400 group-hover:text-amber-600 rotate-180" />
+              <span className="text-sm font-bold">Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 lg:ml-72">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button className="lg:hidden p-2 text-slate-500">
+                <LayoutGrid size={24} />
+              </button>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">{accountantTab}</h2>
+                <p className="text-xs text-slate-500">Financial overview and tracking</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <button className="relative w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                  <Bell size={20} />
+                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+                <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-bold text-slate-900">Finance Team</div>
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Senior Accountant</div>
+                  </div>
+                  <div className="w-10 h-10 bg-amber-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-amber-100">
+                    FT
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="p-8 max-w-7xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={accountantTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {accountantTab === 'Overview' && renderOverview()}
+                {accountantTab !== 'Overview' && (
+                  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-600">
+                      {accountantTab === 'Transactions' && <History size={48} />}
+                      {accountantTab === 'Invoices' && <Receipt size={48} />}
+                      {accountantTab === 'Reports' && <FileText size={48} />}
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900">{accountantTab} Module</h3>
+                      <p className="text-slate-500 mt-2">Financial data is being synchronized for this section.</p>
+                    </div>
+                    <button className="px-8 py-3 bg-amber-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-amber-100 hover:scale-105 transition-transform">
+                      Refresh Records
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </div>
+
+        {/* Mobile Navigation */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+          {[
+            { id: 'Overview', icon: LayoutGrid, label: 'Home' },
+            { id: 'Transactions', icon: History, label: 'Trans.' },
+            { id: 'Invoices', icon: Receipt, label: 'Invoices' },
+            { id: 'Reports', icon: FileText, label: 'Reports' },
+          ].map((tab) => {
+            const isActive = accountantTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button key={tab.id} onClick={() => setAccountantTab(tab.id as any)} className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group">
+                {isActive && <motion.div layoutId="activeAccountantTabMobile" className="absolute inset-0 bg-amber-50 rounded-2xl -z-10" />}
+                <Icon size={isActive ? 22 : 20} className={`transition-all duration-300 ${isActive ? 'text-amber-600 scale-110' : 'text-slate-400'}`} />
+                <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider ${isActive ? 'text-amber-700' : 'text-slate-400'}`}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  };
+
+  const renderSalesDashboard = () => (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
       <main className="max-w-md mx-auto p-6">
         <AnimatePresence mode="wait">
@@ -1486,43 +2787,70 @@ export default function App() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-3 flex justify-between items-center z-40 max-w-md mx-auto">
-        <button 
-          onClick={() => { setActiveTab('Home'); setView('List'); }}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'Home' ? 'text-emerald-600' : 'text-slate-400'}`}
-        >
-          <LayoutGrid size={20} />
-          <span className="text-[8px] font-bold uppercase">Home</span>
-        </button>
-        <button 
-          onClick={() => { setActiveTab('Leads'); setView('List'); }}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'Leads' ? 'text-emerald-600' : 'text-slate-400'}`}
-        >
-          <Users size={20} />
-          <span className="text-[8px] font-bold uppercase">Leads</span>
-        </button>
-        <button 
-          onClick={() => { setActiveTab('Catalog'); setCatalogLevel('discover'); }}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'Catalog' ? 'text-emerald-600' : 'text-slate-400'}`}
-        >
-          <div className="relative">
-            <Package size={20} />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[6px] font-bold w-3 h-3 rounded-full flex items-center justify-center border border-white">
-                {cartCount}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 max-w-md mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        {[
+          { id: 'Home', icon: LayoutGrid, label: 'Home', action: () => { setActiveTab('Home'); setView('List'); } },
+          { id: 'Leads', icon: Users, label: 'Leads', action: () => { setActiveTab('Leads'); setView('List'); } },
+          { id: 'Catalog', icon: Package, label: 'Catalog', action: () => { setActiveTab('Catalog'); setCatalogLevel('discover'); }, badge: cartCount },
+          { id: 'Orders', icon: Truck, label: 'Orders', action: () => { setActiveTab('Orders'); setView('List'); } },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
+          
+          return (
+            <button 
+              key={tab.id}
+              onClick={tab.action}
+              className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group"
+            >
+              {isActive && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-emerald-50 rounded-2xl -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <div className="relative">
+                <Icon 
+                  size={isActive ? 22 : 20} 
+                  className={`transition-all duration-300 ${isActive ? 'text-emerald-600 scale-110' : 'text-slate-400 group-hover:text-slate-500'}`} 
+                />
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className={`absolute -top-1 -right-1 text-white text-[6px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white transition-colors ${isActive ? 'bg-emerald-600' : 'bg-emerald-500'}`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider transition-all duration-300 ${isActive ? 'text-emerald-700' : 'text-slate-400'}`}>
+                {tab.label}
               </span>
-            )}
-          </div>
-          <span className="text-[8px] font-bold uppercase">Catalog</span>
-        </button>
-        <button 
-          onClick={() => { setActiveTab('Orders'); setView('List'); }}
-          className={`flex flex-col items-center gap-1 ${activeTab === 'Orders' ? 'text-emerald-600' : 'text-slate-400'}`}
-        >
-          <Truck size={20} />
-          <span className="text-[8px] font-bold uppercase">Orders</span>
-        </button>
+            </button>
+          );
+        })}
       </nav>
+      
+      {/* Logout Button (Floating) */}
+      <button 
+        onClick={() => setAppView('selection')}
+        className="fixed top-6 right-6 w-10 h-10 bg-white/80 backdrop-blur-md rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors z-50"
+      >
+        <X size={20} />
+      </button>
     </div>
+  );
+
+  return (
+    <AnimatePresence mode="wait">
+      {appView === 'selection' && <motion.div key="selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderSelection()}</motion.div>}
+      {appView === 'login' && <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderLogin()}</motion.div>}
+      {appView === 'dashboard' && (
+        <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          {selectedDashboard === 'sales' && renderSalesDashboard()}
+          {selectedDashboard === 'supervisor' && renderSupervisorDashboard()}
+          {selectedDashboard === 'admin' && renderAdminDashboard()}
+          {selectedDashboard === 'accountant' && renderAccountantDashboard()}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
