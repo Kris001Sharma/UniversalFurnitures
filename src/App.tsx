@@ -86,7 +86,6 @@ import {
 } from 'recharts';
 
 import { DataSync } from './components/admin/DataSync';
-import { useOrders, useOrganizations } from './hooks/useSupabase';
 
 // --- Types ---
 
@@ -1705,9 +1704,6 @@ function ProfileModal({
 }
 
 export default function App() {
-  const { data: supabaseOrders, isLoading: isLoadingOrders } = useOrders();
-  const { data: supabaseOrgs, isLoading: isLoadingOrgs } = useOrganizations();
-
   const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>('selection');
   const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -4101,81 +4097,21 @@ export default function App() {
     };
 
     const renderAdminClientsOrders = () => {
-      const activeOrders = supabaseOrders?.filter(o => o.status !== 'Draft').map(o => ({
-        id: o.id.substring(0, 8).toUpperCase(),
-        client: o.organization?.name || 'Unknown Client',
-        date: new Date(o.created_at).toLocaleDateString(),
-        expectedDelivery: 'TBD',
-        salesAgent: o.created_by_user?.full_name || 'Unassigned',
-        salesAgentId: o.created_by,
-        accountant: 'Pending',
-        accountantId: null,
-        supervisor: o.supervisor?.full_name || 'Unassigned',
-        supervisorId: o.assigned_supervisor_id,
-        status: o.status,
-        value: o.total_amount,
-        advance: 0,
-        pending: o.total_amount,
-        discount: 0,
-        discountReason: '',
-        notes: o.notes ? [{ id: 1, author: 'System', text: o.notes, time: new Date(o.created_at).toLocaleDateString() }] : []
-      }));
-
-      const draftOrders = supabaseOrders?.filter(o => o.status === 'Draft').map(o => ({
-        id: o.id.substring(0, 8).toUpperCase(),
-        client: o.organization?.name || 'Unknown Client',
-        org: o.organization?.name || 'Unknown Org',
-        priority: 'Medium',
-        salesAgent: o.created_by_user?.full_name || 'Unassigned',
-        value: o.total_amount,
-        date: new Date(o.created_at).toLocaleDateString(),
-        status: o.status,
-        advance: 0,
-        pending: o.total_amount,
-        notes: o.notes ? [{ id: 1, author: 'System', text: o.notes, time: new Date(o.created_at).toLocaleDateString() }] : []
-      }));
-
-      const leads = supabaseOrgs?.filter(o => !o.is_client).map(o => ({
-        id: o.id.substring(0, 8).toUpperCase(),
-        name: o.name,
-        contactPerson: 'Unknown',
-        interest: 'General',
-        lastContact: new Date(o.created_at).toLocaleDateString(),
-        salesAgent: 'Unassigned',
-        location: o.address || 'Unknown',
-        email: 'Unknown',
-        contact: 'Unknown',
-        type: 'Active Lead',
-        notes: []
-      }));
-
-      const allClients = supabaseOrgs?.map(o => ({
-        id: o.id.substring(0, 8).toUpperCase(),
-        name: o.name,
-        type: o.is_client ? 'Active Client' : 'Active Lead',
-        totalOrders: supabaseOrders?.filter(ord => ord.organization_id === o.id).length || 0,
-        totalValue: supabaseOrders?.filter(ord => ord.organization_id === o.id).reduce((acc, ord) => acc + (ord.total_amount || 0), 0) || 0,
-        lastInteraction: new Date(o.created_at).toLocaleDateString(),
-        location: o.address || 'Unknown',
-        contact: 'Unknown',
-        email: 'Unknown'
-      }));
-
-      const MOCK_ACTIVE_ORDERS = activeOrders && activeOrders.length > 0 ? activeOrders : [
+      const MOCK_ACTIVE_ORDERS = [
         { id: 'ORD-1001', client: 'TechCorp Industries', date: 'Oct 10, 2023', expectedDelivery: 'Oct 15, 2023', salesAgent: 'Sarah Jenkins', salesAgentId: '1', accountant: 'Alice Smith', accountantId: '1', supervisor: 'Mark Taylor', supervisorId: '1', status: 'In Production', value: 12500, advance: 5000, pending: 7500, discount: 500, discountReason: 'Volume discount', notes: [{ id: 1, author: 'Sarah Jenkins', text: 'Client requested expedited delivery.', time: 'Oct 11, 2023' }] },
         { id: 'ORD-1002', client: 'Apex Solutions', date: 'Oct 12, 2023', expectedDelivery: 'Oct 18, 2023', salesAgent: 'Sarah Jenkins', salesAgentId: '1', accountant: 'Bob Johnson', accountantId: '2', supervisor: 'Lisa Wong', supervisorId: '2', status: 'In Production', value: 8500, advance: 8500, pending: 0, discount: 0, discountReason: '', notes: [] },
       ];
 
-      const MOCK_DRAFT_ORDERS = draftOrders && draftOrders.length > 0 ? draftOrders : [
+      const MOCK_DRAFT_ORDERS = [
         { id: 'DRF-0045', client: 'Global Logistics', org: 'Global Logistics Inc.', priority: 'High', salesAgent: 'Michael Chen', value: 15000, date: 'Oct 14, 2023', status: 'Draft', advance: 0, pending: 15000, notes: [{ id: 1, author: 'Michael Chen', text: 'Initial discussion about bulk order.', time: '2 days ago' }] },
         { id: 'DRF-0046', client: 'Nexus Dynamics', org: 'Nexus Dynamics LLC', priority: 'Medium', salesAgent: 'Michael Chen', value: 5000, date: 'Oct 13, 2023', status: 'Draft', advance: 0, pending: 5000, notes: [] },
       ];
 
-      const MOCK_LEADS = leads && leads.length > 0 ? leads : [
+      const MOCK_LEADS = [
         { id: 'L-001', name: 'Future Tech', contactPerson: 'John Doe', interest: 'Bulk Chairs', lastContact: '2 days ago', salesAgent: 'David Rodriguez', location: 'Kathmandu, Nepal', email: 'john@futuretech.com', contact: '+977 9844444444', type: 'Active Lead', notes: [{ id: 1, author: 'David Rodriguez', text: 'Interested in 50 ergonomic chairs.', time: '2 days ago' }] },
       ];
 
-      const MOCK_ALL_CLIENTS = allClients && allClients.length > 0 ? allClients : [
+      const MOCK_ALL_CLIENTS = [
         { id: 'C-001', name: 'TechCorp Industries', type: 'Active Client', totalOrders: 2, totalValue: 25000, lastInteraction: 'Today', location: 'Kathmandu, Nepal', contact: '+977 9800000000', email: 'contact@techcorp.com' },
         { id: 'C-002', name: 'Quantum Retail', type: 'Past Client', totalOrders: 5, totalValue: 45000, lastInteraction: 'Jan 15, 2023', location: 'Pokhara, Nepal', contact: '+977 9811111111', email: 'procurement@quantumretail.com' },
         { id: 'C-003', name: 'Global Logistics', type: 'Active Lead', totalOrders: 0, totalValue: 0, lastInteraction: 'Yesterday', location: 'Lalitpur, Nepal', contact: '+977 9822222222', email: 'info@globallogistics.com' },
