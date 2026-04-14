@@ -12,7 +12,7 @@ export default function AccountsPage() {
               <DollarSign size={24} />
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">$245,800</div>
+          <div className="text-3xl font-bold text-slate-900">₹245,800</div>
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Balance</div>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -21,7 +21,7 @@ export default function AccountsPage() {
               <ArrowUpRight size={24} />
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">$45,200</div>
+          <div className="text-3xl font-bold text-slate-900">₹45,200</div>
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Monthly Income</div>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -30,7 +30,7 @@ export default function AccountsPage() {
               <ArrowDownRight size={24} />
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">$12,400</div>
+          <div className="text-3xl font-bold text-slate-900">₹12,400</div>
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Monthly Expenses</div>
         </div>
       </div>
@@ -55,7 +55,7 @@ export default function AccountsPage() {
                   <td className="px-6 py-4 text-sm text-slate-500">{tx.date}</td>
                   <td className="px-6 py-4 font-bold text-slate-900">{tx.description}</td>
                   <td className={`px-6 py-4 font-bold ${tx.type === 'Income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {tx.type === 'Income' ? '+' : '-'}${tx.amount.toFixed(2)}
+                    {tx.type === 'Income' ? '+' : '-'}₹{tx.amount.toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${

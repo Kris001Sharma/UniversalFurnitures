@@ -12,7 +12,7 @@ export default function AdminPage() {
             </div>
             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12.5%</span>
           </div>
-          <div className="text-3xl font-bold text-slate-900">$124,500</div>
+          <div className="text-3xl font-bold text-slate-900">₹124,500</div>
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Revenue</div>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
