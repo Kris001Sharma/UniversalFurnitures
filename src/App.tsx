@@ -86,6 +86,7 @@ import {
 } from 'recharts';
 
 import { DataSync } from './components/admin/DataSync';
+import { appConfig } from './config/appConfig';
 
 // --- Types ---
 
@@ -2960,75 +2961,100 @@ export default function App() {
         </div>
 
         <div className="grid gap-4">
-          <button 
-            onClick={() => { setSelectedDashboard('sales'); setAppView('login'); }}
-            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-          >
-            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-              <TrendingUp size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">Sales Dashboard</h3>
-              <p className="text-xs text-slate-500">Manage leads, catalog, and orders</p>
-            </div>
-            <ChevronRight className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-colors" size={20} />
-          </button>
+          {appConfig.dashboards.sales.enabled && (
+            <button 
+              onClick={() => { 
+                setSelectedDashboard('sales'); 
+                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+              }}
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+            >
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <TrendingUp size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Sales Dashboard</h3>
+                <p className="text-xs text-slate-500">Manage leads, catalog, and orders</p>
+              </div>
+              <ChevronRight className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-colors" size={20} />
+            </button>
+          )}
 
-          <button 
-            onClick={() => { setSelectedDashboard('supervisor'); setAppView('login'); }}
-            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-          >
-            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-              <ShieldCheck size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">Supervisor Dashboard</h3>
-              <p className="text-xs text-slate-500">Monitor production and team performance</p>
-            </div>
-            <ChevronRight className="ml-auto text-slate-300 group-hover:text-indigo-500 transition-colors" size={20} />
-          </button>
+          {appConfig.dashboards.supervisor.enabled && (
+            <button 
+              onClick={() => { 
+                setSelectedDashboard('supervisor'); 
+                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+              }}
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+            >
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Supervisor Dashboard</h3>
+                <p className="text-xs text-slate-500">Monitor production and team performance</p>
+              </div>
+              <ChevronRight className="ml-auto text-slate-300 group-hover:text-indigo-500 transition-colors" size={20} />
+            </button>
+          )}
 
-          <button 
-            onClick={() => { setSelectedDashboard('admin'); setAppView('login'); }}
-            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-          >
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
-              <Shield size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">Admin Dashboard</h3>
+          {appConfig.dashboards.admin.enabled && (
+            <button 
+              onClick={() => { 
+                setSelectedDashboard('admin'); 
+                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+              }}
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+            >
+              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                <Shield size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Admin Dashboard</h3>
               <p className="text-xs text-slate-500">System settings and user management</p>
             </div>
             <ChevronRight className="ml-auto text-slate-300 group-hover:text-rose-500 transition-colors" size={20} />
           </button>
+          )}
 
-          <button 
-            onClick={() => { setSelectedDashboard('accountant'); setAppView('login'); }}
-            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-          >
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-              <Wallet size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">Accountant Dashboard</h3>
-              <p className="text-xs text-slate-500">Financial reports and transactions</p>
-            </div>
-            <ChevronRight className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
-          </button>
+          {appConfig.dashboards.accountant.enabled && (
+            <button 
+              onClick={() => { 
+                setSelectedDashboard('accountant'); 
+                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+              }}
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+            >
+              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <Wallet size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Accountant Dashboard</h3>
+                <p className="text-xs text-slate-500">Financial reports and transactions</p>
+              </div>
+              <ChevronRight className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
+            </button>
+          )}
 
-          <button 
-            onClick={() => { setSelectedDashboard('delivery'); setAppView('login'); }}
-            className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-          >
-            <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-              <Truck size={24} />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900">Delivery Dashboard</h3>
-              <p className="text-xs text-slate-500">Order handover and client delivery</p>
-            </div>
-            <ChevronRight className="ml-auto text-slate-300 group-hover:text-orange-500 transition-colors" size={20} />
-          </button>
+          {appConfig.dashboards.delivery.enabled && (
+            <button 
+              onClick={() => { 
+                setSelectedDashboard('delivery'); 
+                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+              }}
+              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+            >
+              <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                <Truck size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Delivery Dashboard</h3>
+                <p className="text-xs text-slate-500">Order handover and client delivery</p>
+              </div>
+              <ChevronRight className="ml-auto text-slate-300 group-hover:text-orange-500 transition-colors" size={20} />
+            </button>
+          )}
         </div>
 
         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Enterprise Resource Planning v2.4</p>
