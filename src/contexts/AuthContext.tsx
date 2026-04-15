@@ -43,6 +43,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If no user, stop loading immediately
         setIsLoading(false);
       }
+    }).catch(err => {
+      console.error('Failed to get session:', err);
+      setIsLoading(false);
     });
 
     // 2. Set up a listener for any future auth changes (e.g., user logs in or out)
