@@ -1,7 +1,9 @@
 export const appConfig = {
+  // Developer Mode
+  devMode: true, // Set to true to bypass authentication and select dashboards freely for testing
+
   // Authentication settings
   auth: {
-    enabled: true, // Set to false to bypass authentication completely for development
     provider: 'supabase', // 'supabase' or 'firebase' or 'local'
     requireRole: true, // If true, users must have a specific role to access dashboards
   },

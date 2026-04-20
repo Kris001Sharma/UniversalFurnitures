@@ -1,6 +1,145 @@
 import { supabase } from '../lib/supabase';
 
 export const dataService = {
+  async getClients() {
+    const { data, error } = await supabase.from('clients').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async createClient(clientData: any) {
+    const { data, error } = await supabase.from('clients').insert([clientData]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateClient(clientId: string, updates: any) {
+    const { data, error } = await supabase.from('clients').update(updates).eq('id', clientId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteClient(clientId: string) {
+    const { error } = await supabase.from('clients').delete().eq('id', clientId);
+    if (error) throw error;
+  },
+
+  async getOrders() {
+    const { data, error } = await supabase.from('orders').select('*, order_items(*)');
+    if (error) throw error;
+    return data;
+  },
+
+  async getTransactions() {
+    const { data, error } = await supabase.from('transactions').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async createOrder(orderData: any, orderItems: any[]) {
+    // Insert order
+    const { data: newOrder, error: orderError } = await supabase
+      .from('orders')
+      .insert([orderData])
+      .select()
+      .single();
+
+    if (orderError) throw orderError;
+
+    if (newOrder) {
+      // Insert order items
+      const itemsToInsert = orderItems.map(item => ({
+        ...item,
+        order_id: newOrder.id
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(itemsToInsert);
+
+      if (itemsError) throw itemsError;
+    }
+
+    return newOrder;
+  },
+
+  async updateOrder(orderId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getInventory() {
+    const { data, error } = await supabase.from('inventory').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async getProductionLines() {
+    const { data, error } = await supabase.from('production_lines').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async getProductionLog() {
+    const { data, error } = await supabase.from('production_log').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async getDeliveryTasks() {
+    const { data, error } = await supabase.from('delivery_tasks').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async getSalesAgents() {
+    const { data, error } = await supabase.from('user_profiles').select('*, sales_agent_metrics(*)').eq('role', 'Sales Agent');
+    if (error) throw error;
+    return data;
+  },
+
+  async getDeliveryAgents() {
+    const { data, error } = await supabase.from('user_profiles').select('*').eq('role', 'Delivery');
+    if (error) throw error;
+    return data;
+  },
+
+  async getAccountants() {
+    const { data, error } = await supabase.from('user_profiles').select('*, accountant_metrics(*)').eq('role', 'Accountant');
+    if (error) throw error;
+    return data;
+  },
+
+  async getProducts() {
+    const { data, error } = await supabase.from('products').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async createProduct(productData: any) {
+    const { data, error } = await supabase.from('products').insert([productData]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateProduct(productId: string, updates: any) {
+    const { data, error } = await supabase.from('products').update(updates).eq('id', productId).select().single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteProduct(productId: string) {
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (error) throw error;
+  },
+
   /**
    * Fetch records older than X days from a specific table
    */

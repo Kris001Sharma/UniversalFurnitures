@@ -87,6 +87,9 @@ import {
 
 import { DataSync } from './components/admin/DataSync';
 import { appConfig } from './config/appConfig';
+import { useAuth } from './contexts/AuthContext';
+import { authService } from './services/auth.service';
+import { dataService } from './services/data.service';
 
 // --- Types ---
 
@@ -675,7 +678,7 @@ const OrderTracker = ({ status }: { status: OrderStatus }) => {
 const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
   const [activeTab, setActiveTab] = useState<'Tasks' | 'Active' | 'Route'>('Tasks');
   const [view, setView] = useState<'List' | 'Add' | 'Detail'>('List');
-  const [tasks, setTasks] = useState<DeliveryTask[]>(MOCK_DELIVERY_TASKS);
+  const [tasks, setTasks] = useState<DeliveryTask[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [receivedInputs, setReceivedInputs] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<'All' | 'Open' | 'In Progress' | 'Delivered'>('All');
@@ -687,6 +690,37 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigatingTaskId, setNavigatingTaskId] = useState<string | null>(null);
   const [mapCenterTrigger, setMapCenterTrigger] = useState(0);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const fetchedTasks = await dataService.getDeliveryTasks();
+        if (fetchedTasks && fetchedTasks.length > 0) {
+          const mappedTasks = fetchedTasks.map((t: any) => ({
+             id: t.id,
+             orderId: t.order_id,
+             orgId: t.org_id,
+             orgName: t.customer_name || 'Walk-in Customer',
+             address: t.address || t.destination,
+             status: t.status || 'Open',
+             priority: t.priority || 'Normal',
+             itemsExpected: t.items_to_deliver || 1,
+             itemsReceived: t.items_received,
+             contactName: t.contact_name || 'N/A',
+             contactPhone: t.contact_phone || 'N/A',
+             dueDate: t.due_date || t.date || new Date().toISOString().split('T')[0],
+             locationTagged: t.location_tagged || false,
+             lat: t.lat,
+             lng: t.lng
+          }));
+          setTasks(mappedTasks);
+        }
+      } catch (err) {
+        console.error("Failed to fetch delivery tasks:", err);
+      }
+    };
+    fetchTasks();
+  }, []);
 
   const [newTask, setNewTask] = useState<Partial<DeliveryTask>>({
     priority: 'Normal',
@@ -1705,12 +1739,107 @@ function ProfileModal({
 }
 
 export default function App() {
-  const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>('selection');
+  const { user, profile, isLoading } = useAuth();
+  const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>(appConfig.devMode ? 'selection' : 'login');
   const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginStep, setLoginStep] = useState<1 | 2>(1);
+  const [loginRole, setLoginRole] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [showSalesProfile, setShowSalesProfile] = useState(false);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    if (!appConfig.devMode && user && appView === 'login') {
+      if (isLoading) return; // Wait for profile to load
+
+      // If we don't have a specific dashboard selected yet, infer it from profile
+      if (profile) {
+        const role = profile.role;
+        let inferredDashboard: 'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null = null;
+        if (role === 'Sales Agent') inferredDashboard = 'sales';
+        else if (role === 'Supervisor') inferredDashboard = 'supervisor';
+        else if (role === 'Administrator') inferredDashboard = 'admin';
+        else if (role === 'Accountant') inferredDashboard = 'accountant';
+        else if (role === 'Delivery') inferredDashboard = 'delivery';
+
+        if (inferredDashboard) {
+           setSelectedDashboard(inferredDashboard);
+           setAppView('dashboard');
+           return;
+        }
+      }
+      setLoginError('User profile not found. Please contact administrator.');
+    }
+  }, [user, profile, isLoading, appView]);
+
+  const handleEmailCheck = async () => {
+    if (!loginEmail.trim()) {
+      setLoginError('Please enter an email address');
+      return;
+    }
+    setLoginError('');
+    setIsLoggingIn(true);
+    
+    try {
+      const role = await authService.checkEmailRole(loginEmail);
+      if (role) {
+        setLoginRole(role);
+        
+        // Infer dashboard to adjust UI colors before we even finish logging in
+        if (role === 'Sales Agent') setSelectedDashboard('sales');
+        else if (role === 'Supervisor') setSelectedDashboard('supervisor');
+        else if (role === 'Administrator') setSelectedDashboard('admin');
+        else if (role === 'Accountant') setSelectedDashboard('accountant');
+        else if (role === 'Delivery') setSelectedDashboard('delivery');
+        
+        setLoginStep(2);
+      } else {
+        setLoginError('Email not found in our system.');
+      }
+    } catch (err: any) {
+      console.error('Email check error:', err);
+      setLoginError('Unable to verify email at this time.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handlePasswordLogin = async () => {
+    if (!loginPassword.trim()) {
+      setLoginError('Please enter your password');
+      return;
+    }
+    setLoginError('');
+    setIsLoggingIn(true);
+    try {
+      await authService.login(loginEmail, loginPassword);
+      // The auto-redirect effect will handle the transition
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setLoginError(err.message || 'Invalid credentials');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      if (!appConfig.devMode) {
+        await authService.logout();
+      }
+      setAppView(appConfig.devMode ? 'selection' : 'login');
+      setSelectedDashboard(null);
+      setLoginStep(1);
+      setLoginRole(null);
+      setLoginPassword('');
+    } catch (e) {
+      console.error('Signout Error', e);
+    }
+  };
 
   const [supervisorTab, setSupervisorTab] = useState<'Overview' | 'Inventory' | 'Production Log' | 'Active Manufacturing' | 'Team' | 'Alerts' | 'Settings'>('Overview');
   const [adminTab, setAdminTab] = useState<'Overview' | 'Sales' | 'Clients & Orders' | 'Manufacturing' | 'Delivery' | 'Finance' | 'Users' | 'System' | 'Logs' | 'Data Sync' | 'Settings'>('Overview');
@@ -1775,7 +1904,190 @@ export default function App() {
   const [leadFilter, setLeadFilter] = useState<string>('All');
   const [orderTab, setOrderTab] = useState<OrderCategory>('Active');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartClientId, setCartClientId] = useState<string>('');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [activeOrders, setActiveOrders] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [productionLines, setProductionLines] = useState<ProductionLine[]>([]);
+  const [productionLog, setProductionLog] = useState<ProductionRecord[]>([]);
+  const [salesAgents, setSalesAgents] = useState<any[]>([]);
+  const [deliveryAgents, setDeliveryAgents] = useState<any[]>([]);
+  const [accountants, setAccountants] = useState<any[]>([]);
   const [flipText, setFlipText] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+
+  useEffect(() => {
+    if (appView === 'dashboard') {
+      const fetchData = async () => {
+        setIsLoadingData(true);
+        try {
+          const [fetchedClients, fetchedOrders, fetchedTransactions, fetchedProducts, fetchedInventory, fetchedProductionLines, fetchedProductionLog, fetchedSalesAgents, fetchedDeliveryAgents, fetchedAccountants] = await Promise.all([
+            dataService.getClients(),
+            dataService.getOrders(),
+            dataService.getTransactions(),
+            dataService.getProducts(),
+            dataService.getInventory(),
+            dataService.getProductionLines(),
+            dataService.getProductionLog(),
+            dataService.getSalesAgents(),
+            dataService.getDeliveryAgents(),
+            dataService.getAccountants()
+          ]);
+          
+          if (fetchedClients && fetchedClients.length > 0) {
+            setClients(fetchedClients);
+          }
+          if (fetchedSalesAgents && fetchedSalesAgents.length > 0) {
+             const mappedAgents = fetchedSalesAgents.map((a: any) => {
+                 const metrics = a.sales_agent_metrics?.[0] || {};
+                 return {
+                     id: a.id,
+                     name: a.name,
+                     role: a.role,
+                     leads: metrics.leads || 0,
+                     activeClients: metrics.active_clients || 0,
+                     pastClients: metrics.past_clients || 0,
+                     revenue: metrics.revenue ? `₹${metrics.revenue.toLocaleString()}` : '₹0',
+                     conversion: metrics.conversion ? `${metrics.conversion}%` : '0%',
+                     status: a.status || 'Online',
+                     reportsTo: a.reports_to || null
+                 };
+             });
+             setSalesAgents(mappedAgents);
+          }
+          if (fetchedDeliveryAgents && fetchedDeliveryAgents.length > 0) {
+             const mappedAgents = fetchedDeliveryAgents.map((a: any) => ({
+                 id: a.id,
+                 name: a.name,
+                 role: a.role,
+                 activeToday: Math.floor(Math.random() * 5),
+                 doneToday: Math.floor(Math.random() * 10),
+                 currentClient: 'None',
+                 efficiency: a.accuracy || '98%',
+                 status: a.status || 'Available',
+                 reportsTo: a.reports_to || null
+             }));
+             setDeliveryAgents(mappedAgents);
+          }
+          if (fetchedAccountants && fetchedAccountants.length > 0) {
+             const mappedAgents = fetchedAccountants.map((a: any) => {
+                 const metrics = a.accountant_metrics?.[0] || {};
+                 return {
+                     id: a.id,
+                     name: a.name,
+                     role: a.role,
+                     processedInvoices: metrics.processed_invoices || 0,
+                     pendingApprovals: metrics.pending_approvals || 0,
+                     accuracy: metrics.accuracy || '100%',
+                     status: a.status || 'Online',
+                     reportsTo: a.reports_to || null
+                 };
+             });
+             setAccountants(mappedAgents);
+          }
+          if (fetchedProductionLog && fetchedProductionLog.length > 0) {
+            const mappedLog = fetchedProductionLog.map((l: any) => ({
+              id: l.id,
+              itemName: l.product_name || 'Unknown Product',
+              producedDate: l.date || new Date().toISOString().split('T')[0],
+              deliveredTo: l.delivered_to || 'Warehouse',
+              status: l.status || 'Produced'
+            }));
+            setProductionLog(mappedLog);
+          }
+          if (fetchedProductionLines && fetchedProductionLines.length > 0) {
+            const mappedLines = fetchedProductionLines.map((l: any) => ({
+              id: l.id,
+              name: l.name,
+              status: l.status,
+              efficiency: l.efficiency || 85,
+              output: l.output || 0,
+              target: l.target || 100,
+              operator: l.operator || 'Unassigned'
+            }));
+            setProductionLines(mappedLines);
+          }
+          if (fetchedInventory && fetchedInventory.length > 0) {
+            const mappedInventory = fetchedInventory.map((i: any) => ({
+              id: i.id,
+              name: i.name || i.item_name,
+              category: i.category,
+              quantity: i.quantity,
+              unit: i.unit || 'pcs',
+              status: i.quantity > 50 ? 'In Stock' : (i.quantity > 0 ? 'Low Stock' : 'Out of Stock')
+            }));
+            setInventory(mappedInventory);
+          }
+          if (fetchedProducts && fetchedProducts.length > 0) {
+            const mappedProducts = fetchedProducts.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              code: p.id.substring(0, 8), // Generate a code if not present
+              price: p.base_price,
+              image: p.image_url || `https://picsum.photos/seed/${p.id}/400/400`,
+              mainCategory: p.category,
+              subCategory: p.category,
+              description: p.description || 'Premium quality product.'
+            }));
+            setProducts(mappedProducts);
+          }
+          if (fetchedOrders && fetchedOrders.length > 0) {
+            // Map Supabase orders to local Order type
+            const mappedOrders = fetchedOrders.map((o: any) => {
+              const org = fetchedClients?.find((c: any) => c.id === o.org_id);
+              return {
+                id: o.id,
+                orgId: o.org_id,
+                orgName: o.customer_name || org?.name || 'Unknown',
+                items: o.order_items?.map((item: any) => ({
+                  productId: item.product_id,
+                  quantity: item.quantity
+                })) || [],
+                status: o.status === 'Draft' ? 'Received' : o.status, // Map Draft to Received for UI if needed
+                category: o.status === 'Draft' ? 'Open' : (o.status === 'Closed' ? 'Closed' : 'Active'),
+                paymentStatus: o.payment_status || 'Pending',
+                expectedDelivery: o.expected_delivery || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                createdAt: o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0],
+                totalAmount: o.total_amount
+              };
+            });
+            setOrders(mappedOrders);
+
+            // Map active orders for supervisor/admin
+            const mappedActiveOrders = fetchedOrders
+              .filter((o: any) => o.status !== 'Draft' && o.status !== 'Closed')
+              .map((o: any) => {
+                const org = fetchedClients?.find((c: any) => c.id === o.org_id);
+                const totalUnits = o.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0;
+                return {
+                  orderId: o.id,
+                  customer: o.customer_name || org?.name || 'Unknown',
+                  totalUnits: totalUnits,
+                  completedUnits: 0, // Would need actual logic to calculate
+                  tracking_mode: o.tracking_mode || 'Order Level',
+                  overallStage: o.status,
+                  value: o.total_amount || 0,
+                  expectedDelivery: o.expected_delivery || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                  items: o.order_items || []
+                };
+              });
+            setActiveOrders(mappedActiveOrders);
+          }
+          if (fetchedTransactions && fetchedTransactions.length > 0) {
+            setTransactions(fetchedTransactions);
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+      fetchData();
+    }
+  }, [appView]);
 
   useEffect(() => {
     let path = '/';
@@ -1822,7 +2134,7 @@ export default function App() {
 
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = cart.reduce((acc, item) => {
-    const product = MOCK_PRODUCTS.find(p => p.id === item.productId);
+    const product = products.find(p => p.id === item.productId);
     return acc + (product?.price || 0) * item.quantity;
   }, 0);
 
@@ -1869,7 +2181,7 @@ export default function App() {
         >
           <div className="text-[10px] opacity-80 uppercase font-bold mb-1">Priorities</div>
           <div className="text-2xl font-mono font-bold">
-            {MOCK_ORGS.filter(o => o.nextFollowUp && o.nextFollowUp >= today).length}
+            {clients.filter(o => o.nextFollowUp && o.nextFollowUp >= today).length}
           </div>
         </motion.div>
         <motion.div 
@@ -1883,12 +2195,12 @@ export default function App() {
         >
           <div className="text-[10px] opacity-80 uppercase font-bold mb-1">New Leads</div>
           <div className="text-2xl font-mono font-bold">
-            {MOCK_ORGS.filter(o => o.status === 'New').length}
+            {clients.filter(o => o.status === 'New').length}
           </div>
         </motion.div>
         <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-slate-700 shadow-sm">
           <div className="text-[10px] opacity-80 uppercase font-bold mb-1">Orders</div>
-          <div className="text-2xl font-mono font-bold">{MOCK_ORDERS.length}</div>
+          <div className="text-2xl font-mono font-bold">{orders.length}</div>
         </div>
       </div>
 
@@ -1896,7 +2208,7 @@ export default function App() {
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Today's Priorities</h2>
         <div className="space-y-3">
-          {MOCK_ORGS.filter(o => o.nextFollowUp === today).map(org => (
+          {clients.filter(o => o.nextFollowUp === today).map(org => (
             <motion.div 
               key={org.id}
               whileTap={{ scale: 0.98 }}
@@ -1917,7 +2229,7 @@ export default function App() {
               <ChevronRight size={18} className="text-slate-300" />
             </motion.div>
           ))}
-          {MOCK_ORGS.filter(o => o.nextFollowUp === today).length === 0 && (
+          {clients.filter(o => o.nextFollowUp === today).length === 0 && (
             <p className="text-xs text-slate-400 italic px-2">No priorities for today.</p>
           )}
         </div>
@@ -1927,7 +2239,7 @@ export default function App() {
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Follow-ups (Next Week)</h2>
         <div className="space-y-3">
-          {MOCK_ORGS.filter(o => o.nextFollowUp && o.nextFollowUp > today && o.nextFollowUp <= endOfNextWeek).map(org => (
+          {clients.filter(o => o.nextFollowUp && o.nextFollowUp > today && o.nextFollowUp <= endOfNextWeek).map(org => (
             <motion.div 
               key={org.id}
               whileTap={{ scale: 0.98 }}
@@ -1947,7 +2259,7 @@ export default function App() {
               <ChevronRight size={18} className="text-slate-300" />
             </motion.div>
           ))}
-          {MOCK_ORGS.filter(o => o.nextFollowUp && o.nextFollowUp > today && o.nextFollowUp <= endOfNextWeek).length === 0 && (
+          {clients.filter(o => o.nextFollowUp && o.nextFollowUp > today && o.nextFollowUp <= endOfNextWeek).length === 0 && (
             <p className="text-xs text-slate-400 italic px-2">No follow-ups due by next week.</p>
           )}
         </div>
@@ -1975,7 +2287,7 @@ export default function App() {
 
   const renderLeads = () => {
     // Filter organizations based on leadFilter (which now includes 'Clients')
-    const filteredOrgs = MOCK_ORGS.filter(org => {
+    const filteredOrgs = clients.filter(org => {
       const matchesSearch = org.name.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
       
@@ -2055,9 +2367,9 @@ export default function App() {
   const renderCatalog = () => {
     const categories = ['Sofas', 'Chairs', 'Tables', 'Kitchen'];
     const filteredProducts = selectedMainCategory 
-      ? MOCK_PRODUCTS.filter(p => p.mainCategory === selectedMainCategory)
-      : MOCK_PRODUCTS;
-    const popularProducts = MOCK_PRODUCTS.slice(1, 7);
+      ? products.filter(p => p.mainCategory === selectedMainCategory)
+      : products;
+    const popularProducts = products.slice(1, 7);
 
     const renderDiscover = () => (
       <div className="space-y-8">
@@ -2305,6 +2617,65 @@ export default function App() {
       );
     };
 
+    const handleCreateDraftOrder = async () => {
+      if (!cartClientId) {
+        alert('Please select a client first');
+        return;
+      }
+      
+      const client = clients.find(org => org.id === cartClientId);
+      if (!client) return;
+
+      try {
+        const orderData = {
+          id: `ORD-${Math.floor(Math.random() * 10000)}`,
+          org_id: client.id,
+          customer_name: client.name,
+          category: 'Open',
+          sales_agent: 'Current Agent',
+          status: 'Draft',
+          payment_status: 'Pending',
+          total_amount: cartTotal + 70, // including delivery
+          tracking_mode: 'Order Level'
+        };
+
+        const orderItems = cart.map(item => {
+          const product = products.find(p => p.id === item.productId);
+          return {
+            product_id: item.productId,
+            quantity: item.quantity,
+            unit_price: product?.price || 0,
+            status: 'Pending'
+          };
+        });
+
+        const newOrder = await dataService.createOrder(orderData, orderItems);
+
+        // Update local state (you might want to re-fetch orders instead)
+        const localOrder: Order = {
+          id: newOrder.id,
+          orgId: client.id,
+          orgName: client.name,
+          items: [...cart],
+          status: 'Received',
+          category: 'Open', // Open means Draft in this context
+          paymentStatus: 'Pending',
+          expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        setOrders([localOrder, ...orders]);
+        setCart([]);
+        setCartClientId('');
+        setCatalogLevel('discover');
+        setActiveTab('Orders');
+        setOrderTab('Open'); // Switch to Open/Draft orders tab
+      } catch (error) {
+        console.error("Error creating draft order:", error);
+        alert("Failed to create draft order. Please try again.");
+      }
+    };
+
     const renderCart = () => (
       <div className="space-y-6">
         <header className="flex items-center gap-4">
@@ -2314,9 +2685,25 @@ export default function App() {
           <h1 className="text-xl font-bold flex-1 text-center mr-10">Checkout</h1>
         </header>
 
+        {cart.length > 0 && (
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <label className="block text-sm font-bold text-slate-700 mb-2">Select Client</label>
+            <select 
+              value={cartClientId}
+              onChange={(e) => setCartClientId(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+            >
+              <option value="">-- Select a client --</option>
+              {clients.map(org => (
+                <option key={org.id} value={org.id}>{org.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="space-y-4">
           {cart.map(item => {
-            const product = MOCK_PRODUCTS.find(p => p.id === item.productId);
+            const product = products.find(p => p.id === item.productId);
             if (!product) return null;
             return (
               <div key={item.productId} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -2377,10 +2764,11 @@ export default function App() {
               <span className="text-2xl font-bold text-slate-900">₹{(cartTotal + 70).toFixed(2)}</span>
             </div>
             <button 
-              onClick={() => alert('Processing payment...')}
-              className="w-full py-4 bg-emerald-700 text-white rounded-2xl font-bold text-sm mt-4"
+              onClick={handleCreateDraftOrder}
+              disabled={!cartClientId}
+              className="w-full py-4 bg-emerald-700 text-white rounded-2xl font-bold text-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Pay Now
+              Create Order
             </button>
           </div>
         )}
@@ -2398,7 +2786,7 @@ export default function App() {
   };
 
   const renderOrders = () => {
-    const filteredOrders = MOCK_ORDERS.filter(order => 
+    const filteredOrders = orders.filter(order => 
       order.orgName.toLowerCase().includes(searchQuery.toLowerCase()) &&
       order.category === orderTab
     );
@@ -2440,7 +2828,7 @@ export default function App() {
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      const org = MOCK_ORGS.find(o => o.id === order.orgId);
+                      const org = clients.find(o => o.id === order.orgId);
                       if (org) {
                         setActiveTab('Leads');
                         goToDetail(org);
@@ -2519,7 +2907,7 @@ export default function App() {
       'Active': 3
     };
 
-    const sortedPriorities = MOCK_ORGS
+    const sortedPriorities = clients
       .filter(o => o.nextFollowUp)
       .sort((a, b) => {
         // Sort by date ascending
@@ -2699,7 +3087,7 @@ export default function App() {
               <h3 className="text-xs font-bold text-slate-900 mb-3 uppercase tracking-wider">Order Items</h3>
               <div className="space-y-3">
                 {selectedOrder.items.map((item, idx) => {
-                  const product = MOCK_PRODUCTS.find(p => p.id === item.productId);
+                  const product = products.find(p => p.id === item.productId);
                   return (
                     <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
                       <div className="w-12 h-12 bg-white rounded-xl overflow-hidden border border-slate-100">
@@ -2727,7 +3115,68 @@ export default function App() {
                   Edit
                 </button>
                 <button 
-                  onClick={() => alert(`Order ${selectedOrder.id} Placed Successfully!`)}
+                  onClick={async () => {
+                    try {
+                      // Update order in Supabase
+                      await dataService.updateOrder(selectedOrder.id, {
+                        status: 'Active'
+                      });
+
+                      const updatedOrders = orders.map(o => 
+                        o.id === selectedOrder.id 
+                          ? { ...o, category: 'Active', status: 'Received' } 
+                          : o
+                      );
+                      setOrders(updatedOrders);
+                      
+                      // Add to active manufacturing orders
+                      const totalUnits = selectedOrder.items.reduce((acc, item) => acc + item.quantity, 0);
+                      const newActiveOrder = {
+                        orderId: selectedOrder.id,
+                        customer: selectedOrder.orgName,
+                        totalUnits: totalUnits,
+                        completedUnits: 0,
+                        tracking_mode: 'Order Level',
+                        overallStage: 'Received',
+                        items: []
+                      };
+                      setActiveOrders([newActiveOrder, ...activeOrders]);
+
+                      // Add expected transaction for finance
+                      let orderTotal = 0;
+                      selectedOrder.items.forEach(item => {
+                        const product = products.find(p => p.id === item.productId);
+                        if (product && product.price) {
+                          orderTotal += product.price * item.quantity;
+                        }
+                      });
+                      
+                      const newTransaction = {
+                        id: `TXN-${Math.floor(10000 + Math.random() * 90000)}`,
+                        date: new Date().toISOString().split('T')[0],
+                        description: `Order Payment - ${selectedOrder.id}`,
+                        amount: orderTotal,
+                        type: 'Income',
+                        status: 'Pending'
+                      };
+                      setTransactions([newTransaction, ...transactions]);
+                      
+                      // Update client status to active client
+                      const updatedClients = clients.map(c => 
+                        c.id === selectedOrder.orgId 
+                          ? { ...c, is_client: true, status: 'Active' } 
+                          : c
+                      );
+                      setClients(updatedClients);
+                      
+                      setView('List');
+                      setOrderTab('Active');
+                      alert(`Order ${selectedOrder.id} Placed Successfully!`);
+                    } catch (error) {
+                      console.error("Error placing order:", error);
+                      alert("Failed to place order. Please try again.");
+                    }
+                  }}
                   className="py-3 bg-white text-emerald-600 font-bold text-[10px] uppercase tracking-wider border-r border-slate-50 hover:bg-slate-50 transition-colors"
                 >
                   Place
@@ -2785,7 +3234,7 @@ export default function App() {
             <h3 className="text-xs font-bold text-slate-900 mb-3 uppercase tracking-wider">Modify Items</h3>
             <div className="space-y-3">
               {selectedOrder.items.map((item, idx) => {
-                const product = MOCK_PRODUCTS.find(p => p.id === item.productId);
+                const product = products.find(p => p.id === item.productId);
                 return (
                   <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="flex-1">
@@ -2853,10 +3302,37 @@ export default function App() {
     );
   };
 
+  const handleCreateLeadSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newClient = {
+      name: formData.get('name'),
+      address: formData.get('address'),
+      contact_person: formData.get('contactName'),
+      contact: formData.get('phone'),
+      email: formData.get('email'),
+      status: 'New',
+      is_client: false
+    };
+
+    try {
+      setIsLoadingData(true);
+      await dataService.createClient(newClient);
+      const fetchedClients = await dataService.getClients();
+      setClients(fetchedClients);
+      setView('List');
+    } catch (error) {
+      console.error("Failed to create lead", error);
+      alert("Failed to create lead.");
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
   const renderAddLead = () => (
-    <div className="space-y-6">
+    <form onSubmit={handleCreateLeadSubmit} className="space-y-6">
       <header className="flex items-center gap-4">
-        <button onClick={() => setView('List')} className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+        <button type="button" onClick={() => setView('List')} className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-xl font-bold">New Organization</h1>
@@ -2865,30 +3341,30 @@ export default function App() {
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
         <div>
           <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Organization Name</label>
-          <input type="text" placeholder="e.g. St. Jude School" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
+          <input name="name" type="text" required placeholder="e.g. St. Jude School" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
         </div>
         <div>
           <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Address</label>
-          <textarea placeholder="Full physical address" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none h-20" />
+          <textarea name="address" required placeholder="Full physical address" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none h-20" />
         </div>
         
         <div className="pt-4 border-t border-slate-50">
           <h3 className="text-xs font-bold text-slate-900 mb-3">Primary Contact</h3>
           <div className="space-y-3">
-            <input type="text" placeholder="Contact Name" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
-            <input type="text" placeholder="Role / Designation" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
+            <input name="contactName" required type="text" placeholder="Contact Name" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
+            <input name="role" type="text" placeholder="Role / Designation" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
             <div className="grid grid-cols-2 gap-3">
-              <input type="tel" placeholder="Phone" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
-              <input type="email" placeholder="Email" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
+              <input name="phone" required type="tel" placeholder="Phone" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
+              <input name="email" required type="email" placeholder="Email" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
             </div>
           </div>
         </div>
 
-        <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 mt-6">
-          CREATE LEAD
+        <button type="submit" disabled={isLoadingData} className={`w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 mt-6 flex justify-center ${isLoadingData ? 'opacity-70' : 'hover:bg-emerald-700'} transition-all`}>
+          {isLoadingData ? 'SAVING...' : 'CREATE LEAD'}
         </button>
       </div>
-    </div>
+    </form>
   );
 
   const renderLogInteraction = () => (
@@ -2956,8 +3432,8 @@ export default function App() {
           <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100 mb-6">
             <Monitor className="text-white" size={40} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Select Dashboard</h1>
-          <p className="text-slate-500">Choose the workspace you want to access</p>
+          <h1 className="text-3xl font-bold text-slate-900">Developer Mode</h1>
+          <p className="text-slate-500">Bypass auth and select a dashboard directly</p>
         </div>
 
         <div className="grid gap-4">
@@ -2965,7 +3441,7 @@ export default function App() {
             <button 
               onClick={() => { 
                 setSelectedDashboard('sales'); 
-                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+                setAppView('dashboard'); 
               }}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -2984,7 +3460,7 @@ export default function App() {
             <button 
               onClick={() => { 
                 setSelectedDashboard('supervisor'); 
-                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+                setAppView('dashboard'); 
               }}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -3003,7 +3479,7 @@ export default function App() {
             <button 
               onClick={() => { 
                 setSelectedDashboard('admin'); 
-                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+                setAppView('dashboard'); 
               }}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -3022,7 +3498,7 @@ export default function App() {
             <button 
               onClick={() => { 
                 setSelectedDashboard('accountant'); 
-                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+                setAppView('dashboard'); 
               }}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -3041,7 +3517,7 @@ export default function App() {
             <button 
               onClick={() => { 
                 setSelectedDashboard('delivery'); 
-                setAppView(appConfig.auth.enabled ? 'login' : 'dashboard'); 
+                setAppView('dashboard'); 
               }}
               className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -3064,43 +3540,71 @@ export default function App() {
 
   const renderLogin = () => (
     <div className="min-h-screen bg-white flex flex-col p-8">
-      <button 
-        onClick={() => setAppView('selection')}
-        className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-12"
-      >
-        <ArrowLeft size={20} />
-      </button>
+      {appConfig.devMode && loginStep === 1 && (
+        <button 
+          onClick={() => setAppView('selection')}
+          className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-12 hover:bg-slate-100 transition-colors"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      )}
+      
+      {loginStep === 2 && (
+        <button 
+          onClick={() => {
+            setLoginStep(1);
+            setLoginPassword('');
+            setLoginError('');
+            setSelectedDashboard(null);
+          }}
+          className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-12 hover:bg-slate-100 transition-colors"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      )}
+
+      {(!appConfig.devMode || loginStep === 2) && loginStep !== 2 && <div className="mb-12"></div>}
 
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         className="flex-1 max-w-md mx-auto w-full flex flex-col"
       >
-        <div className="mb-12">
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-lg ${
+        <div className="mb-12 text-center">
+          <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-xl ${
+            loginStep === 1 ? 'bg-slate-800 shadow-slate-200' :
             selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
             selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
             selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
             selectedDashboard === 'delivery' ? 'bg-orange-500 shadow-orange-100' :
             'bg-amber-600 shadow-amber-100'
           }`}>
-            {selectedDashboard === 'sales' && <TrendingUp className="text-white" size={32} />}
-            {selectedDashboard === 'supervisor' && <ShieldCheck className="text-white" size={32} />}
-            {selectedDashboard === 'admin' && <Shield className="text-white" size={32} />}
-            {selectedDashboard === 'accountant' && <Wallet className="text-white" size={32} />}
-            {selectedDashboard === 'delivery' && <Truck className="text-white" size={32} />}
+            {loginStep === 1 && <Activity className="text-white" size={36} />}
+            {loginStep === 2 && selectedDashboard === 'sales' && <TrendingUp className="text-white" size={36} />}
+            {loginStep === 2 && selectedDashboard === 'supervisor' && <ShieldCheck className="text-white" size={36} />}
+            {loginStep === 2 && selectedDashboard === 'admin' && <Shield className="text-white" size={36} />}
+            {loginStep === 2 && selectedDashboard === 'accountant' && <Wallet className="text-white" size={36} />}
+            {loginStep === 2 && selectedDashboard === 'delivery' && <Truck className="text-white" size={36} />}
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
-          <p className="text-slate-500">Login to your {
-            selectedDashboard === 'sales' ? 'Sales' : 
-            selectedDashboard === 'supervisor' ? 'Supervisor' :
-            selectedDashboard === 'admin' ? 'Admin' :
-            selectedDashboard === 'delivery' ? 'Delivery' :
-            'Accountant'
-          } account</p>
+          
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            {loginStep === 1 ? 'Welcome' : 'Welcome back'}
+          </h1>
+          <p className="text-slate-500">
+            {loginStep === 1 
+              ? 'Enter your email address to continue' 
+              : `Login to your ${loginRole} account`}
+          </p>
         </div>
 
         <div className="space-y-6 flex-1">
+          {loginError && (
+            <div className="p-4 bg-rose-50 text-rose-600 text-sm rounded-xl font-medium border border-rose-100 flex items-center gap-2">
+              <AlertCircle size={16} />
+              {loginError}
+            </div>
+          )}
+
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Email Address</label>
             <div className="relative">
@@ -3110,7 +3614,9 @@ export default function App() {
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="agent@company.com"
-                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 transition-all ${
+                disabled={loginStep === 2 || isLoggingIn}
+                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                  loginStep === 1 ? 'focus:ring-slate-500/20 focus:border-slate-500' :
                   selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
                   selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
                   selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
@@ -3121,85 +3627,79 @@ export default function App() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-              <input 
-                type={showPassword ? 'text' : 'password'} 
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="••••••••"
-                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-sm focus:outline-none focus:ring-2 transition-all ${
-                  selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
-                  selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
-                  selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
-                  selectedDashboard === 'delivery' ? 'focus:ring-orange-500/20 focus:border-orange-500' :
-                  'focus:ring-amber-500/20 focus:border-amber-500'
-                }`}
-              />
-              <button 
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-1">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <div className={`w-5 h-5 border-2 border-slate-200 rounded-md flex items-center justify-center transition-colors ${
-                selectedDashboard === 'sales' ? 'group-hover:border-emerald-500' :
-                selectedDashboard === 'supervisor' ? 'group-hover:border-indigo-500' :
-                selectedDashboard === 'admin' ? 'group-hover:border-rose-500' :
-                selectedDashboard === 'delivery' ? 'group-hover:border-orange-500' :
-                'group-hover:border-amber-500'
-              }`}>
-                <div className={`w-2 h-2 rounded-sm opacity-0 group-hover:opacity-100 transition-opacity ${
-                  selectedDashboard === 'sales' ? 'bg-emerald-500' :
-                  selectedDashboard === 'supervisor' ? 'bg-indigo-500' :
-                  selectedDashboard === 'admin' ? 'bg-rose-500' :
-                  selectedDashboard === 'delivery' ? 'bg-orange-500' :
-                  'bg-amber-500'
-                }`} />
+          {loginStep === 2 && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="space-y-2 overflow-hidden"
+            >
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                <input 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={isLoggingIn}
+                  className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-sm focus:outline-none focus:ring-2 transition-all ${
+                    selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
+                    selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
+                    selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
+                    selectedDashboard === 'delivery' ? 'focus:ring-orange-500/20 focus:border-orange-500' :
+                    'focus:ring-amber-500/20 focus:border-amber-500'
+                  }`}
+                />
+                <button 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
-              <span className="text-xs text-slate-500">Remember me</span>
-            </label>
-            <button className={`text-xs font-bold ${
-              selectedDashboard === 'sales' ? 'text-emerald-600' :
-              selectedDashboard === 'supervisor' ? 'text-indigo-600' :
-              selectedDashboard === 'admin' ? 'text-rose-600' :
-              selectedDashboard === 'delivery' ? 'text-orange-600' :
-              'text-amber-600'
-            }`}>Forgot Password?</button>
+              
+              <div className="flex justify-end pt-2">
+                <button className={`text-xs font-bold hover:underline ${
+                  selectedDashboard === 'sales' ? 'text-emerald-600' :
+                  selectedDashboard === 'supervisor' ? 'text-indigo-600' :
+                  selectedDashboard === 'admin' ? 'text-rose-600' :
+                  selectedDashboard === 'delivery' ? 'text-orange-600' :
+                  'text-amber-600'
+                }`}>
+                  Forgot Password?
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="pt-6">
+            <button 
+              onClick={loginStep === 1 ? handleEmailCheck : handlePasswordLogin}
+              disabled={isLoggingIn || !loginEmail}
+              className={`w-full text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 ${
+                loginStep === 1 ? 'bg-slate-800 shadow-slate-200 hover:bg-slate-900' :
+                selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100 hover:bg-emerald-700' :
+                selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700' :
+                selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100 hover:bg-rose-700' :
+                selectedDashboard === 'delivery' ? 'bg-orange-500 shadow-orange-100 hover:bg-orange-600' :
+                'bg-amber-600 shadow-amber-100 hover:bg-amber-700'
+              }`}
+            >
+              {isLoggingIn ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : loginStep === 1 ? (
+                'Next'
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  Login to Dashboard
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="mt-8 space-y-4">
-          <button 
-            onClick={() => setAppView('dashboard')}
-            className={`w-full py-4 rounded-2xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-              selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
-              selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
-              selectedDashboard === 'admin' ? 'bg-rose-600 shadow-rose-100' :
-              selectedDashboard === 'delivery' ? 'bg-orange-500 shadow-orange-100' :
-              'bg-amber-600 shadow-amber-100'
-            }`}
-          >
-            <LogIn size={18} />
-            LOGIN TO DASHBOARD
-          </button>
-          <p className="text-center text-xs text-slate-400">
-            Don't have an account? <button className={`${
-              selectedDashboard === 'sales' ? 'text-emerald-600' :
-              selectedDashboard === 'supervisor' ? 'text-indigo-600' :
-              selectedDashboard === 'admin' ? 'text-rose-600' :
-              selectedDashboard === 'delivery' ? 'text-orange-600' :
-              'text-amber-600'
-            } font-bold`}>Contact Admin</button>
-          </p>
-        </div>
+        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest text-center mt-12">Enterprise Resource Planning v2.4</p>
       </motion.div>
     </div>
   );
@@ -3210,7 +3710,7 @@ export default function App() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Items</div>
-            <div className="text-3xl font-bold text-slate-900">{MOCK_INVENTORY.length}</div>
+            <div className="text-3xl font-bold text-slate-900">{inventory.length}</div>
           </div>
           <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100">
             <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-2">Low Stock Alerts</div>
@@ -3242,7 +3742,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {MOCK_INVENTORY.map((item) => (
+                {inventory.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-900">{item.name}</div>
@@ -3312,7 +3812,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {MOCK_PRODUCTION_LOG.map((record) => (
+                {productionLog.map((record) => (
                   <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">{record.itemName}</td>
                     <td className="px-6 py-4 text-sm text-slate-500">{record.producedDate}</td>
@@ -3342,7 +3842,7 @@ export default function App() {
 
     const renderActiveManufacturing = () => (
       <div className="space-y-8">
-        {MOCK_ACTIVE_ORDERS.map((order) => (
+        {activeOrders.map((order) => (
           <div key={order.orderId} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
               <div>
@@ -3514,7 +4014,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {MOCK_PRODUCTION_LINES.map(line => (
+            {productionLines.map(line => (
               <div key={line.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-shadow">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
                   line.status === 'Running' ? 'bg-emerald-50 text-emerald-600' :
@@ -3633,7 +4133,7 @@ export default function App() {
 
           <div className="mt-auto pt-8 border-t border-slate-50">
             <button 
-              onClick={() => setAppView('selection')}
+              onClick={handleSignOut}
               className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all group"
             >
               <LogIn size={20} className="text-slate-400 group-hover:text-indigo-600 rotate-180" />
@@ -3735,14 +4235,8 @@ export default function App() {
 
   const renderAdminDashboard = () => {
     const renderAdminSales = () => {
-      const MOCK_SALES_AGENTS = [
-        { id: '1', name: 'Sarah Jenkins', role: 'Senior Sales Manager', leads: 24, activeClients: 12, pastClients: 45, revenue: '₹145,000', conversion: '50%', status: 'Online', reportsTo: null },
-        { id: '2', name: 'Michael Chen', role: 'Sales Executive', leads: 18, activeClients: 8, pastClients: 20, revenue: '₹28,500', conversion: '44%', status: 'In Meeting', reportsTo: '1' },
-        { id: '3', name: 'David Rodriguez', role: 'Sales Executive', leads: 32, activeClients: 15, pastClients: 30, revenue: '₹62,000', conversion: '46%', status: 'Offline', reportsTo: '1' },
-      ];
-
-      if (selectedAdminSalesAgent) {
-        const agent = MOCK_SALES_AGENTS.find(a => a.id === selectedAdminSalesAgent);
+      if (selectedAdminSalesAgent && salesAgents.length > 0) {
+        const agent = salesAgents.find(a => a.id === selectedAdminSalesAgent);
         
         const renderAgentDetailContent = () => {
           if (selectedAgentTile === 'clients') {
@@ -4028,8 +4522,8 @@ export default function App() {
         );
       }
 
-      const manager = MOCK_SALES_AGENTS.find(a => !a.reportsTo);
-      const reports = MOCK_SALES_AGENTS.filter(a => a.reportsTo === manager?.id);
+      const manager = salesAgents.find(a => !a.reportsTo);
+      const reports = salesAgents.filter(a => a.reportsTo === manager?.id);
 
       return (
         <div className="space-y-8">
@@ -4123,29 +4617,8 @@ export default function App() {
     };
 
     const renderAdminClientsOrders = () => {
-      const MOCK_ACTIVE_ORDERS = [
-        { id: 'ORD-1001', client: 'TechCorp Industries', date: 'Oct 10, 2023', expectedDelivery: 'Oct 15, 2023', salesAgent: 'Sarah Jenkins', salesAgentId: '1', accountant: 'Alice Smith', accountantId: '1', supervisor: 'Mark Taylor', supervisorId: '1', status: 'In Production', value: 12500, advance: 5000, pending: 7500, discount: 500, discountReason: 'Volume discount', notes: [{ id: 1, author: 'Sarah Jenkins', text: 'Client requested expedited delivery.', time: 'Oct 11, 2023' }] },
-        { id: 'ORD-1002', client: 'Apex Solutions', date: 'Oct 12, 2023', expectedDelivery: 'Oct 18, 2023', salesAgent: 'Sarah Jenkins', salesAgentId: '1', accountant: 'Bob Johnson', accountantId: '2', supervisor: 'Lisa Wong', supervisorId: '2', status: 'In Production', value: 8500, advance: 8500, pending: 0, discount: 0, discountReason: '', notes: [] },
-      ];
-
-      const MOCK_DRAFT_ORDERS = [
-        { id: 'DRF-0045', client: 'Global Logistics', org: 'Global Logistics Inc.', priority: 'High', salesAgent: 'Michael Chen', value: 15000, date: 'Oct 14, 2023', status: 'Draft', advance: 0, pending: 15000, notes: [{ id: 1, author: 'Michael Chen', text: 'Initial discussion about bulk order.', time: '2 days ago' }] },
-        { id: 'DRF-0046', client: 'Nexus Dynamics', org: 'Nexus Dynamics LLC', priority: 'Medium', salesAgent: 'Michael Chen', value: 5000, date: 'Oct 13, 2023', status: 'Draft', advance: 0, pending: 5000, notes: [] },
-      ];
-
-      const MOCK_LEADS = [
-        { id: 'L-001', name: 'Future Tech', contactPerson: 'John Doe', interest: 'Bulk Chairs', lastContact: '2 days ago', salesAgent: 'David Rodriguez', location: 'Kathmandu, Nepal', email: 'john@futuretech.com', contact: '+977 9844444444', type: 'Active Lead', notes: [{ id: 1, author: 'David Rodriguez', text: 'Interested in 50 ergonomic chairs.', time: '2 days ago' }] },
-      ];
-
-      const MOCK_ALL_CLIENTS = [
-        { id: 'C-001', name: 'TechCorp Industries', type: 'Active Client', totalOrders: 2, totalValue: 25000, lastInteraction: 'Today', location: 'Kathmandu, Nepal', contact: '+977 9800000000', email: 'contact@techcorp.com' },
-        { id: 'C-002', name: 'Quantum Retail', type: 'Past Client', totalOrders: 5, totalValue: 45000, lastInteraction: 'Jan 15, 2023', location: 'Pokhara, Nepal', contact: '+977 9811111111', email: 'procurement@quantumretail.com' },
-        { id: 'C-003', name: 'Global Logistics', type: 'Active Lead', totalOrders: 0, totalValue: 0, lastInteraction: 'Yesterday', location: 'Lalitpur, Nepal', contact: '+977 9822222222', email: 'info@globallogistics.com' },
-        { id: 'C-004', name: 'Stark Industries', type: 'Inactive Lead', totalOrders: 0, totalValue: 0, lastInteraction: 'Mar 10, 2023', location: 'Bhaktapur, Nepal', contact: '+977 9833333333', email: 'tony@stark.com' },
-      ];
-
       if (selectedAdminOrderDetails) {
-        const order: any = MOCK_ACTIVE_ORDERS.find(o => o.id === selectedAdminOrderDetails) || MOCK_DRAFT_ORDERS.find(o => o.id === selectedAdminOrderDetails);
+        const order: any = activeOrders.find(o => o.orderId === selectedAdminOrderDetails) || orders.find(o => o.id === selectedAdminOrderDetails);
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-6">
@@ -4156,12 +4629,12 @@ export default function App() {
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Order {order?.id}</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Order {order?.orderId || order?.id}</h2>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700">
-                    {order?.status}
+                    {order?.overallStage || order?.status}
                   </span>
-                  • Placed on {order?.date}
+                  • Placed on {order?.date || new Date().toISOString().split('T')[0]}
                 </div>
               </div>
             </div>
@@ -4169,23 +4642,23 @@ export default function App() {
             {/* Client Finances Summary */}
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-900 text-lg cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => { setSelectedClientDetails(order?.client || null); setSelectedAdminOrderDetails(null); }}>
-                  Client: {order?.client}
+                <h3 className="font-bold text-slate-900 text-lg cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => { setSelectedClientDetails(order?.customer || order?.client || null); setSelectedAdminOrderDetails(null); }}>
+                  Client: {order?.customer || order?.client}
                 </h3>
-                <button className="text-sm font-bold text-indigo-600 hover:underline" onClick={() => { setSelectedClientDetails(order?.client || null); setSelectedAdminOrderDetails(null); }}>View Client Profile</button>
+                <button className="text-sm font-bold text-indigo-600 hover:underline" onClick={() => { setSelectedClientDetails(order?.customer || order?.client || null); setSelectedAdminOrderDetails(null); }}>View Client Profile</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 bg-slate-50 rounded-2xl">
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Order Value</div>
-                  <div className="text-2xl font-bold text-slate-900">₹{order?.value.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-slate-900">₹{(order?.value || 0).toLocaleString()}</div>
                 </div>
                 <div className="p-4 bg-emerald-50 rounded-2xl">
                   <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Advance Received</div>
-                  <div className="text-2xl font-bold text-emerald-700">₹{order?.advance.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-emerald-700">₹{(order?.advance || 0).toLocaleString()}</div>
                 </div>
                 <div className="p-4 bg-rose-50 rounded-2xl">
                   <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">Pending Dues</div>
-                  <div className="text-2xl font-bold text-rose-700">₹{order?.pending.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-rose-700">₹{(order?.pending || 0).toLocaleString()}</div>
                 </div>
               </div>
             </div>
@@ -4279,8 +4752,8 @@ export default function App() {
       }
 
       if (selectedClientDetails) {
-        const client = MOCK_ALL_CLIENTS.find(c => c.name === selectedClientDetails) || MOCK_LEADS.find(l => l.name === selectedClientDetails) || MOCK_ALL_CLIENTS[0];
-        const isLeadOnly = client.type.includes('Lead');
+        const client = clients.find(c => c.name === selectedClientDetails) || clients[0];
+        const isLeadOnly = !client.is_client;
         
         return (
           <div className="space-y-6">
@@ -4294,8 +4767,8 @@ export default function App() {
               <div>
                 <h2 className="text-2xl font-bold text-slate-900">{client.name}</h2>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.type.includes('Client') ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {client.type}
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.is_client ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {client.is_client ? 'Client' : 'Lead'}
                   </span>
                   • {isLeadOnly ? 'New Lead' : 'Client Profile'}
                 </div>
@@ -4396,15 +4869,15 @@ export default function App() {
                   <button onClick={() => setClientDetailTab('past')} className={`text-sm font-bold pb-2 border-b-2 ${clientDetailTab === 'past' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Past Orders</button>
                 </div>
                 <div className="space-y-4">
-                  {clientDetailTab === 'active' && MOCK_ACTIVE_ORDERS.filter(o => o.client === client.name).map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  {clientDetailTab === 'active' && activeOrders.filter(o => o.customer === client.name || o.client === client.name).map((order) => (
+                    <div key={order.orderId || order.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
                           <Package size={20} />
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900">{order.id}</div>
-                          <div className="text-xs text-slate-500">Status: {order.status} • Est. Delivery: {order.expectedDelivery}</div>
+                          <div className="font-bold text-slate-900">{order.orderId || order.id}</div>
+                          <div className="text-xs text-slate-500">Status: {order.overallStage || order.status} • Est. Delivery: {order.expectedDelivery || new Date().toISOString().split('T')[0]}</div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -4413,11 +4886,11 @@ export default function App() {
                       </div>
                     </div>
                   ))}
-                  {clientDetailTab === 'active' && MOCK_ACTIVE_ORDERS.filter(o => o.client === client.name).length === 0 && (
+                  {clientDetailTab === 'active' && activeOrders.filter(o => o.customer === client.name || o.client === client.name).length === 0 && (
                     <div className="text-center py-8 text-slate-500">No active orders found.</div>
                   )}
 
-                  {clientDetailTab === 'draft' && MOCK_DRAFT_ORDERS.filter(o => o.client === client.name).map((draft) => (
+                  {clientDetailTab === 'draft' && orders.filter(o => o.category === 'Open' && o.orgId === client.id).map((draft) => (
                     <div key={draft.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
@@ -4425,16 +4898,16 @@ export default function App() {
                         </div>
                         <div>
                           <div className="font-bold text-slate-900">{draft.id}</div>
-                          <div className="text-xs text-slate-500">Priority: {draft.priority} • Agent: {draft.salesAgent}</div>
+                          <div className="text-xs text-slate-500">Priority: {draft.priority || 'Normal'} • Agent: {draft.salesAgent || 'System'}</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-slate-900">Est. ₹{draft.value.toLocaleString()}</div>
+                        <div className="font-bold text-slate-900">Est. ₹{(draft.totalAmount || 0).toLocaleString()}</div>
                         <button onClick={() => setSelectedAdminOrderDetails(draft.id)} className="text-indigo-600 text-xs font-bold hover:underline mt-1">View Details</button>
                       </div>
                     </div>
                   ))}
-                  {clientDetailTab === 'draft' && MOCK_DRAFT_ORDERS.filter(o => o.client === client.name).length === 0 && (
+                  {clientDetailTab === 'draft' && orders.filter(o => o.category === 'Open' && o.orgId === client.id).length === 0 && (
                     <div className="text-center py-8 text-slate-500">No drafted orders found.</div>
                   )}
 
@@ -4595,48 +5068,48 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {clientsOrdersMainTab === 'activeOrders' && sortData(MOCK_ACTIVE_ORDERS.filter(o => o.client.toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((order) => (
-                    <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                  {clientsOrdersMainTab === 'activeOrders' && sortData(activeOrders.filter(o => (o.customer || o.client).toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (o.orderId || o.id).toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((order) => (
+                    <tr key={order.orderId || order.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
-                        <div className="font-bold text-slate-900">{order.id}</div>
-                        <div className="text-xs text-indigo-600 font-bold mt-1">{order.status}</div>
+                        <div className="font-bold text-slate-900">{order.orderId || order.id}</div>
+                        <div className="text-xs text-indigo-600 font-bold mt-1">{order.overallStage || order.status}</div>
                       </td>
                       <td className="p-4">
-                        <div className="font-bold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => setSelectedClientDetails(order.client)}>{order.client}</div>
-                        <div className="text-xs text-slate-500 font-medium">₹{order.value.toLocaleString()}</div>
+                        <div className="font-bold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => setSelectedClientDetails(order.customer || order.client)}>{order.customer || order.client}</div>
+                        <div className="text-xs text-slate-500 font-medium">₹{(order.value || 0).toLocaleString()}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900"><span className="text-slate-500 text-xs">Placed:</span> {order.date}</div>
-                        <div className="text-sm text-slate-900 mt-1"><span className="text-slate-500 text-xs">Delivery:</span> {order.expectedDelivery}</div>
+                        <div className="text-sm text-slate-900"><span className="text-slate-500 text-xs">Placed:</span> {order.date || new Date().toISOString().split('T')[0]}</div>
+                        <div className="text-sm text-slate-900 mt-1"><span className="text-slate-500 text-xs">Delivery:</span> {order.expectedDelivery || new Date().toISOString().split('T')[0]}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Sales:</span> {order.salesAgent}</div>
-                        <div className="text-xs text-slate-600 my-0.5"><span className="font-bold text-slate-500">Prod:</span> {order.supervisor}</div>
-                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Acc:</span> {order.accountant}</div>
+                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Sales:</span> {order.salesAgent || 'System'}</div>
+                        <div className="text-xs text-slate-600 my-0.5"><span className="font-bold text-slate-500">Prod:</span> {order.supervisor || 'System'}</div>
+                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Acc:</span> {order.accountant || 'System'}</div>
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => setSelectedAdminOrderDetails(order.id)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
+                        <button onClick={() => setSelectedAdminOrderDetails(order.orderId || order.id)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
                       </td>
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'draftOrders' && sortData(MOCK_DRAFT_ORDERS.filter(o => o.client.toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((draft) => (
+                  {clientsOrdersMainTab === 'draftOrders' && sortData(orders.filter(o => o.category === 'Open').filter(o => (clients.find(c => c.id === o.orgId)?.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((draft) => (
                     <tr key={draft.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold text-slate-900">{draft.id}</div>
-                        <div className="text-xs text-slate-500 font-medium mt-1">Est. ₹{draft.value.toLocaleString()}</div>
+                        <div className="text-xs text-slate-500 font-medium mt-1">Est. ₹{(draft.totalAmount || 0).toLocaleString()}</div>
                       </td>
                       <td className="p-4">
-                        <div className="font-bold text-slate-900">{draft.client}</div>
-                        <div className="text-xs text-slate-500">{draft.org}</div>
+                        <div className="font-bold text-slate-900">{clients.find(c => c.id === draft.orgId)?.name || 'Unknown Client'}</div>
+                        <div className="text-xs text-slate-500">{clients.find(c => c.id === draft.orgId)?.type || 'N/A'}</div>
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${draft.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {draft.priority}
+                          {draft.priority || 'Normal'}
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{draft.salesAgent}</div>
+                        <div className="text-sm text-slate-900">{draft.salesAgent || 'System'}</div>
                       </td>
                       <td className="p-4 text-right">
                         <button onClick={() => setSelectedAdminOrderDetails(draft.id)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
@@ -4644,21 +5117,21 @@ export default function App() {
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'leads' && sortData(MOCK_LEADS.filter(l => l.name.toLowerCase().includes(clientsSearchQuery.toLowerCase()) || l.contactPerson.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((lead) => (
+                  {clientsOrdersMainTab === 'leads' && sortData(clients.filter(c => !c.is_client).filter(l => l.name.toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (l.contactPerson || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((lead) => (
                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold text-slate-900">{lead.name}</div>
-                        <div className="text-xs text-slate-500 mt-1">Last Contact: {lead.lastContact}</div>
+                        <div className="text-xs text-slate-500 mt-1">Last Contact: {lead.interactions?.[0]?.date || 'N/A'}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.contactPerson}</div>
-                        <div className="text-xs text-slate-500">{lead.contact}</div>
+                        <div className="text-sm text-slate-900">{lead.contactPerson || 'N/A'}</div>
+                        <div className="text-xs text-slate-500">{lead.contact || 'N/A'}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.interest}</div>
+                        <div className="text-sm text-slate-900">{lead.interest || 'N/A'}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.salesAgent}</div>
+                        <div className="text-sm text-slate-900">{lead.salesAgent || 'System'}</div>
                       </td>
                       <td className="p-4 text-right">
                         <button onClick={() => setSelectedClientDetails(lead.name)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
@@ -4666,24 +5139,24 @@ export default function App() {
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'allClients' && sortData(MOCK_ALL_CLIENTS.filter(c => allClientsFilter === 'All' || c.type === allClientsFilter).filter(c => c.name.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((client) => (
+                  {clientsOrdersMainTab === 'allClients' && sortData(clients.filter(c => allClientsFilter === 'All' || (allClientsFilter === 'Active Client' && c.is_client) || (allClientsFilter === 'Active Lead' && !c.is_client && c.status === 'Active') || (allClientsFilter === 'Inactive Lead' && !c.is_client && c.status === 'Inactive')).filter(c => c.name.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((client) => (
                     <tr key={client.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold text-slate-900">{client.name}</div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.type.includes('Client') ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {client.type}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.is_client ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {client.is_client ? 'Client' : 'Lead'}
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{client.totalOrders}</div>
+                        <div className="text-sm text-slate-900">{orders.filter(o => o.orgId === client.id).length}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900 font-bold">₹{client.totalValue.toLocaleString()}</div>
+                        <div className="text-sm text-slate-900 font-bold">₹{(client.totalValue || 0).toLocaleString()}</div>
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-slate-900">{client.lastInteraction}</div>
+                        <div className="text-sm text-slate-900">{client.interactions?.[0]?.date || 'N/A'}</div>
                       </td>
                       <td className="p-4 text-right">
                         <button onClick={() => setSelectedClientDetails(client.name)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
@@ -4699,15 +5172,9 @@ export default function App() {
     };
 
     const renderAdminDelivery = () => {
-      const MOCK_DELIVERY_AGENTS = [
-        { id: '1', name: 'James Wilson', role: 'Senior Driver', activeToday: 3, doneToday: 5, currentClient: 'TechCorp Industries', efficiency: '98%', status: 'On Route' },
-        { id: '2', name: 'Robert Fox', role: 'Driver', activeToday: 1, doneToday: 8, currentClient: 'Global Logistics', efficiency: '95%', status: 'Available' },
-        { id: '3', name: 'Emily Davis', role: 'Driver', activeToday: 4, doneToday: 2, currentClient: 'Apex Solutions', efficiency: '99%', status: 'On Route' },
-        { id: '4', name: 'Michael Brown', role: 'Driver', activeToday: 0, doneToday: 0, currentClient: 'None', efficiency: '94%', status: 'Offline' },
-      ];
 
       if (selectedAdminDeliveryAgent) {
-        const agent = MOCK_DELIVERY_AGENTS.find(a => a.id === selectedAdminDeliveryAgent);
+        const agent = deliveryAgents.find(a => a.id === selectedAdminDeliveryAgent);
 
         const renderAgentDetailContent = () => {
           if (selectedDeliveryAgentTile === 'tasks') {
@@ -4973,7 +5440,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {MOCK_DELIVERY_AGENTS.map(agent => (
+            {deliveryAgents.map(agent => (
               <div 
                 key={agent.id} 
                 onClick={() => setSelectedAdminDeliveryAgent(agent.id)}
@@ -4998,14 +5465,9 @@ export default function App() {
     };
 
     const renderAdminFinance = () => {
-      const MOCK_ACCOUNTANTS = [
-        { id: '1', name: 'Alice Smith', processedInvoices: 145, pendingApprovals: 12, accuracy: '99.8%', status: 'Online' },
-        { id: '2', name: 'Bob Johnson', processedInvoices: 132, pendingApprovals: 5, accuracy: '99.5%', status: 'In Meeting' },
-        { id: '3', name: 'Carol Williams', processedInvoices: 156, pendingApprovals: 8, accuracy: '99.9%', status: 'Offline' },
-      ];
 
       if (selectedAdminAccountant) {
-        const agent = MOCK_ACCOUNTANTS.find(a => a.id === selectedAdminAccountant);
+        const agent = accountants.find(a => a.id === selectedAdminAccountant);
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
@@ -5116,7 +5578,7 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_ACCOUNTANTS.map(agent => (
+            {accountants.map(agent => (
               <div 
                 key={agent.id} 
                 onClick={() => setSelectedAdminAccountant(agent.id)}
@@ -5423,7 +5885,7 @@ export default function App() {
 
           <div className="mt-auto pt-8 border-t border-slate-50">
             <button 
-              onClick={() => setAppView('selection')}
+              onClick={handleSignOut}
               className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
             >
               <LogIn size={20} className="text-slate-400 group-hover:text-rose-600 rotate-180" />
@@ -5710,7 +6172,7 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {MOCK_TRANSACTIONS.map(tx => (
+                {transactions.map(tx => (
                   <tr key={tx.id} className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-4 text-sm font-bold text-slate-900">{tx.id}</td>
                     <td className="px-8 py-4 text-sm text-slate-500">{tx.date}</td>
@@ -5780,7 +6242,7 @@ export default function App() {
 
           <div className="mt-auto pt-8 border-t border-slate-50">
             <button 
-              onClick={() => setAppView('selection')}
+              onClick={handleSignOut}
               className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-amber-50 hover:text-amber-600 transition-all group"
             >
               <LogIn size={20} className="text-slate-400 group-hover:text-amber-600 rotate-180" />
@@ -5947,7 +6409,7 @@ export default function App() {
       <ProfileModal 
         isOpen={showSalesProfile} 
         onClose={() => setShowSalesProfile(false)} 
-        onSignOut={() => { setAppView('selection'); setSelectedDashboard(null); }}
+        onSignOut={handleSignOut}
         stats={[
           { label: 'Orders This Month', value: 45 },
           { label: 'Total Revenue', value: '₹12.4k' }
@@ -5966,7 +6428,7 @@ export default function App() {
           {selectedDashboard === 'supervisor' && renderSupervisorDashboard()}
           {selectedDashboard === 'admin' && renderAdminDashboard()}
           {selectedDashboard === 'accountant' && renderAccountantDashboard()}
-          {selectedDashboard === 'delivery' && <DeliveryDashboard onBack={() => { setAppView('selection'); setSelectedDashboard(null); }} />}
+          {selectedDashboard === 'delivery' && <DeliveryDashboard onBack={handleSignOut} />}
         </motion.div>
       )}
     </AnimatePresence>
