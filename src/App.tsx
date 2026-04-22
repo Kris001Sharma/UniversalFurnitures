@@ -383,12 +383,12 @@ export default function App() {
   const [isLoadingData, setIsLoadingData] = useState(false);
 
   useEffect(() => {
-    if (appView === 'dashboard') {
+    if (appView === 'dashboard' && !isLoading) {
       const fetchData = async () => {
         setIsLoadingData(true);
         try {
           let [fetchedClients, fetchedOrders, fetchedTransactions, fetchedProducts, fetchedInventory, fetchedProductionLines, fetchedProductionLog, fetchedSalesAgents, fetchedDeliveryAgents, fetchedAccountants] = await Promise.all([
-            dataService.getClients(),
+            dataService.getClients(profile?.role === 'SALES' ? profile.id : undefined),
             dataService.getOrders(),
             dataService.getTransactions(),
             dataService.getProducts(),
@@ -401,9 +401,6 @@ export default function App() {
           ]);
           
           if (profile?.role === 'SALES') {
-             if (fetchedClients) {
-               fetchedClients = fetchedClients.filter((c: any) => c.sales_agent_id === profile.id || !c.sales_agent_id);
-             }
              if (fetchedOrders && fetchedClients) {
                const myClientIds = fetchedClients.map((c: any) => c.id);
                fetchedOrders = fetchedOrders.filter((o: any) => myClientIds.includes(o.org_id));
@@ -411,7 +408,7 @@ export default function App() {
           }
           
           if (fetchedClients && fetchedClients.length > 0) {
-            setClients(fetchedClients);
+            setClients(fetchedClients.filter((c: any) => !c.is_deleted));
           }
           if (fetchedSalesAgents && fetchedSalesAgents.length > 0) {
              const mappedAgents = fetchedSalesAgents.map((a: any) => {
@@ -560,7 +557,7 @@ export default function App() {
       };
       fetchData();
     }
-  }, [appView]);
+  }, [appView, profile, isLoading]);
 
   useEffect(() => {
     let path = '/';

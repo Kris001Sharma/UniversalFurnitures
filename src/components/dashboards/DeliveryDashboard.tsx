@@ -17,7 +17,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   const [filter, setFilter] = useState<'All' | 'Open' | 'In Progress' | 'Delivered'>('All');
   const [sortBy, setSortBy] = useState<'Priority' | 'Date'>('Priority');
   const [expandedRouteTask, setExpandedRouteTask] = useState<string | null>(null);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -46,8 +46,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
              contactPhone: t.contact_phone || 'N/A',
              dueDate: t.due_date || t.date || new Date().toISOString().split('T')[0],
              locationTagged: t.location_tagged || false,
-             lat: t.lat,
-             lng: t.lng
+             latitude: t.latitude,
+             longitude: t.longitude
           }));
           setTasks(mappedTasks);
         }
@@ -77,16 +77,16 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const loc = { lat: position.coords.latitude, lng: position.coords.longitude };
+          const loc = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setUserLocation(loc);
           localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
           try {
             await dataService.updateDeliveryTask(taskId, { 
               location_tagged: true, 
-              lat: loc.lat, 
-              lng: loc.lng 
+              latitude: loc.latitude, 
+              longitude: loc.longitude 
             });
-            setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLat: loc.lat, taggedLng: loc.lng } : t));
+            setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLatitude: loc.latitude, taggedLongitude: loc.longitude } : t));
           } catch(err) { console.error('Failed to update location:', err); }
         },
         async (error) => {
@@ -94,8 +94,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           // Fallback to cached or IP location if GPS fails
           if (userLocation) {
             try {
-              await dataService.updateDeliveryTask(taskId, { location_tagged: true, lat: userLocation.lat, lng: userLocation.lng });
-              setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLat: userLocation.lat, taggedLng: userLocation.lng } : t));
+              await dataService.updateDeliveryTask(taskId, { location_tagged: true, latitude: userLocation.latitude, longitude: userLocation.longitude });
+              setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLatitude: userLocation.latitude, taggedLongitude: userLocation.longitude } : t));
             } catch(err) {}
           } else {
             handleGetLocation(); // Try to get IP location
@@ -154,7 +154,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       const response = await fetch('https://get.geojs.io/v1/ip/geo.json');
       const data = await response.json();
       if (data && data.latitude && data.longitude) {
-        const loc = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+        const loc = { latitude: parseFloat(data.latitude), longitude: parseFloat(data.longitude) };
         setUserLocation(loc);
         localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
       } else {
@@ -163,7 +163,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     } catch (err) {
       console.error("IP Location fallback failed", err);
       // Fallback to Kathmandu
-      setUserLocation({ lat: 27.7172, lng: 85.3240 });
+      setUserLocation({ latitude: 27.7172, longitude: 85.3240 });
     }
   };
 
@@ -172,8 +172,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const loc = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
           };
           setUserLocation(loc);
           localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
@@ -182,7 +182,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
         (error) => {
           console.error("Geolocation Error:", error.message, "Code:", error.code);
           // Fallback to Kathmandu if geolocation fails to keep it focused on Nepal
-          const fallbackLoc = { lat: 27.7172, lng: 85.3240 };
+          const fallbackLoc = { latitude: 27.7172, longitude: 85.3240 };
           setUserLocation(fallbackLoc);
           setMapCenterTrigger(prev => prev + 1);
         },
@@ -190,7 +190,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       );
     } else {
       console.error("Geolocation is not supported by this browser.");
-      const fallbackLoc = { lat: 27.7172, lng: 85.3240 };
+      const fallbackLoc = { latitude: 27.7172, longitude: 85.3240 };
       setUserLocation(fallbackLoc);
       setMapCenterTrigger(prev => prev + 1);
     }
@@ -200,7 +200,14 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     const cachedLoc = localStorage.getItem('deliveryUserLocation');
     if (cachedLoc) {
       try {
-        setUserLocation(JSON.parse(cachedLoc));
+        const parsed = JSON.parse(cachedLoc);
+        if (parsed && typeof parsed === 'object') {
+          if ('lat' in parsed) {
+            setUserLocation({ latitude: parsed.lat as number, longitude: parsed.lng as number });
+          } else {
+            setUserLocation(parsed as any);
+          }
+        }
       } catch (e) {
         handleGetLocation();
       }
@@ -620,14 +627,28 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                         <p className="text-[11px] text-slate-500">{activeTask.contactPhone}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleStartNavigation(activeTask.id)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-colors"
-                      >
-                        <Navigation size={14} /> Navigate
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 transition-colors">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleStartNavigation(activeTask.id)}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-colors"
+                        >
+                          <MapPin size={14} /> Map View
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (activeTask.latitude && activeTask.longitude) {
+                              window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeTask.latitude},${activeTask.longitude}`, '_blank');
+                            } else {
+                              alert("Destination coordinates not available.");
+                            }
+                          }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-200 transition-colors"
+                        >
+                          <Navigation size={14} /> Navigate
+                        </button>
+                      </div>
+                      <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 transition-colors">
                         <MessageSquare size={14} /> Admin Chat
                       </button>
                     </div>
@@ -650,7 +671,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                           activeTask.locationTagged ? 'bg-emerald-100 text-emerald-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                         }`}
                       >
-                        <MapPin size={14} /> {activeTask.locationTagged ? `Tagged: ${activeTask.taggedLat?.toFixed(4)}, ${activeTask.taggedLng?.toFixed(4)}` : 'Tag Geolocation'}
+                        <MapPin size={14} /> {activeTask.locationTagged ? `Tagged: ${activeTask.taggedLatitude?.toFixed(4)}, ${activeTask.taggedLongitude?.toFixed(4)}` : 'Tag Geolocation'}
                       </button>
                       <div className="relative">
                         <input 
@@ -738,8 +759,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       : inProgressTasks;
 
     const routePoints = userLocation 
-      ? [userLocation, ...targetTasks.filter(t => t.lat && t.lng).map(t => ({ lat: t.lat!, lng: t.lng! }))]
-      : targetTasks.filter(t => t.lat && t.lng).map(t => ({ lat: t.lat!, lng: t.lng! }));
+      ? [userLocation, ...targetTasks.filter(t => t.latitude && t.longitude).map(t => ({ latitude: t.latitude!, longitude: t.longitude! }))]
+      : targetTasks.filter(t => t.latitude && t.longitude).map(t => ({ latitude: t.latitude!, longitude: t.longitude! }));
 
     return (
       <div className={`space-y-6 ${isMapFullscreen ? 'fixed inset-0 z-50 bg-slate-50 p-0 m-0' : ''}`}>

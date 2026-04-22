@@ -1,8 +1,12 @@
 import { supabase } from '../lib/supabase';
 
 export const dataService = {
-  async getClients() {
-    const { data, error } = await supabase.from('clients').select('*');
+  async getClients(agentId?: string) {
+    let query = supabase.from('clients').select('*, client_contacts(*)');
+    if (agentId) {
+      query = query.eq('sales_agent_id', agentId);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -81,8 +85,20 @@ export const dataService = {
     return data;
   },
 
+  async getClientContacts(clientId: string) {
+    const { data, error } = await supabase.from('client_contacts').select('*').eq('client_id', clientId);
+    if (error) throw error;
+    return data;
+  },
+
   async getInventory() {
     const { data, error } = await supabase.from('inventory').select('*');
+    if (error) throw error;
+    return data;
+  },
+
+  async createClientContact(contactData: any) {
+    const { data, error } = await supabase.from('client_contacts').insert([contactData]).select().single();
     if (error) throw error;
     return data;
   },
