@@ -27,16 +27,16 @@ export const authService = {
    */
   async checkEmailRole(email: string): Promise<string | null> {
     const { data, error } = await supabase
-      .from('users') // Notice we query 'users' table directly - requires RLS permitting to read by email
+      .from('user_profiles') // Notice we query 'user_profiles' table directly
       .select('role')
       .eq('email', email)
-      .maybeSingle();
+      .limit(1);
     
     if (error) {
       console.error('Error checking email role:', error);
       return null;
     }
-    return data?.role || null;
+    return data && data.length > 0 ? data[0].role : null;
   },
 
   /**

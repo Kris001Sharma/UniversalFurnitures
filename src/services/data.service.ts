@@ -36,6 +36,12 @@ export const dataService = {
     return data;
   },
 
+  async createTransaction(txnData: any) {
+    const { data, error } = await supabase.from('transactions').insert([txnData]).select().single();
+    if (error) throw error;
+    return data;
+  },
+
   async createOrder(orderData: any, orderItems: any[]) {
     // Insert order
     const { data: newOrder, error: orderError } = await supabase
@@ -99,20 +105,31 @@ export const dataService = {
     return data;
   },
 
+  async updateDeliveryTask(taskId: string, updates: any) {
+    const { data, error } = await supabase
+      .from('delivery_tasks')
+      .update(updates)
+      .eq('id', taskId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
   async getSalesAgents() {
-    const { data, error } = await supabase.from('user_profiles').select('*, sales_agent_metrics(*)').eq('role', 'Sales Agent');
+    const { data, error } = await supabase.from('user_profiles').select('*, sales_agent_metrics(*)').eq('role', 'SALES');
     if (error) throw error;
     return data;
   },
 
   async getDeliveryAgents() {
-    const { data, error } = await supabase.from('user_profiles').select('*').eq('role', 'Delivery');
+    const { data, error } = await supabase.from('user_profiles').select('*').eq('role', 'DELIVERY');
     if (error) throw error;
     return data;
   },
 
   async getAccountants() {
-    const { data, error } = await supabase.from('user_profiles').select('*, accountant_metrics(*)').eq('role', 'Accountant');
+    const { data, error } = await supabase.from('user_profiles').select('*, accountant_metrics(*)').eq('role', 'ACCOUNTS');
     if (error) throw error;
     return data;
   },

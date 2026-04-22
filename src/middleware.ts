@@ -13,11 +13,11 @@ export function middleware(request: NextRequest) {
 
   // Define route protection rules
   const routeRules: Record<string, UserRole[]> = {
-    '/admin': ['ADMIN'],
-    '/supervisor': ['SUPERVISOR'],
-    '/accounts': ['ACCOUNTS'],
-    '/sales': ['SALES'],
-    '/delivery': ['DELIVERY'],
+    '/admin': ['admin'],
+    '/supervisor': ['supervisor'],
+    '/accounts': ['accountant'],
+    '/sales': ['sales'],
+    '/delivery': ['delivery'],
   };
 
   // Check if the current path matches any protected route

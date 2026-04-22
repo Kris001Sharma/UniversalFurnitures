@@ -3,11 +3,11 @@
 -- ========================================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-DO $$ BEGIN CREATE TYPE public.user_role AS ENUM ('Administrator', 'Sales Agent', 'Supervisor', 'Delivery', 'Accountant'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.user_role AS ENUM ('ADMIN', 'SALES', 'SUPERVISOR', 'DELIVERY', 'ACCOUNTS'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.org_status AS ENUM ('New', 'Priority', 'Active','Inactive'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.interaction_type AS ENUM ('Visit', 'Call'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.sentiment_type AS ENUM ('Positive', 'Neutral', 'Negative'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE public.order_status AS ENUM ('Draft', 'Received', 'Active', 'Metal Forging', 'Wood Cutting', 'Assembly', 'Painting', 'Finishing', 'Ready for Delivery', 'Out for Delivery', 'Delivered', 'Closed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.order_status AS ENUM ('Draft', 'Received', 'Active', 'In Production', 'Ready for Delivery', 'Out for Delivery', 'Delivered', 'Closed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.payment_status AS ENUM ('Pending', 'Partial', 'Paid'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.order_item_status AS ENUM ('Pending', 'In Production', 'Completed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.production_stage AS ENUM ('Forging', 'Cutting', 'Assembly', 'Painting', 'Finishing'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -427,7 +427,21 @@ ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
 -- Disable RLS partially or add blanket rules
-DO $$ BEGIN CREATE POLICY "Authenticated users have full access" ON public.user_profiles FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ 
+DECLARE
+  pol record;
+BEGIN
+  FOR pol IN 
+    SELECT policyname 
+    FROM pg_policies 
+    WHERE schemaname = 'public' AND tablename = 'user_profiles' 
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.user_profiles', pol.policyname);
+  END LOOP;
+END $$;
+
+DO $$ BEGIN CREATE POLICY "Public read access for user_profiles logs" ON public.user_profiles FOR SELECT USING (true); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE POLICY "Authenticated users have full access to user_profiles" ON public.user_profiles FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use sales_agent_metrics" ON public.sales_agent_metrics FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use accountant_metrics" ON public.accountant_metrics FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use clients" ON public.clients FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;

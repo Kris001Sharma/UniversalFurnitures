@@ -136,7 +136,7 @@ export const DataSync: React.FC = () => {
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500"
             >
               {tables.map(t => (
-                <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                <option key={t} value={t}>{t ? t.charAt(0).toUpperCase() + t.slice(1) : ''}</option>
               ))}
             </select>
           </div>

@@ -1,6 +1,6 @@
 export const appConfig = {
   // Developer Mode
-  devMode: true, // Set to true to bypass authentication and select dashboards freely for testing
+  devMode: false, // Set to true to bypass authentication and select dashboards freely for testing
 
   // Authentication settings
   auth: {
