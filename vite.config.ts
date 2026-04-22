@@ -28,7 +28,6 @@ export default defineConfig(({mode}) => {
           manualChunks: {
             vendor: ['react', 'react-dom', 'motion/react'],
             recharts: ['recharts'],
-            leaflet: ['react-leaflet', 'leaflet'],
           },
         },
       },
