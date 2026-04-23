@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import ProfileModal from '../ProfileModal';
 import React, { useState, useEffect, useRef } from 'react';
 import { LogIn, X, Bell, UserCircle, MessageSquare, ClipboardList, AlertCircle, LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, ArrowUp, ArrowDown, Crosshair, Navigation, Maximize, Minimize, Compass } from 'lucide-react';
-import { DeliveryTask } from '../../types';
+import { DeliveryTask, Order, Product } from '../../types';
 import { dataService } from '../../services/data.service';
 const DeliveryMap = React.lazy(() => import('../../DeliveryMap'));
 
@@ -12,6 +12,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   const [activeTab, setActiveTab] = useState<'Tasks' | 'Active' | 'Route'>('Tasks');
   const [view, setView] = useState<'List' | 'Add' | 'Detail'>('List');
   const [tasks, setTasks] = useState<DeliveryTask[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [receivedInputs, setReceivedInputs] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<'All' | 'Open' | 'In Progress' | 'Delivered'>('All');
@@ -25,9 +27,34 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   const [mapCenterTrigger, setMapCenterTrigger] = useState(0);
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchData = async () => {
       try {
-        const fetchedTasks = await dataService.getDeliveryTasks();
+        const [fetchedTasks, fetchedOrders, fetchedProducts] = await Promise.all([
+          dataService.getDeliveryTasks(),
+          dataService.getOrders(),
+          dataService.getProducts()
+        ]);
+
+        if (fetchedProducts) setProducts(fetchedProducts);
+        
+        if (fetchedOrders) {
+          const mappedOrders = fetchedOrders.map((o: any) => ({
+            id: o.id,
+            orgId: o.org_id,
+            orgName: o.customer_name,
+            items: o.order_items.map((oi: any) => ({
+              productId: oi.product_id,
+              quantity: oi.quantity
+            })),
+            status: o.status,
+            category: o.category,
+            paymentStatus: o.payment_status,
+            expectedDelivery: o.expected_delivery,
+            createdAt: o.created_at
+          }));
+          setOrders(mappedOrders);
+        }
+
         if (fetchedTasks && fetchedTasks.length > 0) {
           // If not admin, only show tasks specifically assigned to this user role profile
           const assignedTasks = isAdminView ? fetchedTasks : fetchedTasks.filter((t: any) => t.assigned_to === profile?.id || !t.assigned_to);
@@ -55,7 +82,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
         console.error("Failed to fetch delivery tasks:", err);
       }
     };
-    if (profile || isAdminView) fetchTasks();
+    if (profile || isAdminView) fetchData();
   }, [profile, isAdminView]);
 
   const [newTask, setNewTask] = useState<Partial<DeliveryTask>>({
@@ -548,186 +575,194 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           </div>
         </header>
         
-        {activeTasks.map(activeTask => (
-          <div key={activeTask.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden mb-6">
-            <div className="p-4 border-b border-slate-50 bg-orange-50/30">
-              <div className="flex justify-between items-start mb-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-slate-900 text-base">{activeTask.orderId}</h4>
-                  {activeTask.priority === 'High' && (
-                    <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded uppercase tracking-wider">Priority</span>
-                  )}
+        {activeTasks.map(activeTask => {
+          const order = orders.find(o => o.id === activeTask.orderId);
+          
+          return (
+            <div key={activeTask.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
+              {/* Task Header */}
+              <div className="p-4 border-b border-slate-50 bg-slate-50/20">
+                <div className="mb-3">
+                  <h4 className="font-bold text-slate-900 text-lg tracking-tight inline-block">
+                    {activeTask.orderId}
+                    <span className="mx-2 text-slate-300 font-normal">|</span>
+                    <span className="text-slate-500 text-sm font-medium">{activeTask.orgName}</span>
+                  </h4>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!activeTask.itemsReceived && (
-                    <button 
-                      onClick={() => handleCancelTask(activeTask.id)}
-                      className="text-[10px] font-bold px-2 py-1 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                <div className="flex gap-2">
+                  <span className={`text-[10px] font-bold px-3 py-1 rounded-lg uppercase tracking-wider border ${
+                    activeTask.priority === 'High' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-500 border-slate-100'
+                  }`}>
+                    {activeTask.priority}
+                  </span>
+                  <span className="text-[10px] font-bold px-3 py-1 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 uppercase tracking-wider">
                     {activeTask.status}
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-slate-600">{activeTask.orgName}</p>
-            </div>
 
-            <div className="p-4 space-y-4">
-              {/* Step 1: Handover */}
-              <div className={`p-4 rounded-2xl border ${activeTask.itemsReceived ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-100'}`}>
-                <h5 className="font-bold text-slate-900 mb-2 flex items-center gap-2 text-sm">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${activeTask.itemsReceived ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>1</div>
-                  Warehouse Handover
-                </h5>
-                <div className="pl-7">
-                  <p className="text-[11px] text-slate-500 mb-2">Expected Items: <strong className="text-slate-900">{activeTask.itemsExpected}</strong></p>
-                  {!activeTask.itemsReceived ? (
-                    <div className="flex gap-2 items-center">
-                      <input 
-                        type="number" 
-                        placeholder="Items received..." 
-                        className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-                        value={receivedInputs[activeTask.id] || ''}
-                        onChange={(e) => setReceivedInputs({...receivedInputs, [activeTask.id]: e.target.value})}
-                      />
-                      <button 
-                        onClick={() => handleHandover(activeTask.id)}
-                        className="shrink-0 px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors"
-                      >
-                        Confirm
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                      <CheckCircle2 size={14} /> Confirmed {activeTask.itemsReceived} items received.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Step 2: Client Details & Navigation */}
-              {activeTask.itemsReceived && (
-                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
-                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
-                    <div className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center text-[10px]">2</div>
-                    Client Destination
-                  </h5>
-                  <div className="pl-7">
-                    <div className="space-y-3 mb-4">
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><MapPin size={10} /> Address</p>
-                        <p className="text-xs font-medium text-slate-900 mt-0.5">{activeTask.address}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1"><UserCircle size={10} /> Contact</p>
-                        <p className="text-xs font-medium text-slate-900 mt-0.5">{activeTask.contactName}</p>
-                        <p className="text-[11px] text-slate-500">{activeTask.contactPhone}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleStartNavigation(activeTask.id)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-200 transition-colors"
-                        >
-                          <MapPin size={14} /> Map View
-                        </button>
-                        <button 
-                          onClick={() => {
-                            if (activeTask.latitude && activeTask.longitude) {
-                              window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeTask.latitude},${activeTask.longitude}`, '_blank');
-                            } else {
-                              alert("Destination coordinates not available.");
-                            }
-                          }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold hover:bg-emerald-200 transition-colors"
-                        >
-                          <Navigation size={14} /> Navigate
-                        </button>
-                      </div>
-                      <button className="w-full flex items-center justify-center gap-1.5 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 transition-colors">
-                        <MessageSquare size={14} /> Admin Chat
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Delivery Confirmation */}
-              {activeTask.itemsReceived && (
-                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
-                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
-                    <div className="w-5 h-5 rounded-full bg-orange-200 text-orange-800 flex items-center justify-center text-[10px]">3</div>
-                    Delivery Confirmation
-                  </h5>
-                  <div className="pl-7">
-                    <div className="flex flex-col gap-2 mb-4">
-                      <button 
-                        onClick={() => handleTagLocation(activeTask.id)}
-                        className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                          activeTask.locationTagged ? 'bg-emerald-100 text-emerald-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        <MapPin size={14} /> {activeTask.locationTagged ? `Tagged: ${activeTask.taggedLatitude?.toFixed(4)}, ${activeTask.taggedLongitude?.toFixed(4)}` : 'Tag Geolocation'}
-                      </button>
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          capture="environment" 
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          onChange={(e) => handleUploadProof(activeTask.id, e)}
-                        />
-                        <button className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-colors ${
-                          activeTask.proofImage ? 'bg-emerald-100 text-emerald-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}>
-                          <Camera size={14} /> {activeTask.proofImage ? 'Proof Uploaded' : 'Upload Proof'}
-                        </button>
-                      </div>
-                      {activeTask.proofImage && (
-                        <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200">
-                          <img src={activeTask.proofImage} alt="Delivery Proof" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
+              <div className="p-4 space-y-4">
+                {/* Step Content */}
+                {!activeTask.itemsReceived ? (
+                  <div className="space-y-4">
+                    {/* Address Detail & Directions */}
                     <button 
-                      onClick={() => handleMarkDelivered(activeTask.id)}
-                      disabled={!activeTask.locationTagged}
-                      className={`w-full py-3 rounded-xl text-sm font-bold transition-all ${
-                        activeTask.locationTagged 
-                          ? 'bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-200 active:scale-[0.98]' 
-                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                      }`}
+                      onClick={() => {
+                        if (activeTask.latitude && activeTask.longitude) {
+                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeTask.latitude},${activeTask.longitude}`, '_blank');
+                        } else {
+                          // Fallback to address search
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeTask.address)}`, '_blank');
+                        }
+                      }}
+                      className="w-full text-left bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center gap-3 hover:bg-blue-50 transition-colors"
                     >
-                      Mark as Delivered
+                      <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
+                        <Navigation size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-0.5">Delivery Address</p>
+                        <p className="text-xs font-bold text-slate-800 truncate">{activeTask.address}</p>
+                        <p className="text-[10px] text-blue-500 font-medium">Tap for directions</p>
+                      </div>
+                      <ChevronRight size={16} className="text-blue-300" />
                     </button>
-                  </div>
-                </div>
-              )}
 
-              {/* Step 4: Logs / Remarks */}
-              {activeTask.itemsReceived && (
-                <div className="p-4 rounded-2xl border bg-slate-50 border-slate-100">
-                  <h5 className="font-bold text-slate-900 mb-3 flex items-center gap-2 text-sm">
-                    <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-800 flex items-center justify-center text-[10px]">4</div>
-                    Logs & Remarks (Optional)
-                  </h5>
-                  <div className="pl-7">
-                    <textarea 
-                      placeholder="Add any additional notes or remarks here..."
-                      className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[80px] resize-none"
-                      value={activeTask.logs || ''}
-                      onChange={(e) => setTasks(tasks.map(t => t.id === activeTask.id ? { ...t, logs: e.target.value } : t))}
-                    />
+                    {/* Warehouse Handover / Item List */}
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-6 h-6 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">1</div>
+                        <h5 className="font-bold text-slate-900 text-sm">Verify Handover Items</h5>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {order?.items.map(item => {
+                          const product = products.find(p => p.id === item.productId);
+                          const inputKey = `${activeTask.id}_${item.productId}`;
+                          const inputValue = receivedInputs[inputKey] === undefined ? item.quantity.toString() : receivedInputs[inputKey];
+                          
+                          return (
+                            <div key={item.productId} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
+                                <img 
+                                  src={product?.image || 'https://picsum.photos/seed/product/100/100'} 
+                                  alt={product?.name} 
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-slate-900 text-[11px] truncate">{product?.name || 'Item'}</p>
+                                <p className="text-[9px] text-slate-400 font-mono">Expected: {item.quantity}</p>
+                              </div>
+                              <div className="shrink-0 flex items-center gap-1">
+                                <span className="text-[10px] font-bold text-slate-400">Rec:</span>
+                                <input 
+                                  type="number"
+                                  value={inputValue}
+                                  onChange={(e) => setReceivedInputs({...receivedInputs, [inputKey]: e.target.value})}
+                                  className="w-10 h-8 text-center bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold focus:outline-none focus:ring-1 focus:ring-slate-400"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {(!order || order.items.length === 0) && (
+                          <div className="text-center py-2 text-slate-400 text-[10px] italic">
+                            Total Expected: {activeTask.itemsExpected}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Neomorphic Buttons */}
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => handleCancelTask(activeTask.id)}
+                        className="flex-1 py-3 bg-slate-50 text-rose-500 rounded-xl font-bold text-xs shadow-[3px_3px_6px_#e2e8f0,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#cbd5e1,inset_-2px_-2px_4px_#ffffff] transition-all border border-white/50"
+                      >
+                        CANCEL
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const totalReceived = order?.items.reduce((acc, item) => {
+                            const inputKey = `${activeTask.id}_${item.productId}`;
+                            const val = receivedInputs[inputKey] === undefined ? item.quantity : parseInt(receivedInputs[inputKey] || '0', 10);
+                            return acc + val;
+                          }, 0) || activeTask.itemsExpected;
+
+                          setReceivedInputs({...receivedInputs, [activeTask.id]: totalReceived.toString()});
+                          handleHandover(activeTask.id);
+                        }}
+                        className="flex-1 py-3 bg-slate-50 text-emerald-600 rounded-xl font-bold text-xs shadow-[3px_3px_6px_#e2e8f0,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#cbd5e1,inset_-2px_-2px_4px_#ffffff] transition-all border border-white/50"
+                      >
+                        CONFIRM
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="space-y-4">
+                    {/* Success Message */}
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex items-center gap-3">
+                      <CheckCircle2 size={20} className="text-emerald-500 shrink-0" />
+                      <div>
+                        <p className="text-[11px] font-bold text-emerald-900">Handover Complete</p>
+                        <p className="text-[10px] font-medium text-emerald-700">{activeTask.itemsReceived} items confirmed for {activeTask.orgName}.</p>
+                      </div>
+                    </div>
+
+                    {/* Delivery Confirmation */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-6 h-6 rounded-lg bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">2</div>
+                        <h5 className="font-bold text-slate-900 text-sm">Delivery Proof</h5>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleTagLocation(activeTask.id)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                              activeTask.locationTagged ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+                            }`}
+                          >
+                            <MapPin size={14} /> {activeTask.locationTagged ? 'Loc Tagged' : 'Tag GPS'}
+                          </button>
+                          
+                          <div className="flex-1 relative">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              capture="environment" 
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={(e) => handleUploadProof(activeTask.id, e)}
+                            />
+                            <button className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                              activeTask.proofImage ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-white border-slate-200 text-slate-600 shadow-sm'
+                            }`}>
+                              <Camera size={14} /> {activeTask.proofImage ? 'Proof OK' : 'Capture'}
+                            </button>
+                          </div>
+                        </div>
+
+                        <button 
+                          onClick={() => handleMarkDelivered(activeTask.id)}
+                          disabled={!activeTask.locationTagged}
+                          className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            activeTask.locationTagged 
+                              ? 'bg-slate-900 text-white hover:bg-black shadow-lg shadow-slate-200 active:scale-98' 
+                              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Complete Delivery
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

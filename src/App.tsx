@@ -217,7 +217,7 @@ export default function App() {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (!appConfig.devMode && user && appView === 'login') {
-      if (isLoading) return; // Wait for profile to load
+      if (isLoading || isLoggingIn) return; // Wait for profile to load or login to complete
 
       // If we don't have a specific dashboard selected yet, infer it from profile
       if (profile) {
@@ -232,12 +232,15 @@ export default function App() {
         if (inferredDashboard) {
            setSelectedDashboard(inferredDashboard);
            setAppView('dashboard');
+           setLoginError(''); // Clear any pending errors on success
            return;
         }
+      } else {
+        // Only set error if we've finished loading and truly have no profile
+        setLoginError('User profile not found. Please contact administrator.');
       }
-      setLoginError('User profile not found. Please contact administrator.');
     }
-  }, [user, profile, isLoading, appView]);
+  }, [user, profile, isLoading, appView, isLoggingIn]);
 
   const handleEmailCheck = async () => {
     if (!loginEmail.trim()) {
@@ -291,6 +294,7 @@ export default function App() {
 
   const handleSignOut = async () => {
     try {
+      setLoginError(''); // Clear errors before signing out
       if (!appConfig.devMode) {
         await authService.logout();
       }
