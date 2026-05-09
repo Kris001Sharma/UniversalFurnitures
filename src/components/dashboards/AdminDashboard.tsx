@@ -27,9 +27,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           if (selectedAgentTile === 'clients') {
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
-                <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
-                  <button onClick={() => setAgentDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'active' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Active Clients</button>
-                  <button onClick={() => setAgentDetailTab('past')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'past' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Past Clients</button>
+                <div className="segmented-control mb-4">
+                  <button onClick={() => setAgentDetailTab('active')} className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    Active Clients
+                  </button>
+                  <button onClick={() => setAgentDetailTab('past')} className={`segmented-item ${agentDetailTab === 'past' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    Past Clients
+                  </button>
                 </div>
                 <div className="space-y-4">
                   {agentDetailTab === 'active' ? (
@@ -54,9 +58,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           if (selectedAgentTile === 'leads') {
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
-                <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
-                  <button onClick={() => setAgentDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'active' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Active Leads</button>
-                  <button onClick={() => setAgentDetailTab('new')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'new' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>New Leads</button>
+                <div className="segmented-control mb-4">
+                  <button onClick={() => setAgentDetailTab('active')} className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    Active Leads
+                  </button>
+                  <button onClick={() => setAgentDetailTab('new')} className={`segmented-item ${agentDetailTab === 'new' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    New Leads
+                  </button>
                 </div>
                 <div className="space-y-4">
                   {agentDetailTab === 'active' ? (
@@ -80,9 +88,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           if (selectedAgentTile === 'schedule') {
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
-                <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
-                  <button onClick={() => setAgentDetailTab('today')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'today' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Priorities Today</button>
-                  <button onClick={() => setAgentDetailTab('week')} className={`text-sm font-bold pb-2 border-b-2 ${agentDetailTab === 'week' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Weekly Calendar</button>
+                <div className="segmented-control mb-4">
+                  <button onClick={() => setAgentDetailTab('today')} className={`segmented-item ${agentDetailTab === 'today' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    Priorities Today
+                  </button>
+                  <button onClick={() => setAgentDetailTab('week')} className={`segmented-item ${agentDetailTab === 'week' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                    Weekly Calendar
+                  </button>
                 </div>
                 <div className="space-y-4">
                   {agentDetailTab === 'today' ? (
@@ -142,7 +154,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 className={`bg-white p-4 rounded-2xl border ${selectedAgentTile === 'clients' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-slate-500 text-xs font-bold uppercase tracking-wider">Clients</div>
+                  <div className="card-info-text">Clients</div>
                   <Users size={16} className="text-indigo-500" />
                 </div>
                 <div className="text-2xl font-bold text-slate-900">{agent?.activeClients} <span className="text-sm font-normal text-slate-500">Active</span></div>
@@ -648,10 +660,25 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Orders Tabs */}
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 lg:col-span-2">
-                <div className="flex gap-4 border-b border-slate-100 pb-4 mb-6">
-                  <button onClick={() => setClientDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${clientDetailTab === 'active' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Active Orders</button>
-                  <button onClick={() => setClientDetailTab('draft')} className={`text-sm font-bold pb-2 border-b-2 ${clientDetailTab === 'draft' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Drafted Orders</button>
-                  <button onClick={() => setClientDetailTab('past')} className={`text-sm font-bold pb-2 border-b-2 ${clientDetailTab === 'past' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}>Past Orders</button>
+                <div className="segmented-control mb-6">
+                  <button 
+                    onClick={() => setClientDetailTab('active')} 
+                    className={`segmented-item ${clientDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    Active Orders
+                  </button>
+                  <button 
+                    onClick={() => setClientDetailTab('draft')} 
+                    className={`segmented-item ${clientDetailTab === 'draft' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    Drafted Orders
+                  </button>
+                  <button 
+                    onClick={() => setClientDetailTab('past')} 
+                    className={`segmented-item ${clientDetailTab === 'past' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    Past Orders
+                  </button>
                 </div>
                 <div className="space-y-4">
                   {clientDetailTab === 'active' && activeOrders.filter(o => o.customer === client.name || o.client === client.name).map((order) => (
@@ -930,7 +957,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                         <div className="font-bold text-slate-900">{client.name}</div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.is_client ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                        <span className={`status-tag ${client.is_client ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                           {client.is_client ? 'Client' : 'Lead'}
                         </span>
                       </td>
@@ -1219,7 +1246,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <h2 className="text-2xl font-bold text-slate-900">Delivery Fleet</h2>
               <p className="text-slate-500 text-sm mt-1">Monitor and manage delivery personnel</p>
             </div>
-            <button className="px-4 py-2 bg-orange-600 text-white rounded-xl text-sm font-bold hover:bg-orange-700 transition-colors flex items-center gap-2 shadow-sm">
+            <button className="btn-standard bg-orange-600 text-white py-2 px-4 rounded-xl shadow-sm hover:bg-orange-700">
               <Plus size={16} /> Add Agent
             </button>
           </div>
@@ -1277,15 +1304,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <div className="lg:col-span-2 space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Processed</div>
+                    <div className="card-info-text mb-1">Processed</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.processedInvoices}</div>
                   </div>
                   <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Pending</div>
+                    <div className="card-info-text mb-1">Pending</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.pendingApprovals}</div>
                   </div>
                   <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                    <div className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Accuracy</div>
+                    <div className="card-info-text mb-1">Accuracy</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.accuracy}</div>
                   </div>
                 </div>
@@ -1389,15 +1416,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
                 <div className="grid grid-cols-3 gap-2">
                   <div className="p-3 bg-slate-50 rounded-2xl">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Processed</div>
+                    <div className="card-info-text mb-1">Processed</div>
                     <div className="font-bold text-slate-900">{agent.processedInvoices}</div>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-2xl">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pending</div>
+                    <div className="card-info-text mb-1">Pending</div>
                     <div className="font-bold text-slate-900">{agent.pendingApprovals}</div>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-2xl">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Acc.</div>
+                    <div className="card-info-text mb-1">Acc.</div>
                     <div className="font-bold text-emerald-600">{agent.accuracy}</div>
                   </div>
                 </div>

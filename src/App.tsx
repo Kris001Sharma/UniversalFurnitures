@@ -354,7 +354,7 @@ export default function App() {
   };
   const [selectedAdminOrderDetails, setSelectedAdminOrderDetails] = useState<string | null>(null);
   const [selectedClientDetails, setSelectedClientDetails] = useState<string | null>(null);
-  const [clientDetailTab, setClientDetailTab] = useState<'active' | 'past' | 'draft'>('active');
+  const [clientDetailTab, setClientDetailTab] = useState<string>('Activity');
   const [allClientsFilter, setAllClientsFilter] = useState<'All' | 'Active Client' | 'Past Client' | 'Active Lead' | 'Inactive Lead'>('All');
   const [showClientsFilters, setShowClientsFilters] = useState(false);
   const [clientsSortBy, setClientsSortBy] = useState<'newest' | 'value_high' | 'value_low'>('newest');
@@ -801,7 +801,7 @@ export default function App() {
           )}
 
           <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Email Address</label>
+            <label className="card-info-text ml-1">Email Address</label>
             <div className="relative">
               <UserCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
               <input 
@@ -810,7 +810,7 @@ export default function App() {
                 onChange={(e) => setLoginEmail(e.target.value)}
                 placeholder="agent@company.com"
                 disabled={loginStep === 2 || isLoggingIn}
-                className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`input-standard pl-12 pr-4 py-4 rounded-2xl ${
                   loginStep === 1 ? 'focus:ring-slate-500/20 focus:border-slate-500' :
                   selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
                   selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
@@ -828,7 +828,7 @@ export default function App() {
               animate={{ opacity: 1, height: 'auto' }}
               className="space-y-2 overflow-hidden"
             >
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Password</label>
+              <label className="card-info-text ml-1">Password</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                 <input 
@@ -837,7 +837,7 @@ export default function App() {
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={isLoggingIn}
-                  className={`w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-12 text-sm focus:outline-none focus:ring-2 transition-all ${
+                  className={`input-standard pl-12 pr-12 py-4 rounded-2xl ${
                     selectedDashboard === 'sales' ? 'focus:ring-emerald-500/20 focus:border-emerald-500' :
                     selectedDashboard === 'supervisor' ? 'focus:ring-indigo-500/20 focus:border-indigo-500' :
                     selectedDashboard === 'admin' ? 'focus:ring-rose-500/20 focus:border-rose-500' :
@@ -871,7 +871,7 @@ export default function App() {
             <button 
               onClick={loginStep === 1 ? handleEmailCheck : handlePasswordLogin}
               disabled={isLoggingIn || !loginEmail}
-              className={`w-full text-white rounded-2xl py-4 font-bold text-sm transition-all shadow-lg hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2 ${
+              className={`btn-standard w-full text-white py-4 flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] disabled:hover:scale-100 rounded-2xl ${
                 loginStep === 1 ? 'bg-slate-800 shadow-slate-200 hover:bg-slate-900' :
                 selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100 hover:bg-emerald-700' :
                 selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100 hover:bg-indigo-700' :

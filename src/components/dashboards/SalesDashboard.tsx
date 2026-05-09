@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, Factory, Hammer, Paintbrush, Box, CheckCircle, TrendingUp, Star, Hash, Settings, Edit, Trash2, ShoppingCart, ShoppingBasket, X, ShieldCheck, UserCircle, Lock, Eye, EyeOff, LogIn, Monitor, Activity, AlertCircle, Users2, ClipboardList, BarChart3, Zap, ShieldAlert, Shield, Key, UserPlus, Database, Server, Wallet, Receipt, CreditCard, FileText, PieChart, Coins, History, Bell, MessageSquare, Navigation, Maximize, Minimize, Compass, ArrowUp, ArrowDown, DollarSign, Briefcase, Globe, Crosshair } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, Factory, Hammer, Paintbrush, Box, CheckCircle, TrendingUp, Star, Hash, Settings, Edit, Trash2, ShoppingCart, ShoppingBasket, X, ShieldCheck, UserCircle, Lock, Eye, EyeOff, LogIn, Monitor, Activity, AlertCircle, Users2, ClipboardList, BarChart3, Zap, ShieldAlert, Shield, Key, UserPlus, Database, Server, Wallet, Receipt, CreditCard, FileText, PieChart, Coins, History, Bell, MessageSquare, Navigation, Maximize, Minimize, Compass, ArrowUp, ArrowDown, DollarSign, Briefcase, Globe, Crosshair, Paperclip, Image as ImageIcon, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,6 +24,106 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
 
   const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, addToCart, updateCartQuantity, cartCount, cartTotal, today, endOfNextWeek, renderSortIcon } = useAppState();
   const { profile } = useAuth();
+  
+  // Chat States
+  const [chatMessages, setChatMessages] = useState<any[]>([
+    {
+      id: '1',
+      sender: 'User',
+      text: `Hello! I'm reviewing the visit logs for ${selectedOrg?.name || 'this client'}. Do we have any special credit terms for them?`,
+      timestamp: new Date(Date.now() - 3600000 * 25), // Yesterday
+      type: 'text'
+    },
+    {
+      id: '2',
+      sender: 'Admin',
+      text: 'Standard 30-day credit applies. If they order above ₹50k, we can discuss 45 days.',
+      timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+      type: 'text'
+    }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [showAddOptions, setShowAddOptions] = useState(false);
+  const [showOrderSearch, setShowOrderSearch] = useState(false);
+  const [chatOrderSearchQuery, setChatOrderSearchQuery] = useState('');
+  const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
+
+  const handleScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 100);
+    }
+  };
+
+  const handleSendChat = () => {
+    if (!chatInput.trim()) return;
+    const newMessage = {
+      id: Date.now().toString(),
+      sender: 'User',
+      text: chatInput,
+      timestamp: new Date(),
+      type: 'text'
+    };
+    setChatMessages(prev => [...prev, newMessage]);
+    setChatInput('');
+  };
+
+  const handleAttachOrder = (order: Order) => {
+    const newMessage = {
+      id: Date.now().toString(),
+      sender: 'User',
+      text: `Attached Order #${order.id}`,
+      timestamp: new Date(),
+      type: 'order',
+      attachment: order
+    };
+    setChatMessages(prev => [...prev, newMessage]);
+    setShowOrderSearch(false);
+    setShowAddOptions(false);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const newMessage = {
+        id: Date.now().toString(),
+        sender: 'User',
+        text: 'Photo shared',
+        timestamp: new Date(),
+        type: 'photo',
+        attachment: URL.createObjectURL(file)
+      };
+      setChatMessages(prev => [...prev, newMessage]);
+      setShowAddOptions(false);
+    }
+  };
+
+  const formatChatDate = (date: Date) => {
+    const d = new Date(date);
+    const now = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(now.getDate() - 1);
+
+    if (d.toDateString() === now.toDateString()) return 'Today';
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   // Navigation Helper
   const goToDetail = (org: Organization) => {
     setSelectedOrg(org);
@@ -181,46 +281,46 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
     });
 
     return (
-      <div className="space-y-6">
-        <header className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Clients & Leads</h1>
+      <div className="space-y-4">
+        <header className="flex justify-between items-center mb-1">
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Clients & Leads</h1>
           <button 
             onClick={() => setView('AddLead')}
-            className="w-11 h-11 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center"
+            className="w-10 h-10 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center"
           >
-            <Plus size={24} />
+            <Plus size={20} />
           </button>
         </header>
 
-        <div className="flex flex-wrap gap-2 pb-2">
+        <div className="flex flex-wrap gap-2 pb-1">
           {['All', 'Priority', 'New', 'Active', 'Clients'].map((filter) => (
             <button 
               key={filter} 
               onClick={() => setLeadFilter(filter)}
-              className={`px-5 py-2 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${leadFilter === filter ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105' : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700'}`}
+              className={`status-tag min-w-[70px] ${leadFilter === filter ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105' : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700'}`}
             >
               {filter}
             </button>
           ))}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {filteredOrgs.map(org => (
             <motion.div 
               key={org.id}
               whileTap={{ scale: 0.98 }}
-              whileHover={{ y: -4 }}
+              whileHover={{ y: -2 }}
               onClick={() => goToDetail(org)}
-              className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all duration-300 cursor-pointer"
+              className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:shadow-slate-100 transition-all duration-300 cursor-pointer"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col">
                   <h3 className="font-bold text-lg text-slate-900 tracking-tight leading-tight">{org.name}</h3>
                   {org.client_type && (
-                    <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">{org.client_type}</span>
+                    <span className="status-tag bg-emerald-50 text-emerald-700 border border-emerald-100 mt-1">{org.client_type}</span>
                   )}
                 </div>
-                <span className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase tracking-widest ${
+                <span className={`status-tag ${
                   org.is_client ? 'bg-indigo-50 text-indigo-600' :
                   org.status === 'Priority' ? 'bg-amber-50 text-amber-600' :
                   org.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 
@@ -851,66 +951,111 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
     );
   };
 
+  const getOrdinalNum = (n: number) => {
+    if (n > 3 && n < 21) return n + 'th';
+    switch (n % 10) {
+      case 1:  return n + 'st';
+      case 2:  return n + 'nd';
+      case 3:  return n + 'rd';
+      default: return n + 'th';
+    }
+  };
+
+  const formatAlphanumericDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    const month = date.toLocaleString('en-US', { month: 'long' });
+    const day = getOrdinalNum(date.getDate());
+    const year = date.getFullYear();
+    return `${month} ${day}, ${year}`;
+  };
+
   const renderDetail = () => {
     if (!selectedOrg) return null;
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <header className="flex items-center gap-4">
           <button onClick={() => setView('List')} className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
           </button>
-          <h1 className="text-xl font-bold truncate">{selectedOrg.name}</h1>
+          <h1 className="text-lg font-bold truncate">{selectedOrg.name}</h1>
         </header>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1 space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <span className={`px-2 py-1 rounded-md text-[8px] font-bold uppercase tracking-wider ${selectedOrg.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex-1 space-y-3">
+              <div className="flex flex-wrap gap-2 mb-6">
+                <span className={`status-tag ${selectedOrg.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                   {selectedOrg.status} {selectedOrg.is_client ? 'Client' : 'Lead'}
                 </span>
                 {selectedOrg.client_type && (
-                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-[8px] font-bold uppercase tracking-wider">
+                  <span className="status-tag bg-slate-100 text-slate-600 border border-slate-200">
                     {selectedOrg.client_type}
                   </span>
                 )}
               </div>
               
-              <div className="flex items-start gap-3">
-                <div className="p-2.5 bg-slate-50 rounded-2xl text-slate-400">
-                  <MapPin size={20} />
-                </div>
+              <motion.div 
+                whileHover="hover"
+                onClick={() => {
+                  if (selectedOrg.latitude && selectedOrg.longitude) {
+                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedOrg.latitude},${selectedOrg.longitude}`, '_blank');
+                  }
+                }}
+                className="flex items-center gap-3 p-4 rounded-2xl transition-all cursor-pointer hover:bg-slate-50/50 border border-transparent hover:border-slate-100"
+              >
+                <MapPin size={18} className="text-emerald-600" />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-slate-900 leading-snug">
+                  <h3 className="text-base font-bold text-slate-900 leading-snug">
                     {selectedOrg.address}
-                  </p>
+                  </h3>
                   {selectedOrg.latitude && selectedOrg.longitude && (
-                    <button 
-                      onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedOrg.latitude},${selectedOrg.longitude}`, '_blank')}
-                      className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-widest"
-                    >
-                      <Navigation size={12} fill="currentColor" /> GET DIRECTIONS
-                    </button>
+                    <div className="flex items-center gap-2 mt-2 text-emerald-600">
+                      <motion.div
+                        variants={{
+                          hover: {
+                            y: [0, -6, 0],
+                            opacity: [1, 0, 1],
+                            transition: {
+                              duration: 1,
+                              repeat: 0,
+                              ease: "easeInOut"
+                            }
+                          }
+                        }}
+                      >
+                        <Navigation size={12} fill="currentColor" />
+                      </motion.div>
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest">Open in Maps</span>
+                    </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
 
-              {selectedOrg.interest && (
-                <div className="pt-2">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Primary Interest</p>
-                  <div className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-50">
-                    <Star size={14} fill="currentColor" className="text-emerald-500" />
-                    <span className="text-xs font-bold leading-none">{selectedOrg.interest}</span>
+              <div className="ml-[30px] pl-1 space-y-4 pt-4 border-t border-slate-50">
+                {selectedOrg.interest && (
+                  <div>
+                    <h4 className="card-info-text mb-1">Primary Interest</h4>
+                    <p className="text-sm font-bold text-slate-700">{selectedOrg.interest}</p>
                   </div>
-                </div>
-              )}
+                )}
+
+                {selectedOrg.created_at && (
+                  <div>
+                    <h4 className="card-info-text mb-1">Active Since</h4>
+                    <p className="text-sm font-bold text-slate-700">
+                      {formatAlphanumericDate(selectedOrg.created_at)}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="relative">
               <button 
                 onClick={() => setShowOrgMenu(!showOrgMenu)}
-                className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
               >
-                <MoreVertical size={20} />
+                <MoreVertical size={18} />
               </button>
               
               <AnimatePresence>
@@ -919,26 +1064,26 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden"
+                    className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden"
                   >
                     <button 
                       onClick={() => { setView('EditLead'); setEditingOrg(selectedOrg); setShowOrgMenu(false); setShowCustomType(selectedOrg.client_type === 'Others' || !['Marts', 'Hospitals', 'Offices', 'Schools'].includes(selectedOrg.client_type || '')); }}
-                      className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                     >
-                      <Edit size={16} /> Edit Details
+                      <Edit size={14} /> Edit Details
                     </button>
                     <button 
                       onClick={() => { setView('AddLocation'); setShowOrgMenu(false); if (selectedOrg.latitude) setMapLocation({ latitude: selectedOrg.latitude, longitude: selectedOrg.longitude }); }}
-                      className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                     >
-                      <MapPin size={16} /> Add Location
+                      <MapPin size={14} /> Add Location
                     </button>
                     <button 
                       disabled={selectedOrg.is_client}
                       onClick={() => { setShowDeleteConfirm(true); setShowOrgMenu(false); }}
-                      className={`w-full px-4 py-3 text-left text-sm flex items-center gap-2 ${selectedOrg.is_client ? 'text-slate-200 cursor-not-allowed opacity-50' : 'text-rose-600 hover:bg-rose-50'}`}
+                      className={`w-full px-3 py-2 text-left text-xs flex items-center gap-2 ${selectedOrg.is_client ? 'text-slate-200 cursor-not-allowed opacity-50' : 'text-rose-600 hover:bg-rose-50'}`}
                     >
-                      <Trash2 size={16} /> Delete Lead
+                      <Trash2 size={14} /> Delete Lead
                     </button>
                   </motion.div>
                 )}
@@ -946,24 +1091,24 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-3 mt-6">
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <button 
               onClick={() => setView('LogInteraction')}
-              className="flex items-center justify-center gap-2 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-bold hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-100 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="btn-neomorphic bg-emerald-50 text-emerald-600 py-3 rounded-xl"
             >
-              <Plus size={16} /> LOG VISIT
+              <Plus size={14} /> LOG VISIT
             </button>
             <button 
               onClick={() => { setActiveTab('Catalog'); setView('List'); }}
-              className="flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-2xl text-xs font-bold hover:bg-slate-800 hover:shadow-lg hover:shadow-slate-200 active:scale-95 transition-all duration-200 cursor-pointer"
+              className="btn-neomorphic bg-slate-50 text-slate-900 py-3 rounded-xl"
             >
-              <Package size={16} /> NEW ORDER
+              <Package size={14} /> NEW ORDER
             </button>
           </div>
         </div>
 
         <section>
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Contact Persons</h2>
+          <h2 className="section-heading">Contact Persons</h2>
           <div className="space-y-3">
             {selectedOrg.client_contacts && selectedOrg.client_contacts.length > 0 ? (
               [...selectedOrg.client_contacts]
@@ -981,7 +1126,7 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                       <div className="flex items-center gap-2">
                         <div className="font-bold text-slate-900">{contact.name}</div>
                         {contact.is_primary && (
-                          <span className="text-[8px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded uppercase">Primary</span>
+                          <span className="status-tag bg-amber-100 text-amber-700">Primary</span>
                         )}
                       </div>
                       <div className="text-[10px] text-slate-500 uppercase font-medium">{contact.role}</div>
@@ -1014,7 +1159,7 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
             )}
             <button 
               onClick={() => setView('AddContact')}
-              className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-xs font-bold text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-600 active:scale-[0.98] transition-all duration-200"
+              className="w-full btn-standard py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-600"
             >
               <Plus size={16} /> ADD CONTACT
             </button>
@@ -1022,28 +1167,309 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         </section>
 
         <section className="mt-6">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Activity Log</h2>
-            <div className="space-y-4">
-              {selectedOrg.interactions?.map(interaction => (
-                <div key={interaction.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                  <div className="flex justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-emerald-600 uppercase">{interaction.type}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{interaction.date}</span>
-                    </div>
-                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${interaction.sentiment === 'High' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'}`}>
-                      {interaction.sentiment} INTEREST
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600">{interaction.notes}</p>
-                  {interaction.location && (
-                    <div className="mt-2 flex items-center gap-1 text-[8px] text-slate-400 font-mono">
-                      <MapPin size={10} /> {interaction.location}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="segmented-control mb-4">
+              <button 
+                onClick={() => setClientDetailTab('Activity')}
+                className={`segmented-item ${clientDetailTab === 'Activity' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+              >
+                Activity Log
+              </button>
+              <button 
+                onClick={() => setClientDetailTab('Chat')}
+                className={`segmented-item ${clientDetailTab === 'Chat' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+              >
+                Admin Chat
+              </button>
             </div>
+
+            {clientDetailTab === 'Activity' ? (
+              <div className="space-y-4">
+                {(() => {
+                  const clientOrders = orders.filter(o => o.orgId === selectedOrg.id);
+                  const allActivities = [
+                    ...(selectedOrg.interactions || []).map(i => ({ ...i, activityType: 'interaction' as const })),
+                    ...clientOrders.map(o => ({ 
+                      id: o.id, 
+                      date: o.createdAt, 
+                      activityType: 'order' as const,
+                      orderId: o.id,
+                      status: o.status,
+                      itemCount: o.items.reduce((acc, item) => acc + item.quantity, 0)
+                    }))
+                  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                  if (allActivities.length === 0) {
+                    return <div className="text-center py-10 text-slate-400 text-xs italic">No activity recorded yet.</div>;
+                  }
+
+                  return allActivities.map((activity: any, idx) => (
+                    <div key={idx} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm group hover:border-emerald-200 transition-all duration-200">
+                      {activity.activityType === 'interaction' ? (
+                        <>
+                          <div className="flex justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1 bg-emerald-50 rounded-lg text-emerald-600">
+                                <Activity size={12} />
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-600 uppercase">{activity.type}</span>
+                              <span className="text-[10px] font-mono text-slate-400">{activity.date}</span>
+                            </div>
+                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${activity.sentiment === 'High' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-600'}`}>
+                              {activity.sentiment} INTEREST
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600">{activity.notes}</p>
+                          {activity.location && (
+                            <div className="mt-2 flex items-center gap-1 text-[8px] text-slate-400 font-mono">
+                              <MapPin size={10} /> {activity.location}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1 bg-blue-50 rounded-lg text-blue-600">
+                                <Package size={12} />
+                              </div>
+                              <span className="text-[10px] font-bold text-blue-600 uppercase">Order Placed</span>
+                              <span className="text-[10px] font-mono text-slate-400">{activity.date}</span>
+                            </div>
+                            <StatusBadge status={activity.status} />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <button 
+                              onClick={() => {
+                                const order = orders.find(o => o.id === activity.orderId);
+                                if (order) {
+                                  setSelectedOrder(order);
+                                  setView('ViewOrder');
+                                }
+                              }}
+                              className="text-xs font-bold text-slate-900 group-hover:text-emerald-600 transition-colors flex items-center gap-1"
+                            >
+                              Order #{activity.orderId} <ChevronRight size={14} />
+                            </button>
+                            <p className="text-[10px] text-slate-500 font-medium">{activity.itemCount} Items</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[700px] overflow-hidden relative group/chat">
+                {/* Chat Messages */}
+                <div 
+                  ref={chatContainerRef}
+                  onScroll={handleScroll}
+                  className="flex-1 p-6 overflow-y-auto space-y-6 bg-white chat-scrollbar scroll-smooth"
+                >
+                  {chatMessages.reduce((acc: any[], msg, idx) => {
+                    const prevMsg = chatMessages[idx - 1];
+                    const msgDate = new Date(msg.timestamp);
+                    const prevMsgDate = prevMsg ? new Date(prevMsg.timestamp) : null;
+                    
+                    const showDate = !prevMsgDate || formatChatDate(prevMsgDate) !== formatChatDate(msgDate);
+                    
+                    if (showDate) {
+                      acc.push(
+                        <div key={`date-${msg.id}`} className="flex justify-center my-6">
+                          <span className="px-4 py-1 bg-slate-50 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100">
+                            {formatChatDate(msgDate)}
+                          </span>
+                        </div>
+                      );
+                    }
+                    
+                    const isUser = msg.sender === 'User';
+                    acc.push(
+                      <div key={msg.id} className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+                        <p className="card-info-text px-2 mb-0.5">{isUser ? 'You' : 'Admin'}</p>
+                        <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm ${
+                          isUser 
+                            ? 'bg-emerald-600 text-white rounded-tr-sm shadow-md' 
+                            : 'bg-slate-100 text-slate-700 border border-slate-200 rounded-tl-sm'
+                        }`}>
+                          {msg.type === 'text' && msg.text}
+                          {msg.type === 'order' && (
+                            <div className="space-y-2 min-w-[200px]">
+                              <p className="font-bold flex items-center gap-2">
+                                <Package size={14} /> Attached Order
+                              </p>
+                              <button 
+                                onClick={() => {
+                                  setSelectedOrder(msg.attachment);
+                                  setView('ViewOrder');
+                                }}
+                                className={`w-full p-3 rounded-xl text-xs font-bold leading-tight flex items-center justify-between border transition-colors ${
+                                  isUser ? 'bg-emerald-700/50 border-emerald-500 hover:bg-emerald-700' : 'bg-white border-slate-200 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span className="font-mono">#{msg.attachment.id}</span>
+                                <ChevronRight size={14} />
+                              </button>
+                            </div>
+                          )}
+                          {msg.type === 'photo' && (
+                            <div className="rounded-xl overflow-hidden border-2 border-white/20">
+                              <img src={msg.attachment} alt="Shared attachment" className="max-w-full h-auto" />
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-300 px-2 uppercase">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                    return acc;
+                  }, [])}
+                </div>
+
+                {/* Scroll to Bottom Button */}
+                <AnimatePresence>
+                  {showScrollBottom && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      onClick={scrollToBottom}
+                      className="absolute bottom-24 right-6 w-10 h-10 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-xl hover:bg-emerald-700 transition-all z-20 group"
+                    >
+                      <ArrowDown size={20} className="group-hover:translate-y-0.5 transition-transform" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
+                {/* Input Area */}
+                <div className="p-4 border-t border-slate-100 bg-white">
+                  <div className="flex items-center gap-3 relative">
+                    <div className="relative">
+                      <button 
+                        onClick={() => setShowAddOptions(!showAddOptions)}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                          showAddOptions ? 'bg-slate-900 text-white rotate-45' : 'bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                      >
+                        <Plus size={20} />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {showAddOptions && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            className="absolute bottom-full left-0 mb-4 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 min-w-[170px] z-50"
+                          >
+                            <button 
+                              onClick={() => {
+                                setShowOrderSearch(true);
+                                setShowAddOptions(false);
+                              }}
+                              className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors"
+                            >
+                              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                                <Package size={16} />
+                              </div>
+                              Add Order
+                            </button>
+                            <label className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors cursor-pointer">
+                              <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                                <Camera size={16} />
+                              </div>
+                              Chat Photo
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment" 
+                                className="hidden" 
+                                onChange={handlePhotoUpload} 
+                              />
+                            </label>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="flex-1 relative">
+                       <input 
+                        type="text" 
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                        placeholder="Message Admin..."
+                        className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all font-medium"
+                      />
+                      <button 
+                        onClick={handleSendChat}
+                        disabled={!chatInput.trim()}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-emerald-600 text-white rounded-lg flex items-center justify-center shadow-lg shadow-emerald-100 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Order Search Overlay */}
+                  <AnimatePresence>
+                    {showOrderSearch && (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-white z-[60] flex flex-col"
+                      >
+                        <div className="p-4 border-b border-slate-100 flex items-center gap-4">
+                          <button onClick={() => setShowOrderSearch(false)} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400">
+                            <ArrowLeft size={18} />
+                          </button>
+                          <div className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                            <input 
+                              type="text"
+                              value={chatOrderSearchQuery}
+                              onChange={(e) => setChatOrderSearchQuery(e.target.value)}
+                              placeholder="Search order ID or product..."
+                              autoFocus
+                              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                          {orders
+                            .filter(o => o.orgId === selectedOrg.id)
+                            .filter(o => 
+                              o.id.toLowerCase().includes(chatOrderSearchQuery.toLowerCase()) ||
+                              o.items.some(item => item.name.toLowerCase().includes(chatOrderSearchQuery.toLowerCase()))
+                            )
+                            .map(order => (
+                              <button 
+                                key={order.id}
+                                onClick={() => handleAttachOrder(order)}
+                                className="w-full p-4 border border-slate-100 rounded-2xl hover:border-blue-500 hover:bg-blue-50/30 transition-all text-left group"
+                              >
+                                <div className="flex justify-between items-start mb-1">
+                                  <span className="font-mono text-[10px] font-bold text-slate-400 group-hover:text-blue-500">#{order.id}</span>
+                                  <StatusBadge status={order.status} />
+                                </div>
+                                <div className="text-xs font-bold text-slate-700 truncate">
+                                  {order.items.map(i => i.name).join(', ')}
+                                </div>
+                              </button>
+                            ))
+                          }
+                          {orders.filter(o => o.orgId === selectedOrg.id).length === 0 && (
+                            <div className="text-center py-10 text-slate-400 text-xs italic">No orders found for this client.</div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
           </section>
       </div>
     );
@@ -1894,19 +2320,19 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center gap-2 text-slate-400">
             <Camera size={24} />
-            <span className="text-[10px] font-bold uppercase">Add Photo</span>
+            <span className="card-info-text">Add Photo</span>
           </div>
           <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col items-center gap-2 text-emerald-600">
             <MapPin size={24} />
-            <span className="text-[10px] font-bold uppercase">Location Captured</span>
+            <span className="card-info-text text-emerald-600">Location Captured</span>
           </div>
         </div>
 
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase mb-3 block">Sentiment / Interest Level</label>
+          <label className="card-info-text mb-3 block">Sentiment / Interest Level</label>
           <div className="flex gap-2">
             {['Low', 'Medium', 'High'].map(s => (
-              <button key={s} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase border ${s === 'High' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-400 border-slate-100'}`}>
+              <button key={s} className={`flex-1 py-2 rounded-xl card-info-text border ${s === 'High' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-400 border-slate-100'}`}>
                 {s}
               </button>
             ))}
@@ -1914,16 +2340,16 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         </div>
 
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Notes</label>
+          <label className="card-info-text mb-1 block">Notes</label>
           <textarea placeholder="What did you discuss?" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none h-32" />
         </div>
 
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Next Follow-up Date</label>
+          <label className="card-info-text mb-1 block">Next Follow-up Date</label>
           <input type="date" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
         </div>
 
-        <button className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200 active:scale-95 transition-all duration-200 cursor-pointer">
+        <button className="w-full py-4 btn-neomorphic bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700">
           SAVE ACTIVITY
         </button>
       </div>
@@ -2021,76 +2447,94 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
-              className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-white shadow-2xl transition-all"
+              className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
             >
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="w-20 h-20 rounded-3xl bg-emerald-50/50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-3xl font-bold">
-                    {selectedLeadContact.name.charAt(0).toLowerCase()}
-                  </div>
+              <div className="p-6">
+                <div className="space-y-1 mb-6 pr-8 relative">
                   <button 
                     onClick={() => setSelectedLeadContact(null)}
-                    className="p-3 text-slate-400 hover:bg-slate-50 rounded-2xl transition-colors"
+                    className="absolute -top-2 -right-2 p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"
                   >
-                    <X size={24} />
+                    <X size={20} />
                   </button>
-                </div>
-
-                <div className="space-y-2 mb-8">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedLeadContact.name}</h3>
+                    <h3 className="text-xl font-bold text-slate-900 tracking-tight">{selectedLeadContact.name}</h3>
                     {(selectedLeadContact as any).is_primary && (
-                      <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Primary</span>
+                      <span className="status-tag bg-amber-50 text-amber-600 border border-amber-100">Primary</span>
                     )}
                   </div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedLeadContact.role}</p>
+                  <p className="card-info-text">{selectedLeadContact.role}</p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm group-hover:text-emerald-500 transition-colors">
-                        <Phone size={20} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Phone Number</p>
-                        <p className="text-sm font-bold text-slate-700 tracking-tight">{selectedLeadContact.phone}</p>
-                      </div>
+                <div className="space-y-3">
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-3 group transition-all">
+                    <div className="flex-1 min-w-0">
+                      <p className="card-info-text mb-0.5">Phone Number</p>
+                      <p className="text-sm font-bold text-slate-700 tracking-tight truncate">{selectedLeadContact.phone}</p>
                     </div>
-                    <a 
-                      href={`tel:${selectedLeadContact.phone}`}
-                      className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[80px] text-center"
-                    >
-                      CALL
-                    </a>
+                    <div className="flex gap-2 flex-shrink-0">
+                       <button 
+                        onClick={() => {
+                          const whatsappUrl = `https://wa.me/${selectedLeadContact.phone.replace(/[^0-9]/g, '')}`;
+                          window.open(whatsappUrl, '_blank');
+                        }}
+                        className="p-2.5 bg-white border border-slate-200 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all shadow-sm"
+                        title="WhatsApp"
+                      >
+                        <MessageSquare size={16} />
+                      </button>
+                      <a 
+                        href={`tel:${selectedLeadContact.phone}`}
+                        className="p-2.5 bg-white border border-slate-200 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm"
+                        title="Call"
+                      >
+                        <Phone size={16} />
+                      </a>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedLeadContact.phone);
+                        }}
+                        className="p-2.5 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm"
+                        title="Copy"
+                      >
+                        <History size={16} />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="p-5 bg-slate-50/50 rounded-3xl border border-slate-100 flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm group-hover:text-emerald-500 transition-colors">
-                        <Mail size={20} />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Email Address</p>
-                        <p className="text-sm font-bold text-slate-700 tracking-tight">{selectedLeadContact.email}</p>
-                      </div>
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-3 group transition-all">
+                    <div className="flex-1 min-w-0">
+                      <p className="card-info-text mb-0.5">Email Address</p>
+                      <p className="text-sm font-bold text-slate-700 tracking-tight truncate">{selectedLeadContact.email}</p>
                     </div>
-                    <a 
-                      href={`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedLeadContact.email}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all font-bold text-[10px] uppercase tracking-widest min-w-[80px] text-center"
-                    >
-                      EMAIL
-                    </a>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <a 
+                        href={`https://mail.google.com/mail/?view=cm&fs=1&to=${selectedLeadContact.email}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2.5 bg-white border border-slate-200 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all shadow-sm"
+                        title="Email"
+                      >
+                        <Mail size={16} />
+                      </a>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedLeadContact.email);
+                        }}
+                        className="p-2.5 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm"
+                        title="Copy"
+                      >
+                        <History size={16} />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setSelectedLeadContact(null)}
-                  className="w-full mt-10 py-5 bg-slate-50 text-slate-500 rounded-3xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-100"
+                  className="w-full mt-8 btn-neomorphic bg-slate-50 text-slate-900 py-3.5 rounded-xl"
                 >
-                  DISMISS
+                  DONE
                 </button>
               </div>
             </motion.div>
@@ -2125,13 +2569,13 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                 <button 
                   onClick={() => handleSoftDelete(selectedOrg.id)}
                   disabled={isLoadingData}
-                  className="w-full py-4 bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-rose-100 active:scale-95 transition-all"
+                  className="w-full py-4 btn-neomorphic bg-rose-600 text-white rounded-2xl shadow-lg shadow-rose-100"
                 >
                   {isLoadingData ? 'DELETING...' : 'YES, DELETE'}
                 </button>
                 <button 
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="w-full py-4 bg-slate-50 text-slate-500 rounded-2xl font-bold text-sm hover:bg-slate-100 active:scale-95 transition-all"
+                  className="w-full py-4 btn-neomorphic bg-slate-50 text-slate-500 rounded-2xl"
                 >
                   CANCEL
                 </button>

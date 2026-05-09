@@ -353,7 +353,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
             placeholder="Search order ID or client..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="input-standard pl-10 pr-4 focus:ring-orange-500/20 focus:border-orange-500"
           />
         </div>
 
@@ -362,7 +362,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
             <button
               key={f}
               onClick={() => setFilter(f as any)}
-              className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+              className={`status-tag whitespace-nowrap transition-colors ${
                 filter === f ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'
               }`}
             >
@@ -415,12 +415,12 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-bold text-slate-900 text-sm">{task.orderId}</h3>
             {task.priority === 'High' && (
-              <span className="text-[8px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded uppercase tracking-wider">Priority</span>
+              <span className="status-tag bg-rose-100 text-rose-700">Priority</span>
             )}
           </div>
           <p className="text-xs text-slate-600">{task.orgName}</p>
         </div>
-        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${
+        <span className={`status-tag ${
           task.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
           task.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
           'bg-amber-50 text-amber-600'
@@ -441,7 +441,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       {task.status === 'Open' && (
         <button 
           onClick={() => handleStartDelivery(task.id)}
-          className="w-full py-2 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition-colors"
+          className="w-full py-2 bg-orange-50 text-orange-600 rounded-xl btn-standard hover:bg-orange-100"
         >
           Start Delivery
         </button>

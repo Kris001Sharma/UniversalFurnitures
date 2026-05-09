@@ -161,8 +161,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
               <div>
                 <div className="flex items-center gap-3">
                   <h3 className="font-bold text-slate-900 text-lg">{order.orderId}</h3>
-                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded uppercase tracking-wider">In Manufacturing</span>
-                  <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase tracking-wider border border-slate-200">
+                  <span className="status-tag bg-indigo-100 text-indigo-700 border border-indigo-200">In Manufacturing</span>
+                  <span className="status-tag bg-slate-100 text-slate-600 border border-slate-200">
                     {order.tracking_mode || 'Item Level'} Tracking
                   </span>
                 </div>
@@ -183,19 +183,19 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
               {order.tracking_mode === 'Order Level' ? (
                 <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Overall Order Stage</h4>
+                    <h4 className="card-info-text mb-1">Overall Order Stage</h4>
                     <div className="text-xl font-bold text-indigo-700 flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                       {order.overallStage || 'In Progress'}
                     </div>
                   </div>
-                  <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors">
+                  <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl btn-standard shadow-sm hover:bg-slate-50">
                     Update Order Stage
                   </button>
                 </div>
               ) : (
                 <>
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Unit Level Progress</h4>
+                  <h4 className="card-info-text mb-4">Unit Level Progress</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     {order.items.map((unit: any) => (
                       <div key={unit.unitId} className={`p-4 rounded-2xl border transition-all ${

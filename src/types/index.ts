@@ -20,6 +20,7 @@ export interface Organization {
   is_deleted?: boolean; 
   latitude?: number; 
   longitude?: number; 
+  created_at?: string;
 }
 export interface Product { id: string; code: string; name: string; mainCategory: string; subcategory: string; itemCategory: string; image: string; description: string; price?: number; }
 export interface Order { id: string; orgId: string; orgName: string; items: { productId: string; quantity: number }[]; status: OrderStatus; category: OrderCategory; paymentStatus: PaymentStatus; expectedDelivery: string; createdAt: string; }

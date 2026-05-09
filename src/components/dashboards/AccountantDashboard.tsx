@@ -24,7 +24,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
           <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 opacity-30" />
             <div className="relative z-10">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total Balance</div>
+              <div className="card-info-text mb-2">Total Balance</div>
               <div className="text-5xl font-bold text-slate-900 mb-8">₹42,850.00</div>
               <div className="grid grid-cols-2 gap-6">
                 <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100/50">
@@ -140,8 +140,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                 <Receipt size={28} />
               </div>
               <div>
+                <div className="card-info-text mb-1">Processed</div>
                 <div className="text-2xl font-bold text-slate-900">14</div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Invoices</div>
               </div>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-6">
@@ -149,8 +149,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                 <PieChart size={28} />
               </div>
               <div>
+                <div className="card-info-text mb-1">Utilization</div>
                 <div className="text-2xl font-bold text-slate-900">84%</div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Budget Utilization</div>
               </div>
             </div>
             <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex items-center gap-6">
@@ -172,8 +172,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
               <p className="text-sm text-slate-500">Real-time financial activity log</p>
             </div>
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-600 shadow-sm">Export CSV</button>
-              <button className="px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-100">Add Transaction</button>
+              <button className="btn-standard px-4 py-2 bg-white border border-slate-100 rounded-xl text-slate-600 shadow-sm">Export CSV</button>
+              <button className="btn-standard px-4 py-2 bg-amber-600 text-white rounded-xl shadow-md shadow-amber-100">Add Transaction</button>
             </div>
           </div>
 
@@ -181,12 +181,12 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
             <table className="w-full">
               <thead>
                 <tr className="text-left bg-slate-50/50 border-b border-slate-100">
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Transaction ID</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-8 py-4 card-info-text">Transaction ID</th>
+                  <th className="px-8 py-4 card-info-text">Date</th>
+                  <th className="px-8 py-4 card-info-text">Description</th>
+                  <th className="px-8 py-4 card-info-text">Amount</th>
+                  <th className="px-8 py-4 card-info-text">Type</th>
+                  <th className="px-8 py-4 card-info-text">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
