@@ -19,7 +19,7 @@ DO $$ BEGIN CREATE TYPE public.transaction_status AS ENUM ('Pending', 'Completed
 DO $$ BEGIN CREATE TYPE public.production_tracking_mode AS ENUM ('Order Level', 'Item Level'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ========================================================================================
--- 1. IDENTITY & ACCESS LAYER (Public Schema)
+-- 1. IDENTITY & ACCESS LAYER (Public Schema) 
 -- ========================================================================================
 CREATE TABLE IF NOT EXISTS public.user_profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
