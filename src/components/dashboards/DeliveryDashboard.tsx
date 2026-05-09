@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogIn, X, Bell, UserCircle, MessageSquare, ClipboardList, AlertCircle, LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, ArrowUp, ArrowDown, Crosshair, Navigation, Maximize, Minimize, Compass } from 'lucide-react';
 import { DeliveryTask, Order, Product } from '../../types';
 import { dataService } from '../../services/data.service';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 const DeliveryMap = React.lazy(() => import('../../DeliveryMap'));
 
 const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
@@ -75,7 +76,8 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
              dueDate: t.due_date || t.date || new Date().toISOString().split('T')[0],
              locationTagged: t.location_tagged || false,
              latitude: t.latitude,
-             longitude: t.longitude
+             longitude: t.longitude,
+             proofImage: t.proof_image_url
           }));
           setTasks(mappedTasks);
         }
@@ -149,40 +151,76 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     }
   };
 
-  const handleUploadProof = (taskId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+   const handleUploadProof = async (taskId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const imageUrl = URL.createObjectURL(file); // Mock upload wrapper
-      setTasks(tasks.map(t => t.id === taskId ? { ...t, proofImage: imageUrl } : t));
+      try {
+        const imageUrl = await uploadToCloudinary(file);
+        setTasks(prevTasks => prevTasks.map(t => t.id === taskId ? { ...t, proofImage: imageUrl } : t));
+      } catch (err) {
+        console.error('Failed to upload proof image:', err);
+        alert('Failed to upload image. Please check your internet connection and try again.');
+      }
     }
   };
 
   const handleMarkDelivered = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    const deliveredCount = task?.itemsReceived || task?.itemsExpected || 0;
+    if (!task) return;
+
+    if (!task.proofImage) {
+      alert('Please upload a proof of delivery image before completing.');
+      return;
+    }
+
+    const deliveredCount = task.itemsReceived || task.itemsExpected || 0;
 
     try {
+      // Get current location if possible one last time for the final proof
+      let finalLat = task.latitude;
+      let finalLng = task.longitude;
+
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          finalLat = position.coords.latitude;
+          finalLng = position.coords.longitude;
+        } catch (e) {
+          console.warn("Could not get fresh location for delivery completion, using tagged location.");
+        }
+      }
+
       await dataService.updateDeliveryTask(taskId, { 
         status: 'Delivered',
-        items_delivered: deliveredCount
+        items_delivered: deliveredCount,
+        proof_image_url: task.proofImage,
+        latitude: finalLat,
+        longitude: finalLng,
+        completed_at: new Date().toISOString()
+      });
+
+      // Always update local UI state in a single atomic operation
+      setTasks(currentTasks => {
+        const updated = currentTasks.map(t => t.id === taskId ? { 
+          ...t, 
+          status: 'Delivered',
+          itemsDelivered: deliveredCount,
+          latitude: finalLat,
+          longitude: finalLng
+        } : t);
+        // Automatically switch tab if no more active tasks remain "InProgress"
+        const stillActive = updated.filter(u => u.status === 'InProgress');
+        if (stillActive.length === 0) {
+          setTimeout(() => setActiveTab('Tasks'), 500);
+        }
+        return updated;
       });
     } catch (err) { 
       console.error('Failed to mark delivered on server:', err); 
+      alert('Failed to complete delivery on server. Please try again.');
     }
-    // Always update local UI state in a single atomic operation
-    setTasks(currentTasks => {
-      const updated = currentTasks.map(t => t.id === taskId ? { 
-        ...t, 
-        status: 'Delivered',
-        itemsDelivered: deliveredCount 
-      } : t);
-      // Automatically switch tab if no more active tasks remain "InProgress"
-      const stillActive = updated.filter(t => t.status === 'InProgress');
-      if (stillActive.length === 0) {
-        setTimeout(() => setActiveTab('Tasks'), 500);
-      }
-      return updated;
-    });
   };
 
   const handleStartDelivery = async (taskId: string) => {
@@ -805,6 +843,20 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                             </button>
                           </div>
                         </div>
+
+                        {activeTask.proofImage && (
+                          <div className="rounded-xl overflow-hidden border border-slate-100 h-32 relative">
+                            <img 
+                              src={activeTask.proofImage} 
+                              alt="Delivery Proof" 
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="absolute top-2 right-2 px-2 py-1 bg-emerald-500 text-white text-[8px] font-bold rounded-lg shadow-sm uppercase tracking-widest">
+                               Upload Complete
+                            </div>
+                          </div>
+                        )}
 
                         <button 
                           onClick={() => handleMarkDelivered(activeTask.id)}

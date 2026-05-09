@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export const dataService = {
   async getClients(agentId?: string) {
-    let query = supabase.from('clients').select('*, contacts(*)');
+    let query = supabase.from('clients').select('*, contacts(*), interactions(*)');
     if (agentId) {
       query = query.eq('sales_agent_id', agentId);
     }
@@ -136,6 +136,16 @@ export const dataService = {
     const { data, error } = await supabase
       .from('delivery_tasks')
       .insert([taskData])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createInteraction(interactionData: any) {
+    const { data, error } = await supabase
+      .from('interactions')
+      .insert([interactionData])
       .select()
       .single();
     if (error) throw error;

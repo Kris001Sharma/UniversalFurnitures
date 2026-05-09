@@ -233,6 +233,7 @@ CREATE TABLE IF NOT EXISTS public.delivery_tasks (
     tagged_longitude DOUBLE PRECISION,
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
+    proof_image_url TEXT,
     due_date DATE,
     agent_id UUID REFERENCES public.user_profiles(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),

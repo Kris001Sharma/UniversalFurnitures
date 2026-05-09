@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ProfileModal from '../ProfileModal';
 import { DataSync } from '../admin/DataSync';
 import { dataService } from '../../services/data.service';
+import { uploadToCloudinary } from '../../utils/cloudinary';
 import { Order, Transaction, Product, CartItem, ProductionLine, ProductionRecord, InventoryItem, DeliveryTask, Organization, Contact, OrderStatus, OrderCategory, ClientStatus } from '../../types';
 import { StatusBadge } from '../StatusBadge';
 import { OrderTracker } from '../OrderTracker';
@@ -49,6 +50,16 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  
+  // Interaction Logging State
+  const [interactionType, setInteractionType] = useState<'Visit' | 'Call'>('Visit');
+  const [interactionSentiment, setInteractionSentiment] = useState<'Low' | 'Medium' | 'High'>('Medium');
+  const [interactionNotes, setInteractionNotes] = useState('');
+  const [interactionPhoto, setInteractionPhoto] = useState<string | null>(null);
+  const [interactionLocation, setInteractionLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [isUploadingInteractionPhoto, setIsUploadingInteractionPhoto] = useState(false);
+  const [isSubmittingInteraction, setIsSubmittingInteraction] = useState(false);
+  const [nextFollowUpDate, setNextFollowUpDate] = useState('');
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -1247,6 +1258,16 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                             </span>
                           </div>
                           <p className="text-xs text-slate-600">{activity.notes}</p>
+                          {activity.photoUrl && (
+                            <div className="mt-3 rounded-xl overflow-hidden border border-slate-100 max-h-48">
+                              <img 
+                                src={activity.photoUrl} 
+                                alt="Interaction" 
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+                          )}
                           {activity.location && (
                             <div className="mt-2 flex items-center gap-1 text-[8px] text-slate-400 font-mono">
                               <MapPin size={10} /> {activity.location}
@@ -2330,59 +2351,192 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
     </form>
   );
 
-  const renderLogInteraction = () => (
-    <div className="space-y-6">
-      <header className="flex items-center gap-4">
-        <button onClick={() => setView('Detail')} className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-xl font-bold">Log Activity</h1>
-      </header>
+  const renderLogInteraction = () => {
+    const handleCaptureInteractionPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-        <div className="flex gap-4">
-          <button className="flex-1 py-3 bg-emerald-50 text-emerald-700 rounded-2xl text-xs font-bold border border-emerald-100">IN-PERSON VISIT</button>
-          <button className="flex-1 py-3 bg-slate-50 text-slate-500 rounded-2xl text-xs font-bold border border-slate-100">PHONE CALL</button>
-        </div>
+      setIsUploadingInteractionPhoto(true);
+      try {
+        const url = await uploadToCloudinary(file);
+        setInteractionPhoto(url);
+      } catch (err) {
+        console.error('Photo upload failed:', err);
+        alert('Failed to upload photo. Please try again.');
+      } finally {
+        setIsUploadingInteractionPhoto(false);
+      }
+    };
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center gap-2 text-slate-400">
-            <Camera size={24} />
-            <span className="card-info-text">Add Photo</span>
+    const handleTagInteractionLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          setInteractionLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        }, (err) => {
+          alert('Failed to get location. Please enable location services.');
+        });
+      }
+    };
+
+    const handleSaveInteraction = async () => {
+      if (!selectedOrg || !profile) return;
+      
+      setIsSubmittingInteraction(true);
+      try {
+        const interactionData = {
+          client_id: selectedOrg.id,
+          user_id: profile.id,
+          type: interactionType,
+          sentiment: interactionSentiment,
+          notes: interactionNotes,
+          latitude: interactionLocation?.latitude,
+          longitude: interactionLocation?.longitude,
+          image_url: interactionPhoto,
+          created_at: new Date().toISOString()
+        };
+
+        await dataService.createInteraction(interactionData);
+
+        // Update follow-up if provided
+        if (nextFollowUpDate) {
+          await dataService.updateClient(selectedOrg.id, { next_follow_up: nextFollowUpDate });
+        }
+
+        // Refresh data
+        const fetchedClients = await dataService.getClients(profile.id);
+        const mappedClients = fetchedClients.map((c: any) => ({
+          ...c,
+          client_contacts: c.contacts || [],
+          interactions: (c.interactions || []).map((i: any) => ({
+            id: i.id,
+            date: new Date(i.created_at).toLocaleDateString(),
+            type: i.type,
+            sentiment: i.sentiment,
+            notes: i.notes,
+            location: i.latitude ? `${i.latitude.toFixed(4)}, ${i.longitude.toFixed(4)}` : undefined,
+            photoUrl: i.image_url
+          }))
+        }));
+        setClients(mappedClients);
+        
+        const updated = mappedClients.find((c: any) => c.id === selectedOrg.id);
+        if (updated) setSelectedOrg(updated);
+
+        // Reset and go back
+        setInteractionNotes('');
+        setInteractionPhoto(null);
+        setInteractionLocation(null);
+        setNextFollowUpDate('');
+        setView('Detail');
+      } catch (err) {
+        console.error('Failed to save interaction:', err);
+        alert('Failed to save activity.');
+      } finally {
+        setIsSubmittingInteraction(false);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <header className="flex items-center gap-4">
+          <button onClick={() => setView('Detail')} className="p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold">Log Activity</h1>
+        </header>
+
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setInteractionType('Visit')}
+              className={`flex-1 py-3 rounded-2xl text-xs font-bold border transition-all ${interactionType === 'Visit' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}
+            >
+              IN-PERSON VISIT
+            </button>
+            <button 
+              onClick={() => setInteractionType('Call')}
+              className={`flex-1 py-3 rounded-2xl text-xs font-bold border transition-all ${interactionType === 'Call' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}
+            >
+              PHONE CALL
+            </button>
           </div>
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col items-center gap-2 text-emerald-600">
-            <MapPin size={24} />
-            <span className="card-info-text text-emerald-600">Location Captured</span>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative">
+              <input 
+                type="file" 
+                accept="image/*" 
+                capture="environment" 
+                onChange={handleCaptureInteractionPhoto}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${interactionPhoto ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                {isUploadingInteractionPhoto ? (
+                  <div className="animate-spin h-6 w-6 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                ) : (
+                  <Camera size={24} />
+                )}
+                <span className="card-info-text">{interactionPhoto ? 'Photo Added' : 'Add Photo'}</span>
+              </div>
+            </div>
+            <button 
+              onClick={handleTagInteractionLocation}
+              className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition-all ${interactionLocation ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+            >
+              <MapPin size={24} />
+              <span className="card-info-text">{interactionLocation ? 'Location Tagged' : 'Tag Location'}</span>
+            </button>
           </div>
-        </div>
 
-        <div>
-          <label className="card-info-text mb-3 block">Sentiment / Interest Level</label>
-          <div className="flex gap-2">
-            {['Low', 'Medium', 'High'].map(s => (
-              <button key={s} className={`flex-1 py-2 rounded-xl card-info-text border ${s === 'High' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-400 border-slate-100'}`}>
-                {s}
-              </button>
-            ))}
+          <div>
+            <label className="card-info-text mb-3 block">Sentiment / Interest Level</label>
+            <div className="flex gap-2">
+              {(['Low', 'Medium', 'High'] as const).map(s => (
+                <button 
+                  key={s} 
+                  onClick={() => setInteractionSentiment(s)}
+                  className={`flex-1 py-2 rounded-xl card-info-text border transition-all ${interactionSentiment === s ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-400 border-slate-100'}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="card-info-text mb-1 block">Notes</label>
-          <textarea placeholder="What did you discuss?" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none h-32" />
-        </div>
+          <div>
+            <label className="card-info-text mb-1 block">Notes</label>
+            <textarea 
+              value={interactionNotes}
+              onChange={e => setInteractionNotes(e.target.value)}
+              placeholder="What did you discuss?" 
+              className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none h-32" 
+            />
+          </div>
 
-        <div>
-          <label className="card-info-text mb-1 block">Next Follow-up Date</label>
-          <input type="date" className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" />
-        </div>
+          <div>
+            <label className="card-info-text mb-1 block">Next Follow-up Date (Optional)</label>
+            <input 
+              type="date" 
+              value={nextFollowUpDate}
+              onChange={e => setNextFollowUpDate(e.target.value)}
+              className="w-full p-3 bg-slate-50 rounded-xl border border-slate-100 text-sm focus:outline-none" 
+            />
+          </div>
 
-        <button className="w-full py-4 btn-neomorphic bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700">
-          SAVE ACTIVITY
-        </button>
+          <button 
+            onClick={handleSaveInteraction}
+            disabled={isSubmittingInteraction}
+            className="w-full py-4 btn-neomorphic bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {isSubmittingInteraction ? 'SAVING...' : 'SAVE ACTIVITY'}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
       <main className={`max-w-md mx-auto ${view === 'AddLocation' ? 'p-3' : 'p-6'}`}>
