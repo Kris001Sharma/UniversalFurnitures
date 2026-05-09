@@ -280,13 +280,40 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='items_to_deliver') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN items_to_deliver INTEGER DEFAULT 1;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='customer_name') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN customer_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='order_id') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN order_id TEXT REFERENCES public.orders(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='org_id') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN org_id UUID REFERENCES public.clients(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='address') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='contact_name') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN contact_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='contact_phone') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN contact_phone TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='due_date') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN due_date DATE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='agent_id') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN agent_id UUID REFERENCES public.user_profiles(id);
+    END IF;
 
-    -- REMOVE REDUNDANT "TAGGED" FIELDS IF THEY EXIST
+    -- REMOVE REDUNDANT "TAGGED" & GHOST FIELDS IF THEY EXIST
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_latitude') THEN
         ALTER TABLE public.delivery_tasks DROP COLUMN tagged_latitude;
     END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_longitude') THEN
         ALTER TABLE public.delivery_tasks DROP COLUMN tagged_longitude;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='client_name') THEN
+        ALTER TABLE public.delivery_tasks DROP COLUMN client_name;
     END IF;
 END $$;
 
