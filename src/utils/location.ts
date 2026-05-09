@@ -14,18 +14,7 @@ export async function getGeolocation(): Promise<GeolocationResult> {
     throw new Error('GEOLOCATION_NOT_SUPPORTED');
   }
 
-  // Check permission status if API is available (Chrome/Firefox/Edge)
-  if (navigator.permissions && (navigator.permissions as any).query) {
-    try {
-      const status = await navigator.permissions.query({ name: 'geolocation' });
-      if (status.state === 'denied') {
-        throw new Error('GEOLOCATION_PERMISSION_DENIED');
-      }
-    } catch (e) {
-      console.warn('Permissions API query failed:', e);
-    }
-  }
-
+  // Force a fresh request every time this is called to trigger the system prompt if not blocked
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -36,6 +25,7 @@ export async function getGeolocation(): Promise<GeolocationResult> {
         });
       },
       (error) => {
+        console.warn('Geolocation error code:', error.code);
         switch (error.code) {
           case error.PERMISSION_DENIED:
             reject(new Error('GEOLOCATION_PERMISSION_DENIED'));
@@ -53,7 +43,7 @@ export async function getGeolocation(): Promise<GeolocationResult> {
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0,
+        maximumAge: 0, // Force fresh data
       }
     );
   });
@@ -63,13 +53,13 @@ export function handleGeolocationError(error: any): string {
   const message = error.message || error;
   
   if (message === 'GEOLOCATION_PERMISSION_DENIED') {
-    return 'Location access is denied. Please enable it in your browser/phone settings and click again.';
+    return 'Location access is denied. Please reset the site permissions in your browser settings (usually the lock icon in the address bar) and click Tag GPS again to see the prompt.';
   }
   if (message === 'GEOLOCATION_POSITION_UNAVAILABLE') {
-    return 'Location information is unavailable. Please check your GPS signal.';
+    return 'Location information is unavailable. Please check your GPS signal or ensure location is enabled on your device.';
   }
   if (message === 'GEOLOCATION_TIMEOUT') {
-    return 'Location request timed out. Please try again.';
+    return 'Location request timed out. Please try again with a better signal.';
   }
   if (message === 'GEOLOCATION_NOT_SUPPORTED') {
     return 'Geolocation is not supported by this browser.';

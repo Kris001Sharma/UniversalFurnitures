@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 DO $$ BEGIN CREATE TYPE public.user_role AS ENUM ('ADMIN', 'SALES', 'SUPERVISOR', 'DELIVERY', 'ACCOUNTS'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.org_status AS ENUM ('New', 'Priority', 'Active','Inactive'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.interaction_type AS ENUM ('Visit', 'Call'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE public.sentiment_type AS ENUM ('Positive', 'Neutral', 'Negative'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.sentiment_type AS ENUM ('Low', 'Medium', 'High'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.order_status AS ENUM ('Draft', 'Received', 'Active', 'In Production', 'Ready for Delivery', 'Out for Delivery', 'Delivered', 'Closed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.payment_status AS ENUM ('Pending', 'Partial', 'Paid'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.order_item_status AS ENUM ('Pending', 'In Production', 'Completed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -504,3 +504,6 @@ DO $$ BEGIN CREATE POLICY "Authenticated users can use delivery_logs" ON public.
 DO $$ BEGIN CREATE POLICY "Authenticated users can use transactions" ON public.transactions FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use invoices" ON public.invoices FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use activity_logs" ON public.activity_logs FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- Notify PostgREST to reload its schema cache
+NOTIFY pgrst, 'reload schema';
