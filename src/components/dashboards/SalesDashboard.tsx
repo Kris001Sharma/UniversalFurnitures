@@ -282,23 +282,30 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
 
     return (
       <div className="space-y-4">
-        <header className="flex justify-between items-center mb-1">
+        <header className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Clients & Leads</h1>
           <button 
             onClick={() => setView('AddLead')}
-            className="w-10 h-10 bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center"
+            className="w-10 h-10 bg-emerald-600 text-white rounded-full shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 transition-all duration-200 flex items-center justify-center"
           >
             <Plus size={20} />
           </button>
         </header>
 
-        <div className="flex flex-wrap gap-2 pb-1">
+        <div className="segmented-control mb-4">
           {['All', 'Priority', 'New', 'Active', 'Clients'].map((filter) => (
             <button 
               key={filter} 
               onClick={() => setLeadFilter(filter)}
-              className={`status-tag min-w-[70px] ${leadFilter === filter ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 scale-105' : 'bg-white text-slate-500 border border-slate-100 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-700'}`}
+              className={`segmented-item ${leadFilter === filter ? 'segmented-item-active' : 'segmented-item-inactive'}`}
             >
+              {leadFilter === filter && (
+                <motion.div 
+                  layoutId="leadFilterTab" 
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
               {filter}
             </button>
           ))}
@@ -872,17 +879,24 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         </div>
 
         <div className="space-y-6">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {(['Open', 'Active', 'Closed'] as OrderCategory[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setOrderTab(tab)}
-                className={`px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${orderTab === tab ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-100'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        <div className="segmented-control mb-6">
+          {(['Open', 'Active', 'Closed'] as OrderCategory[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setOrderTab(tab)}
+              className={`segmented-item ${orderTab === tab ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+            >
+              {orderTab === tab && (
+                <motion.div 
+                  layoutId="orderTabIndicator" 
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              {tab}
+            </button>
+          ))}
+        </div>
 
             <div className="space-y-4">
               {filteredOrders.map(order => renderModernCard(order))}
@@ -1172,12 +1186,26 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                 onClick={() => setClientDetailTab('Activity')}
                 className={`segmented-item ${clientDetailTab === 'Activity' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
               >
+                {clientDetailTab === 'Activity' && (
+                  <motion.div 
+                    layoutId="clientActiveTab" 
+                    className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
                 Activity Log
               </button>
               <button 
                 onClick={() => setClientDetailTab('Chat')}
                 className={`segmented-item ${clientDetailTab === 'Chat' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
               >
+                {clientDetailTab === 'Chat' && (
+                  <motion.div 
+                    layoutId="clientActiveTab" 
+                    className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
                 Admin Chat
               </button>
             </div>
@@ -2217,8 +2245,8 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button type="button" onClick={() => setView('List')} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-200 cursor-pointer">CANCEL</button>
-          <button type="submit" disabled={isLoadingData} className={`flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 flex justify-center ${isLoadingData ? 'opacity-70' : 'hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200 active:scale-95 cursor-pointer'} transition-all duration-200`}>
+          <button type="button" onClick={() => setView('List')} className="flex-1 py-4 bg-white border border-slate-100 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-all duration-200 cursor-pointer shadow-sm">CANCEL</button>
+          <button type="submit" disabled={isLoadingData} className={`flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-100 flex justify-center items-center ${isLoadingData ? 'opacity-70' : 'hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200 active:scale-95 cursor-pointer'} transition-all duration-200`}>
             {isLoadingData ? 'SAVING...' : 'CREATE LEAD'}
           </button>
         </div>
@@ -2293,8 +2321,8 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
         </div>
 
         <div className="flex gap-4 mt-6">
-          <button type="button" onClick={() => setView('Detail')} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all duration-200 cursor-pointer">CANCEL</button>
-          <button type="submit" disabled={isLoadingData} className={`flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 flex justify-center ${isLoadingData ? 'opacity-70' : 'hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200 active:scale-95 cursor-pointer'} transition-all duration-200`}>
+          <button type="button" onClick={() => setView('Detail')} className="flex-1 py-4 bg-white border border-slate-100 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-all duration-200 cursor-pointer shadow-sm">CANCEL</button>
+          <button type="submit" disabled={isLoadingData} className={`flex-1 py-4 bg-emerald-600 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-100 flex justify-center items-center ${isLoadingData ? 'opacity-70' : 'hover:bg-emerald-700 hover:shadow-xl hover:shadow-emerald-200 active:scale-95 cursor-pointer'} transition-all duration-200`}>
             {isLoadingData ? 'SAVING...' : 'SAVE CONTACT'}
           </button>
         </div>

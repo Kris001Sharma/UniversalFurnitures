@@ -373,17 +373,24 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
     if (isAdminView) {
       return (
         <div className="space-y-8">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {['Overview', 'Inventory', 'Production Log', 'Active Manufacturing'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSupervisorTab(tab as any)}
-                className={`px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${supervisorTab === tab ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-100'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+        <div className="segmented-control">
+          {['Overview', 'Inventory', 'Production Log', 'Active Manufacturing'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSupervisorTab(tab as any)}
+              className={`segmented-item ${supervisorTab === tab ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+            >
+              {supervisorTab === tab && (
+                <motion.div 
+                  layoutId="supervisorAdminTab" 
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              {tab}
+            </button>
+          ))}
+        </div>
           <AnimatePresence mode="wait">
             <motion.div
               key={supervisorTab}

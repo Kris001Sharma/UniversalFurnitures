@@ -16,7 +16,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [receivedInputs, setReceivedInputs] = useState<Record<string, string>>({});
-  const [filter, setFilter] = useState<'All' | 'Open' | 'In Progress' | 'Delivered'>('All');
+  const [filter, setFilter] = useState<'All' | 'Open' | 'InProgress' | 'Delivered'>('All');
   const [sortBy, setSortBy] = useState<'Priority' | 'Date'>('Priority');
   const [expandedRouteTask, setExpandedRouteTask] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
@@ -64,11 +64,12 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
              orderId: t.order_id,
              orgId: t.org_id,
              orgName: t.customer_name || 'Walk-in Customer',
-             address: t.address || t.destination,
+             address: t.address,
              status: t.status || 'Open',
              priority: t.priority || 'Normal',
              itemsExpected: t.items_to_deliver || 1,
              itemsReceived: t.items_received,
+             itemsDelivered: t.items_delivered,
              contactName: t.contact_name || 'N/A',
              contactPhone: t.contact_phone || 'N/A',
              dueDate: t.due_date || t.date || new Date().toISOString().split('T')[0],
@@ -90,13 +91,19 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     status: 'Open'
   });
 
-  const handleHandover = async (taskId: string) => {
-    const received = receivedInputs[taskId];
-    if (received) {
+  const handleHandover = async (taskId: string, count?: number) => {
+    const received = count !== undefined ? count.toString() : receivedInputs[taskId];
+    if (received !== undefined) {
+      const receivedCount = parseInt(received, 10);
+      
+      // Update local state IMMEDIATELY for a snappy UI
+      setTasks(currentTasks => currentTasks.map(t => t.id === taskId ? { ...t, itemsReceived: receivedCount } : t));
+
       try {
-        await dataService.updateDeliveryTask(taskId, { items_received: parseInt(received, 10) });
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, itemsReceived: parseInt(received, 10) } : t));
-      } catch (err) { console.error('Failed to update handover:', err); }
+        await dataService.updateDeliveryTask(taskId, { items_received: receivedCount });
+      } catch (err) { 
+        console.error('Failed to update handover on server:', err); 
+      }
     }
   };
 
@@ -125,7 +132,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
               setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLatitude: userLocation.latitude, taggedLongitude: userLocation.longitude } : t));
             } catch(err) {}
           } else {
-            handleGetLocation(); // Try to get IP location
+            fetchIpLocation(); // Try to get IP location
             try {
               await dataService.updateDeliveryTask(taskId, { location_tagged: true });
               setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true } : t));
@@ -151,20 +158,37 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   };
 
   const handleMarkDelivered = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    const deliveredCount = task?.itemsReceived || task?.itemsExpected || 0;
+
     try {
-      await dataService.updateDeliveryTask(taskId, { status: 'Delivered' });
-      setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'Delivered' } : t));
-      // If no more active tasks, switch back to Tasks tab
-      if (tasks.filter(t => t.status === 'In Progress' && t.id !== taskId).length === 0) {
-        setActiveTab('Tasks');
+      await dataService.updateDeliveryTask(taskId, { 
+        status: 'Delivered',
+        items_delivered: deliveredCount
+      });
+    } catch (err) { 
+      console.error('Failed to mark delivered on server:', err); 
+    }
+    // Always update local UI state in a single atomic operation
+    setTasks(currentTasks => {
+      const updated = currentTasks.map(t => t.id === taskId ? { 
+        ...t, 
+        status: 'Delivered',
+        itemsDelivered: deliveredCount 
+      } : t);
+      // Automatically switch tab if no more active tasks remain "InProgress"
+      const stillActive = updated.filter(t => t.status === 'InProgress');
+      if (stillActive.length === 0) {
+        setTimeout(() => setActiveTab('Tasks'), 500);
       }
-    } catch(err) { console.error('Failed to mark delivered:', err); }
+      return updated;
+    });
   };
 
   const handleStartDelivery = async (taskId: string) => {
     try {
-      await dataService.updateDeliveryTask(taskId, { status: 'In Progress' });
-      setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'In Progress' } : t));
+      await dataService.updateDeliveryTask(taskId, { status: 'InProgress' });
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'InProgress' } : t));
       setActiveTab('Active');
     } catch(err) { console.error('Failed to start delivery:', err); }
   };
@@ -262,24 +286,45 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     }
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (newTask.orderId && newTask.orgName) {
-      const task: DeliveryTask = {
+      const taskObj = {
         id: `DT-${Math.floor(Math.random() * 1000)}`,
-        orderId: newTask.orderId || '',
-        orgId: `ORG-${Math.floor(Math.random() * 100)}`,
-        orgName: newTask.orgName || '',
+        order_id: newTask.orderId,
+        customer_name: newTask.orgName,
         address: newTask.address || 'Pending Address',
         status: 'Open',
-        priority: newTask.priority as 'Normal' | 'High' || 'Normal',
-        itemsExpected: newTask.itemsExpected || 1,
-        contactName: newTask.contactName || 'Pending Contact',
-        contactPhone: newTask.contactPhone || 'Pending Phone',
-        dueDate: newTask.dueDate || new Date().toISOString().split('T')[0],
+        priority: newTask.priority || 'Normal',
+        items_to_deliver: newTask.itemsExpected || 1,
+        contact_name: newTask.contactName || 'Pending Contact',
+        contact_phone: newTask.contactPhone || 'Pending Phone',
+        due_date: newTask.dueDate || new Date().toISOString().split('T')[0],
+        agent_id: profile?.id
       };
-      setTasks([...tasks, task]);
-      setView('List');
-      setNewTask({ priority: 'Normal', status: 'Open' });
+
+      try {
+        await dataService.createDeliveryTask(taskObj);
+        
+        const task: DeliveryTask = {
+          id: taskObj.id,
+          orderId: taskObj.order_id || '',
+          orgId: '',
+          orgName: taskObj.customer_name || '',
+          address: taskObj.address || 'Pending Address',
+          status: 'Open',
+          priority: taskObj.priority as 'Normal' | 'High' || 'Normal',
+          itemsExpected: taskObj.items_to_deliver || 1,
+          contactName: taskObj.contact_name || 'Pending Contact',
+          contactPhone: taskObj.contact_phone || 'Pending Phone',
+          dueDate: taskObj.due_date || '',
+        };
+
+        setTasks([...tasks, task]);
+        setView('List');
+        setNewTask({ priority: 'Normal', status: 'Open' });
+      } catch (err) {
+        console.error('Failed to save task to Supabase:', err);
+      }
     }
   };
 
@@ -316,15 +361,15 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
 
     return (
       <div className="space-y-6">
-        <header className="flex justify-between items-center mb-2">
+        <header className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Delivery</h1>
-              <p className="text-sm text-slate-500">Welcome back, {profile?.full_name || 'Agent'}</p>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Delivery</h1>
+              <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Agent Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
+            <button className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-600 shadow-sm hover:bg-slate-50 transition-colors">
               <Bell size={18} />
             </button>
             <div 
@@ -336,17 +381,17 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           </div>
         </header>
 
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-slate-900">Tasks</h2>
           <button 
             onClick={() => setView('Add')}
-            className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-md shadow-orange-200 hover:bg-orange-600 transition-colors"
+            className="w-10 h-10 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all active:scale-95"
           >
-            <Plus size={16} />
+            <Plus size={20} />
           </button>
         </div>
 
-        <div className="relative">
+        <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text" 
@@ -357,15 +402,20 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           />
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {['All', 'Open', 'In Progress', 'Delivered'].map((f) => (
+        <div className="segmented-control mb-8">
+          {['All', 'Open', 'InProgress', 'Delivered'].map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f as any)}
-              className={`status-tag whitespace-nowrap transition-colors ${
-                filter === f ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600'
-              }`}
+              className={`segmented-item ${filter === f ? 'segmented-item-active' : 'segmented-item-inactive'}`}
             >
+              {filter === f && (
+                <motion.div 
+                  layoutId="deliveryFilterTab" 
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
               {f}
             </button>
           ))}
@@ -422,7 +472,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
         </div>
         <span className={`status-tag ${
           task.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' :
-          task.status === 'In Progress' ? 'bg-blue-50 text-blue-600' :
+          task.status === 'InProgress' ? 'bg-blue-50 text-blue-600' :
           'bg-amber-50 text-amber-600'
         }`}>
           {task.status}
@@ -446,7 +496,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           Start Delivery
         </button>
       )}
-      {task.status === 'In Progress' && (
+      {task.status === 'InProgress' && (
         <button 
           onClick={() => setActiveTab('Active')}
           className="w-full py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
@@ -469,53 +519,53 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
         <h2 className="text-2xl font-bold text-slate-900">New Task</h2>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-6">
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Order ID</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Order ID</label>
           <input 
             type="text" 
             value={newTask.orderId || ''}
             onChange={e => setNewTask({...newTask, orderId: e.target.value})}
             placeholder="e.g. ORD-1234"
-            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="input-standard focus:ring-orange-500/20 focus:border-orange-500"
           />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Client Name</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Client Name</label>
           <input 
             type="text" 
             value={newTask.orgName || ''}
             onChange={e => setNewTask({...newTask, orgName: e.target.value})}
             placeholder="Client Organization"
-            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="input-standard focus:ring-orange-500/20 focus:border-orange-500"
           />
         </div>
         <div>
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Delivery Address</label>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Delivery Address</label>
           <input 
             type="text" 
             value={newTask.address || ''}
             onChange={e => setNewTask({...newTask, address: e.target.value})}
             placeholder="Full Address"
-            className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+            className="input-standard focus:ring-orange-500/20 focus:border-orange-500"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Items Expected</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Items Expected</label>
             <input 
               type="number" 
               value={newTask.itemsExpected || ''}
               onChange={e => setNewTask({...newTask, itemsExpected: parseInt(e.target.value, 10)})}
-              className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              className="input-standard focus:ring-orange-500/20 focus:border-orange-500"
             />
           </div>
           <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Priority</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Priority</label>
             <select 
               value={newTask.priority || 'Normal'}
               onChange={e => setNewTask({...newTask, priority: e.target.value as 'Normal' | 'High'})}
-              className="w-full mt-1 bg-slate-50 border border-slate-100 rounded-2xl py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              className="input-standard focus:ring-orange-500/20 focus:border-orange-500"
             >
               <option value="Normal">Normal</option>
               <option value="High">High</option>
@@ -523,19 +573,27 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           </div>
         </div>
         
-        <button 
-          onClick={handleAddTask}
-          disabled={!newTask.orderId || !newTask.orgName}
-          className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-sm shadow-lg shadow-orange-200 hover:bg-orange-600 transition-colors mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Create Task
-        </button>
+        <div className="flex gap-4 pt-2">
+          <button 
+            onClick={() => setView('List')}
+            className="flex-1 py-4 bg-white border border-slate-100 text-slate-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-all duration-200 cursor-pointer shadow-sm"
+          >
+            CANCEL
+          </button>
+          <button 
+            onClick={handleAddTask}
+            disabled={!newTask.orderId || !newTask.orgName}
+            className="flex-1 py-4 bg-orange-500 text-white rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Create Task
+          </button>
+        </div>
       </div>
     </div>
   );
 
   const renderActiveTask = () => {
-    const activeTasks = tasks.filter(t => t.status === 'In Progress');
+    const activeTasks = tasks.filter(t => t.status === 'InProgress');
 
     if (activeTasks.length === 0) {
       return (
@@ -602,32 +660,32 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
               </div>
 
               <div className="p-4 space-y-4">
-                {/* Step Content */}
-                {!activeTask.itemsReceived ? (
-                  <div className="space-y-4">
-                    {/* Address Detail & Directions */}
-                    <button 
-                      onClick={() => {
-                        if (activeTask.latitude && activeTask.longitude) {
-                          window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeTask.latitude},${activeTask.longitude}`, '_blank');
-                        } else {
-                          // Fallback to address search
-                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeTask.address)}`, '_blank');
-                        }
-                      }}
-                      className="w-full text-left bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center gap-3 hover:bg-blue-50 transition-colors"
-                    >
-                      <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
-                        <Navigation size={18} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-0.5">Delivery Address</p>
-                        <p className="text-xs font-bold text-slate-800 truncate">{activeTask.address}</p>
-                        <p className="text-[10px] text-blue-500 font-medium">Tap for directions</p>
-                      </div>
-                      <ChevronRight size={16} className="text-blue-300" />
-                    </button>
+                {/* Address Detail & Directions - Always Visible while active */}
+                <button 
+                  onClick={() => {
+                    if (activeTask.latitude && activeTask.longitude) {
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${activeTask.latitude},${activeTask.longitude}`, '_blank');
+                    } else {
+                      // Fallback to address search
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activeTask.address)}`, '_blank');
+                    }
+                  }}
+                  className="w-full text-left bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-center gap-3 hover:bg-blue-50 transition-colors"
+                >
+                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600 shrink-0">
+                    <Navigation size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-0.5">Delivery Address</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">{activeTask.address}</p>
+                    <p className="text-[10px] text-blue-500 font-medium">Tap for directions</p>
+                  </div>
+                  <ChevronRight size={16} className="text-blue-300" />
+                </button>
 
+                {/* Step Content */}
+                {(activeTask.itemsReceived === undefined || activeTask.itemsReceived === null) ? (
+                  <div className="space-y-4">
                     {/* Warehouse Handover / Item List */}
                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-2 mb-4">
@@ -669,7 +727,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                         })}
                         {(!order || order.items.length === 0) && (
                           <div className="text-center py-2 text-slate-400 text-[10px] italic">
-                            Total Expected: {activeTask.itemsExpected}
+                            Total Expected Items: {activeTask.itemsExpected}
                           </div>
                         )}
                       </div>
@@ -685,14 +743,18 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                       </button>
                       <button 
                         onClick={() => {
-                          const totalReceived = order?.items.reduce((acc, item) => {
-                            const inputKey = `${activeTask.id}_${item.productId}`;
-                            const val = receivedInputs[inputKey] === undefined ? item.quantity : parseInt(receivedInputs[inputKey] || '0', 10);
-                            return acc + val;
-                          }, 0) || activeTask.itemsExpected;
+                          let totalReceived = 0;
+                          if (order && order.items.length > 0) {
+                            totalReceived = order.items.reduce((acc, item) => {
+                              const inputKey = `${activeTask.id}_${item.productId}`;
+                              const val = receivedInputs[inputKey] === undefined ? item.quantity : parseInt(receivedInputs[inputKey] || '0', 10);
+                              return acc + (isNaN(val) ? 0 : val);
+                            }, 0);
+                          } else {
+                            totalReceived = activeTask.itemsExpected || 0;
+                          }
 
-                          setReceivedInputs({...receivedInputs, [activeTask.id]: totalReceived.toString()});
-                          handleHandover(activeTask.id);
+                          handleHandover(activeTask.id, totalReceived);
                         }}
                         className="flex-1 py-3 bg-slate-50 text-emerald-600 rounded-xl font-bold text-xs shadow-[3px_3px_6px_#e2e8f0,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_4px_#cbd5e1,inset_-2px_-2px_4px_#ffffff] transition-all border border-white/50"
                       >
@@ -775,7 +837,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     const nextWeekStr = nextWeekDate.toISOString().split('T')[0];
 
     const openTasks = tasks.filter(t => 
-      (t.status === 'Open' || t.status === 'In Progress') &&
+      (t.status === 'Open' || t.status === 'InProgress') &&
       (t.priority === 'High' || (t.dueDate >= todayStr && t.dueDate <= nextWeekStr))
     );
     
@@ -786,7 +848,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       return a.id.localeCompare(b.id);
     });
 
-    const inProgressTasks = optimizedTasks.filter(t => t.status === 'In Progress');
+    const inProgressTasks = optimizedTasks.filter(t => t.status === 'InProgress');
     
     // If navigating to a specific task, only show route to that task
     const targetTasks = navigatingTaskId 
@@ -927,11 +989,11 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
               {optimizedTasks.map((task, index) => (
                 <div key={task.id} className="relative">
                   <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 border-white ${
-                    task.status === 'In Progress' ? 'bg-blue-500' : (index === 0 ? 'bg-orange-500' : 'bg-slate-300')
+                    task.status === 'InProgress' ? 'bg-blue-500' : (index === 0 ? 'bg-orange-500' : 'bg-slate-300')
                   }`} />
                   <div 
                     className={`bg-white p-4 rounded-2xl border shadow-sm cursor-pointer transition-all ${
-                      task.status === 'In Progress' ? 'border-blue-200' : 'border-slate-100 hover:border-orange-200'
+                      task.status === 'InProgress' ? 'border-blue-200' : 'border-slate-100 hover:border-orange-200'
                     }`}
                     onClick={() => setExpandedRouteTask(expandedRouteTask === task.id ? null : task.id)}
                   >
@@ -949,9 +1011,9 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                           Priority
                         </span>
                       )}
-                      {task.status === 'In Progress' && (
+                      {task.status === 'InProgress' && (
                         <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          In Progress
+                          InProgress
                         </span>
                       )}
                     </div>
@@ -978,7 +1040,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
                                 }}
                                 className="flex-1 py-2 bg-orange-50 text-orange-600 rounded-xl text-xs font-bold hover:bg-orange-100 transition-colors"
                               >
-                                {task.status === 'In Progress' ? 'Resume' : 'Start'} Delivery
+                                {task.status === 'InProgress' ? 'Resume' : 'Start'} Delivery
                               </button>
                             </div>
                           </div>
@@ -1001,13 +1063,20 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   if (isAdminView) {
     return (
       <div className="space-y-8">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <div className="segmented-control">
           {['Tasks', 'Active', 'Route'].map((tab) => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab as any); setView('List'); }}
-              className={`px-6 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activeTab === tab ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-100'}`}
+              className={`segmented-item ${activeTab === tab ? 'segmented-item-active' : 'segmented-item-inactive'}`}
             >
+              {activeTab === tab && (
+                <motion.div 
+                  layoutId="deliveryAdminTab" 
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
               {tab}
             </button>
           ))}
@@ -1051,7 +1120,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 max-w-md mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         {[
           { id: 'Tasks', icon: ClipboardList, label: 'Tasks', action: () => { setActiveTab('Tasks'); setView('List'); } },
-          { id: 'Active', icon: Truck, label: 'Active', action: () => { setActiveTab('Active'); setView('List'); }, badge: tasks.filter(t => t.status === 'In Progress').length },
+          { id: 'Active', icon: Truck, label: 'Active', action: () => { setActiveTab('Active'); setView('List'); }, badge: tasks.filter(t => t.status === 'InProgress').length },
           { id: 'Route', icon: MapPin, label: 'Route', action: () => { setActiveTab('Route'); setView('List'); } },
         ].map((tab) => {
           const isActive = activeTab === tab.id;

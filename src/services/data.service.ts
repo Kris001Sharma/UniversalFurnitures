@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export const dataService = {
   async getClients(agentId?: string) {
-    let query = supabase.from('clients').select('*, client_contacts(*)');
+    let query = supabase.from('clients').select('*, contacts(*)');
     if (agentId) {
       query = query.eq('sales_agent_id', agentId);
     }
@@ -86,7 +86,7 @@ export const dataService = {
   },
 
   async getClientContacts(clientId: string) {
-    const { data, error } = await supabase.from('client_contacts').select('*').eq('client_id', clientId);
+    const { data, error } = await supabase.from('contacts').select('*').eq('client_id', clientId);
     if (error) throw error;
     return data;
   },
@@ -98,7 +98,7 @@ export const dataService = {
   },
 
   async createClientContact(contactData: any) {
-    const { data, error } = await supabase.from('client_contacts').insert([contactData]).select().single();
+    const { data, error } = await supabase.from('contacts').insert([contactData]).select().single();
     if (error) throw error;
     return data;
   },
@@ -126,6 +126,16 @@ export const dataService = {
       .from('delivery_tasks')
       .update(updates)
       .eq('id', taskId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createDeliveryTask(taskData: any) {
+    const { data, error } = await supabase
+      .from('delivery_tasks')
+      .insert([taskData])
       .select()
       .single();
     if (error) throw error;

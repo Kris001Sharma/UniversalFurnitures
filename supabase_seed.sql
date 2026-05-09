@@ -80,8 +80,8 @@ INSERT INTO public.production_lines (id, name, status, efficiency, output, targe
 ('L2', 'Assembly Line A', 'Running', 88, 380, 400, 'Jane Smith');
 
 -- 8. Insert Delivery Tasks
-INSERT INTO public.delivery_tasks (id, order_id, client_name, address, status, priority, agent_id) VALUES
-('DEL-001', 'ORD-2024-002', 'TechCorp Campus', '456 Innovation Blvd, Tech Park', 'Open', 'High', '7e117d7a-640d-4beb-bd44-c43838f17759');
+INSERT INTO public.delivery_tasks (id, order_id, customer_name, address, status, priority, agent_id, org_id) VALUES
+('DEL-001', 'ORD-2024-002', 'TechCorp Campus', '456 Innovation Blvd, Tech Park', 'Open', 'High', '7e117d7a-640d-4beb-bd44-c43838f17759', 'f6b92a54-7128-48da-ab7b-d2c67d3e2ab1');
 
 -- 9. Insert Transactions
 INSERT INTO public.transactions (id, order_id, date, description, amount, type, status) VALUES

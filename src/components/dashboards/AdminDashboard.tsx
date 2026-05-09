@@ -28,10 +28,18 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                 <div className="segmented-control mb-4">
-                  <button onClick={() => setAgentDetailTab('active')} className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('active')} 
+                    className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'active' && <motion.div layoutId="agentClientsTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Active Clients
                   </button>
-                  <button onClick={() => setAgentDetailTab('past')} className={`segmented-item ${agentDetailTab === 'past' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('past')} 
+                    className={`segmented-item ${agentDetailTab === 'past' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'past' && <motion.div layoutId="agentClientsTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Past Clients
                   </button>
                 </div>
@@ -59,10 +67,18 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                 <div className="segmented-control mb-4">
-                  <button onClick={() => setAgentDetailTab('active')} className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('active')} 
+                    className={`segmented-item ${agentDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'active' && <motion.div layoutId="agentLeadsTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Active Leads
                   </button>
-                  <button onClick={() => setAgentDetailTab('new')} className={`segmented-item ${agentDetailTab === 'new' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('new')} 
+                    className={`segmented-item ${agentDetailTab === 'new' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'new' && <motion.div layoutId="agentLeadsTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     New Leads
                   </button>
                 </div>
@@ -89,10 +105,18 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             return (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
                 <div className="segmented-control mb-4">
-                  <button onClick={() => setAgentDetailTab('today')} className={`segmented-item ${agentDetailTab === 'today' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('today')} 
+                    className={`segmented-item ${agentDetailTab === 'today' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'today' && <motion.div layoutId="agentScheduleTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Priorities Today
                   </button>
-                  <button onClick={() => setAgentDetailTab('week')} className={`segmented-item ${agentDetailTab === 'week' ? 'segmented-item-active' : 'segmented-item-inactive'}`}>
+                  <button 
+                    onClick={() => setAgentDetailTab('week')} 
+                    className={`segmented-item ${agentDetailTab === 'week' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
+                  >
+                    {agentDetailTab === 'week' && <motion.div layoutId="agentScheduleTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Weekly Calendar
                   </button>
                 </div>
@@ -665,18 +689,21 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     onClick={() => setClientDetailTab('active')} 
                     className={`segmented-item ${clientDetailTab === 'active' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
                   >
+                    {clientDetailTab === 'active' && <motion.div layoutId="adminClientOrdersTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Active Orders
                   </button>
                   <button 
                     onClick={() => setClientDetailTab('draft')} 
                     className={`segmented-item ${clientDetailTab === 'draft' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
                   >
+                    {clientDetailTab === 'draft' && <motion.div layoutId="adminClientOrdersTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Drafted Orders
                   </button>
                   <button 
                     onClick={() => setClientDetailTab('past')} 
                     className={`segmented-item ${clientDetailTab === 'past' ? 'segmented-item-active' : 'segmented-item-inactive'}`}
                   >
+                    {clientDetailTab === 'past' && <motion.div layoutId="adminClientOrdersTab" className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                     Past Orders
                   </button>
                 </div>
