@@ -239,8 +239,6 @@ CREATE TABLE IF NOT EXISTS public.delivery_tasks (
     contact_name TEXT,
     contact_phone TEXT,
     location_tagged BOOLEAN DEFAULT FALSE,
-    tagged_latitude DOUBLE PRECISION,
-    tagged_longitude DOUBLE PRECISION,
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
     proof_image_url TEXT,
@@ -251,17 +249,18 @@ CREATE TABLE IF NOT EXISTS public.delivery_tasks (
     completed_at TIMESTAMPTZ
 );
 
--- Idempotent column additions for Delivery Tasks
+-- Idempotent column management for Delivery Tasks
 DO $$ 
 BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='proof_image_url') THEN
-        ALTER TABLE public.delivery_tasks ADD COLUMN proof_image_url TEXT;
-    END IF;
+    -- Ensure standard location fields exist
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='latitude') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN latitude DOUBLE PRECISION;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='longitude') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN longitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='proof_image_url') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN proof_image_url TEXT;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='started_at') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN started_at TIMESTAMPTZ;
@@ -272,11 +271,22 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='location_tagged') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN location_tagged BOOLEAN DEFAULT FALSE;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_latitude') THEN
-        ALTER TABLE public.delivery_tasks ADD COLUMN tagged_latitude DOUBLE PRECISION;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='items_received') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN items_received INTEGER DEFAULT NULL;
     END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_longitude') THEN
-        ALTER TABLE public.delivery_tasks ADD COLUMN tagged_longitude DOUBLE PRECISION;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='items_delivered') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN items_delivered INTEGER DEFAULT NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='items_to_deliver') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN items_to_deliver INTEGER DEFAULT 1;
+    END IF;
+
+    -- REMOVE REDUNDANT "TAGGED" FIELDS IF THEY EXIST
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_latitude') THEN
+        ALTER TABLE public.delivery_tasks DROP COLUMN tagged_latitude;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_longitude') THEN
+        ALTER TABLE public.delivery_tasks DROP COLUMN tagged_longitude;
     END IF;
 END $$;
 

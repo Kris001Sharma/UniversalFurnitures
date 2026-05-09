@@ -32,6 +32,6 @@ export interface ProductionRecord { id: string; itemName: string; producedDate: 
 export interface OrderUnitProgress { unitId: string; status: 'Pending' | 'In Progress' | 'Completed'; stage: string; }
 export interface OrderProgress { orderId: string; customer: string; totalUnits: number; completedUnits: number; items: OrderUnitProgress[]; }
 export interface Transaction { id: string; date: string; description: string; amount: number; type: 'Income' | 'Expense'; status: 'Completed' | 'Pending'; }
-export interface DeliveryTask { id: string; orderId: string; orgId: string; orgName: string; address: string; status: 'Open' | 'InProgress' | 'Delivered'; priority: 'Normal' | 'High'; itemsExpected: number; itemsReceived?: number; itemsDelivered?: number; contactName: string; contactPhone: string; dueDate: string; locationTagged?: boolean; taggedLatitude?: number; taggedLongitude?: number; proofImage?: string; logs?: string; latitude?: number; longitude?: number; }
+export interface DeliveryTask { id: string; orderId: string; orgId: string; orgName: string; address: string; status: 'Open' | 'InProgress' | 'Delivered'; priority: 'Normal' | 'High'; itemsExpected: number; itemsReceived?: number; itemsDelivered?: number; contactName: string; contactPhone: string; dueDate: string; locationTagged?: boolean; proofImage?: string; logs?: string; latitude?: number; longitude?: number; }
 
 export type UserRole = 'sales' | 'admin' | 'supervisor' | 'accountant' | 'delivery';
