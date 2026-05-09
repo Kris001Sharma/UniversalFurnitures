@@ -23,7 +23,7 @@ jobs:
 
       - name: Execute Schema Script
         run: |
-          supabase db execute --path supabase_schema.sql --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+          supabase db query --file supabase_schema.sql --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
