@@ -269,6 +269,15 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='completed_at') THEN
         ALTER TABLE public.delivery_tasks ADD COLUMN completed_at TIMESTAMPTZ;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='location_tagged') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN location_tagged BOOLEAN DEFAULT FALSE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_latitude') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN tagged_latitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='tagged_longitude') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN tagged_longitude DOUBLE PRECISION;
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS public.delivery_task_items (
