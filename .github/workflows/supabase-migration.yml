@@ -1,0 +1,32 @@
+name: Supabase Schema Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase_schema.sql'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  deploy:
+    name: Sync Database Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Execute Schema Script
+        run: |
+          supabase db execute --path supabase_schema.sql --project-ref "${{ secrets.SUPABASE_PROJECT_ID }}" --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Success Notification
+        if: success()
+        run: echo "Schema synchronized successfully."

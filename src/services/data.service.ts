@@ -115,8 +115,12 @@ export const dataService = {
     return data;
   },
 
-  async getDeliveryTasks() {
-    const { data, error } = await supabase.from('delivery_tasks').select('*');
+  async getDeliveryTasks(agentId?: string) {
+    let query = supabase.from('delivery_tasks').select('*');
+    if (agentId) {
+      query = query.eq('agent_id', agentId);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },

@@ -7,6 +7,7 @@ import ProfileModal from '../ProfileModal';
 import { DataSync } from '../admin/DataSync';
 import { dataService } from '../../services/data.service';
 import { uploadToCloudinary } from '../../utils/cloudinary';
+import { getGeolocation, handleGeolocationError } from '../../utils/location';
 import { Order, Transaction, Product, CartItem, ProductionLine, ProductionRecord, InventoryItem, DeliveryTask, Organization, Contact, OrderStatus, OrderCategory, ClientStatus } from '../../types';
 import { StatusBadge } from '../StatusBadge';
 import { OrderTracker } from '../OrderTracker';
@@ -2368,16 +2369,16 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
       }
     };
 
-    const handleTagInteractionLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          setInteractionLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        }, (err) => {
-          alert('Failed to get location. Please enable location services.');
+    const handleTagInteractionLocation = async () => {
+      try {
+        const location = await getGeolocation();
+        setInteractionLocation({
+          latitude: location.latitude,
+          longitude: location.longitude
         });
+      } catch (error: any) {
+        const msg = handleGeolocationError(error);
+        alert(msg);
       }
     };
 

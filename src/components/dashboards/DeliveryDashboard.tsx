@@ -6,6 +6,7 @@ import { LogIn, X, Bell, UserCircle, MessageSquare, ClipboardList, AlertCircle, 
 import { DeliveryTask, Order, Product } from '../../types';
 import { dataService } from '../../services/data.service';
 import { uploadToCloudinary } from '../../utils/cloudinary';
+import { getGeolocation, handleGeolocationError } from '../../utils/location';
 const DeliveryMap = React.lazy(() => import('../../DeliveryMap'));
 
 const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
@@ -110,44 +111,30 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
   };
 
   const handleTagLocation = async (taskId: string) => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const loc = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-          setUserLocation(loc);
-          localStorage.setItem('deliveryUserLocation', JSON.stringify(loc));
-          try {
-            await dataService.updateDeliveryTask(taskId, { 
-              location_tagged: true, 
-              latitude: loc.latitude, 
-              longitude: loc.longitude 
-            });
-            setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLatitude: loc.latitude, taggedLongitude: loc.longitude } : t));
-          } catch(err) { console.error('Failed to update location:', err); }
-        },
-        async (error) => {
-          console.error("Geolocation Error:", error.message);
-          // Fallback to cached or IP location if GPS fails
-          if (userLocation) {
-            try {
-              await dataService.updateDeliveryTask(taskId, { location_tagged: true, latitude: userLocation.latitude, longitude: userLocation.longitude });
-              setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true, taggedLatitude: userLocation.latitude, taggedLongitude: userLocation.longitude } : t));
-            } catch(err) {}
-          } else {
-            fetchIpLocation(); // Try to get IP location
-            try {
-              await dataService.updateDeliveryTask(taskId, { location_tagged: true });
-              setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true } : t));
-            } catch(err) {}
-          }
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      try {
-        await dataService.updateDeliveryTask(taskId, { location_tagged: true });
-        setTasks(tasks.map(t => t.id === taskId ? { ...t, locationTagged: true } : t));
-      } catch(err) {}
+    try {
+      const location = await getGeolocation();
+      
+      setUserLocation({ latitude: location.latitude, longitude: location.longitude });
+      localStorage.setItem('deliveryUserLocation', JSON.stringify({ latitude: location.latitude, longitude: location.longitude }));
+      
+      await dataService.updateDeliveryTask(taskId, { 
+        location_tagged: true, 
+        latitude: location.latitude, 
+        longitude: location.longitude 
+      });
+
+      setTasks(prevTasks => prevTasks.map(t => t.id === taskId ? { 
+        ...t, 
+        locationTagged: true, 
+        latitude: location.latitude,
+        longitude: location.longitude
+      } : t));
+      
+      alert('Location tagged successfully!');
+    } catch (error: any) {
+      const msg = handleGeolocationError(error);
+      alert(msg);
+      console.error('Geolocation Error:', error);
     }
   };
 
@@ -180,16 +167,12 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       let finalLat = task.latitude;
       let finalLng = task.longitude;
 
-      if (navigator.geolocation) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-          });
-          finalLat = position.coords.latitude;
-          finalLng = position.coords.longitude;
-        } catch (e) {
-          console.warn("Could not get fresh location for delivery completion, using tagged location.");
-        }
+      try {
+        const location = await getGeolocation();
+        finalLat = location.latitude;
+        finalLng = location.longitude;
+      } catch (e) {
+        console.warn("Could not get fresh location for delivery completion, using tagged location.");
       }
 
       await dataService.updateDeliveryTask(taskId, { 

@@ -86,10 +86,20 @@ CREATE TABLE IF NOT EXISTS public.clients (
     sales_agent_id UUID REFERENCES public.user_profiles(id)
 );
 
-DO $$
-BEGIN
+-- Idempotent column additions for Clients
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='latitude') THEN
+        ALTER TABLE public.clients ADD COLUMN latitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='longitude') THEN
+        ALTER TABLE public.clients ADD COLUMN longitude DOUBLE PRECISION;
+    END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='sales_agent_id') THEN
         ALTER TABLE public.clients ADD COLUMN sales_agent_id UUID REFERENCES public.user_profiles(id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='next_follow_up') THEN
+        ALTER TABLE public.clients ADD COLUMN next_follow_up DATE;
     END IF;
 END $$;
 
@@ -240,6 +250,26 @@ CREATE TABLE IF NOT EXISTS public.delivery_tasks (
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ
 );
+
+-- Idempotent column additions for Delivery Tasks
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='proof_image_url') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN proof_image_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='latitude') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN latitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='longitude') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN longitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='started_at') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN started_at TIMESTAMPTZ;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='delivery_tasks' AND column_name='completed_at') THEN
+        ALTER TABLE public.delivery_tasks ADD COLUMN completed_at TIMESTAMPTZ;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.delivery_task_items (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

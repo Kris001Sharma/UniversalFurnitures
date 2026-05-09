@@ -32,7 +32,7 @@
 -- Seed auth.users first to satisfy foreign key constraints
 
 
-INSERT INTO public.user_profiles (id, full_name, email, role, status) VALUES
+INSERT INTO public.user_profiles (id, name, email, role, status) VALUES
 ('ce85dea7-c3f7-4c52-8b3a-780a152ec667', 'John Sales', 'user1.sales@erp.com', 'SALES', 'Online'),
 ('6d52390f-cabd-402e-916f-7b60543d3196', 'Sarah Miller', 'user1.sales@erp.com', 'SALES', 'In Meeting'),
 ('7e117d7a-640d-4beb-bd44-c43838f17759', 'James Wilson', 'user1.driver@erp.com', 'DELIVERY', 'Online'),
