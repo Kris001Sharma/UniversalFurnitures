@@ -471,7 +471,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
               </button>
               <div>
                 <h2 className="text-xl font-bold text-slate-900">{supervisorTab}</h2>
-                <p className="text-xs text-slate-500">Welcome back, {profile?.full_name || 'Agent'}</p>
+                <p className="text-xs text-slate-500">Welcome back, {profile?.name || 'Agent'}</p>
               </div>
             </div>
 
@@ -483,7 +483,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                 </button>
                 <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                   <div className="text-right hidden sm:block">
-                    <div className="text-xs font-bold text-slate-900">{profile?.full_name || 'Agent'}</div>
+                    <div className="text-xs font-bold text-slate-900">{profile?.name || 'Agent'}</div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.role || 'Line Supervisor'}</div>
                   </div>
                   <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100">

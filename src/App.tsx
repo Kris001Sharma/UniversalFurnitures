@@ -201,8 +201,11 @@ const OrderTracker = ({ status }: { status: OrderStatus }) => {
 // --- Main App ---
 
 
+import { useTracking } from './hooks/useTracking';
+
 export default function App() {
   const { user, profile, isLoading } = useAuth();
+  useTracking();
   const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>(appConfig.devMode ? 'selection' : 'login');
   const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null>(null);
   const [showPassword, setShowPassword] = useState(false);

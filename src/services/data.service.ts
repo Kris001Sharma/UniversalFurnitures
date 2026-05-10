@@ -236,5 +236,89 @@ export const dataService = {
 
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * UNIFIED ACTIVITY LOGGING
+   */
+  async logActivity(activity: any) {
+    const { data, error } = await supabase
+      .from('activity_logs')
+      .insert([activity])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getActivityLogs(userId?: string, limit = 50) {
+    let query = supabase
+      .from('activity_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * REAL-TIME TRACKING & STATUS
+   */
+  async updateHeartbeat(trackingData: { 
+    user_id: string; 
+    latitude: number; 
+    longitude: number; 
+    battery_level?: number;
+    is_charging?: boolean;
+    speed?: number;
+    heading?: number;
+  }) {
+    // 1. Update live tracking table (UPSERT)
+    const { error: trackingError } = await supabase
+      .from('user_tracking')
+      .upsert({
+        ...trackingData,
+        updated_at: new Date().toISOString()
+      });
+    
+    if (trackingError) throw trackingError;
+
+    // 2. Snapshot to user profile for basic last-known info
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .update({
+        last_known_latitude: trackingData.latitude,
+        last_known_longitude: trackingData.longitude,
+        last_active_at: new Date().toISOString()
+      })
+      .eq('id', trackingData.user_id);
+
+    if (profileError) throw profileError;
+  },
+
+  async setDutyStatus(userId: string, status: 'Off Duty' | 'On Duty' | 'On Break') {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update({ duty_status: status, last_active_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getLiveAgents() {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*, user_tracking(*)')
+      .neq('duty_status', 'Off Duty');
+    if (error) throw error;
+    return data;
   }
 };

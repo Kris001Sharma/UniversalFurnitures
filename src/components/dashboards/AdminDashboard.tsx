@@ -1762,7 +1762,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 </button>
                 <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                   <div className="text-right hidden sm:block">
-                    <div className="text-xs font-bold text-slate-900">{profile?.full_name || 'Admin User'}</div>
+                    <div className="text-xs font-bold text-slate-900">{profile?.name || 'Admin User'}</div>
                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.role || 'Super Admin'}</div>
                   </div>
                   <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-rose-100">

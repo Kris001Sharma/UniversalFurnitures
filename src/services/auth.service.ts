@@ -81,7 +81,7 @@ export const authService = {
       password,
       options: {
         data: {
-          full_name: fullName,
+          name: fullName,
           role: role,
         }
       }

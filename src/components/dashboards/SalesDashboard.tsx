@@ -13,6 +13,9 @@ import { StatusBadge } from '../StatusBadge';
 import { OrderTracker } from '../OrderTracker';
 import MapComponent from '../MapComponent';
 
+import { ActivityFeed } from '../unified/ActivityFeed';
+import { DutyStatusBar } from '../unified/DutyStatusBar';
+
 const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const [selectedLeadContact, setSelectedLeadContact] = useState<Contact | null>(null);
   const [showOrgMenu, setShowOrgMenu] = useState(false);
@@ -144,10 +147,11 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
 
   const renderHome = () => (
     <div className="space-y-6">
-      <header className="flex justify-between items-center">
+      {!isAdminView && <DutyStatusBar />}
+      <header className="flex justify-between items-center px-4 pt-2">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500">Welcome back, {profile?.full_name || 'Agent'}</p>
+          <p className="text-sm text-slate-500">Welcome back, {profile?.name || 'Agent'}</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
@@ -263,19 +267,7 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
       {/* Recent Activity Stream */}
       <section>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Recent Activity</h2>
-        <div className="space-y-4 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
-          {[1, 2].map(i => (
-            <div key={i} className="flex gap-4 relative">
-              <div className="w-8 h-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center z-10">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-              </div>
-              <div className="flex-1 pb-4 border-b border-slate-50">
-                <p className="text-sm font-medium text-slate-800">Logged visit at <span className="font-bold">City General Hospital</span></p>
-                <p className="text-[10px] text-slate-400 font-mono uppercase">2 HOURS AGO</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ActivityFeed userId={isAdminView ? undefined : profile?.id} limit={5} />
       </section>
     </div>
   );

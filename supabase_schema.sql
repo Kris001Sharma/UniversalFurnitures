@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     status TEXT DEFAULT 'Active',
     last_login TIMESTAMPTZ DEFAULT NOW(),
     reports_to UUID REFERENCES public.user_profiles(id),
+    duty_status TEXT DEFAULT 'Off Duty',
+    last_known_latitude DOUBLE PRECISION,
+    last_known_longitude DOUBLE PRECISION,
+    last_active_at TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -44,7 +48,39 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='status') THEN
         ALTER TABLE public.user_profiles ADD COLUMN status TEXT DEFAULT 'Active';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='duty_status') THEN
+        ALTER TABLE public.user_profiles ADD COLUMN duty_status TEXT DEFAULT 'Off Duty';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='last_known_latitude') THEN
+        ALTER TABLE public.user_profiles ADD COLUMN last_known_latitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='last_known_longitude') THEN
+        ALTER TABLE public.user_profiles ADD COLUMN last_known_longitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='last_active_at') THEN
+        ALTER TABLE public.user_profiles ADD COLUMN last_active_at TIMESTAMPTZ DEFAULT NOW();
+    END IF;
+    
+    -- Cleanup Ghost Fields
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='user_profiles' AND column_name='full_name') THEN
+        ALTER TABLE public.user_profiles DROP COLUMN full_name;
+    END IF;
 END $$;
+
+-- High-performance Live Tracking (Heartbeats)
+CREATE TABLE IF NOT EXISTS public.user_tracking (
+    user_id UUID PRIMARY KEY REFERENCES public.user_profiles(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    heading DOUBLE PRECISION,
+    speed DOUBLE PRECISION,
+    battery_level INTEGER,
+    is_charging BOOLEAN,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.user_tracking ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN CREATE POLICY "Authenticated users can use user_tracking" ON public.user_tracking FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 CREATE TABLE IF NOT EXISTS public.sales_agent_metrics (
     agent_id UUID PRIMARY KEY REFERENCES public.user_profiles(id) ON DELETE CASCADE,
@@ -367,9 +403,33 @@ CREATE TABLE IF NOT EXISTS public.activity_logs (
     action TEXT NOT NULL,
     entity_type TEXT NOT NULL,
     entity_id TEXT,
+    status TEXT DEFAULT 'Completed',
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     metadata JSONB,
+    completed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Idempotent enhancements and indexes
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='activity_logs' AND column_name='status') THEN
+        ALTER TABLE public.activity_logs ADD COLUMN status TEXT DEFAULT 'Completed';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='activity_logs' AND column_name='latitude') THEN
+        ALTER TABLE public.activity_logs ADD COLUMN latitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='activity_logs' AND column_name='longitude') THEN
+        ALTER TABLE public.activity_logs ADD COLUMN longitude DOUBLE PRECISION;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='activity_logs' AND column_name='completed_at') THEN
+        ALTER TABLE public.activity_logs ADD COLUMN completed_at TIMESTAMPTZ;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_user_time ON public.activity_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_logs_recent ON public.activity_logs(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.file_uploads (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -551,5 +611,5 @@ DO $$ BEGIN CREATE POLICY "Authenticated users can use transactions" ON public.t
 DO $$ BEGIN CREATE POLICY "Authenticated users can use invoices" ON public.invoices FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE POLICY "Authenticated users can use activity_logs" ON public.activity_logs FOR ALL USING (auth.role() = 'authenticated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
--- Notify PostgREST to reload its schema cache
+-- Notify PostgREST to reload its schema cache (Triggered: 2026-05-10 04:45)
 NOTIFY pgrst, 'reload schema';

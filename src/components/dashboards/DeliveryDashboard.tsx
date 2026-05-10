@@ -7,11 +7,13 @@ import { DeliveryTask, Order, Product } from '../../types';
 import { dataService } from '../../services/data.service';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 import { getGeolocation, handleGeolocationError } from '../../utils/location';
+import { ActivityFeed } from '../unified/ActivityFeed';
+import { DutyStatusBar } from '../unified/DutyStatusBar';
 const DeliveryMap = React.lazy(() => import('../../DeliveryMap'));
 
 const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'Tasks' | 'Active' | 'Route'>('Tasks');
+  const [activeTab, setActiveTab] = useState<'Tasks' | 'Activity' | 'Active' | 'Route'>('Tasks');
   const [view, setView] = useState<'List' | 'Add' | 'Detail'>('List');
   const [tasks, setTasks] = useState<DeliveryTask[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -1099,7 +1101,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
     return (
       <div className="space-y-8">
         <div className="segmented-control">
-          {['Tasks', 'Active', 'Route'].map((tab) => (
+          {['Tasks', 'Activity', 'Active', 'Route'].map((tab) => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab as any); setView('List'); }}
@@ -1125,6 +1127,15 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'Tasks' && (view === 'List' ? renderTasksList() : renderAddTask())}
+            {activeTab === 'Activity' && (
+              <div className="space-y-6">
+                <header className="mb-6">
+                  <h1 className="text-xl font-bold text-slate-900 tracking-tight">Activity Log</h1>
+                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Historical Audit Trail</p>
+                </header>
+                <ActivityFeed userId={undefined} />
+              </div>
+            )}
             {activeTab === 'Active' && renderActiveTask()}
             {activeTab === 'Route' && renderRouteOptimization()}
           </motion.div>
@@ -1135,6 +1146,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
+      {!isAdminView && <DutyStatusBar />}
       <main className="max-w-md mx-auto p-6">
         <AnimatePresence mode="wait">
           <motion.div
@@ -1145,6 +1157,15 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'Tasks' && (view === 'List' ? renderTasksList() : renderAddTask())}
+            {activeTab === 'Activity' && (
+              <div className="space-y-6">
+                 <header className="mb-6">
+                  <h1 className="text-xl font-bold text-slate-900 tracking-tight">My Activity</h1>
+                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Personal Log</p>
+                </header>
+                <ActivityFeed userId={profile?.id} />
+              </div>
+            )}
             {activeTab === 'Active' && renderActiveTask()}
             {activeTab === 'Route' && renderRouteOptimization()}
           </motion.div>
@@ -1155,6 +1176,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 max-w-md mx-auto shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         {[
           { id: 'Tasks', icon: ClipboardList, label: 'Tasks', action: () => { setActiveTab('Tasks'); setView('List'); } },
+          { id: 'Activity', icon: Clock, label: 'Activity', action: () => { setActiveTab('Activity'); setView('List'); } },
           { id: 'Active', icon: Truck, label: 'Active', action: () => { setActiveTab('Active'); setView('List'); }, badge: tasks.filter(t => t.status === 'InProgress').length },
           { id: 'Route', icon: MapPin, label: 'Route', action: () => { setActiveTab('Route'); setView('List'); } },
         ].map((tab) => {
