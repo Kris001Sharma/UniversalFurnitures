@@ -51,9 +51,9 @@ export const LogisticsDashboard = () => {
   const selectedAgent = agents.find(a => a.id === selectedAgentId);
 
   return (
-    <div className="h-[calc(100vh-180px)] flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-20 lg:pb-0 h-auto lg:h-[calc(100vh-200px)]">
       {/* Top Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
         {[
           { label: 'Live Agents', value: agents.length, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'On Field', value: agents.filter(a => a.duty_status === 'On Duty').length, icon: MapPin, color: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -72,9 +72,9 @@ export const LogisticsDashboard = () => {
         ))}
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
         {/* Main Map Area */}
-        <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden relative">
+        <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden relative min-h-[400px]">
           <AdminLogisticsMap 
             agents={agents} 
             onAgentClick={(id) => setSelectedAgentId(id)}
@@ -86,10 +86,10 @@ export const LogisticsDashboard = () => {
         <AnimatePresence>
           {selectedAgentId && selectedAgent ? (
             <motion.div
-              initial={{ x: 400, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 400, opacity: 0 }}
-              className="w-96 bg-white border border-slate-100 rounded-3xl shadow-xl flex flex-col overflow-hidden"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="w-full lg:w-96 bg-white border border-slate-100 rounded-3xl shadow-xl flex flex-col overflow-hidden max-h-[600px] lg:max-h-none"
             >
               {/* Panel Header */}
               <div className="p-6 border-b border-slate-50 relative">

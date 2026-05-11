@@ -18,7 +18,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
   const SupervisorDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const { profile } = useAuth();
   const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData } = useAppState();
-    const renderInventory = () => (
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const renderInventory = () => (
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -373,7 +375,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
     if (isAdminView) {
       return (
         <div className="space-y-8">
-        <div className="segmented-control">
+        <div className="segmented-control overflow-x-auto no-scrollbar justify-start">
           {['Overview', 'Inventory', 'Production Log', 'Active Manufacturing'].map((tab) => (
             <button
               key={tab}
@@ -411,19 +413,37 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
 
     return (
       <div className="flex min-h-screen bg-slate-50 font-sans">
+        {/* Mobile Menu Backdrop */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden"
+            />
+          )}
+        </AnimatePresence>
+
         {/* Sidebar */}
-        <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 p-8 fixed h-full z-50">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
-              <ShieldCheck size={24} />
+        <aside className={`fixed inset-y-0 left-0 flex flex-col w-72 bg-white border-r border-slate-100 p-4 sm:p-8 h-full z-[70] transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-100">
+                <ShieldCheck size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 leading-none">Supervisor</h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operations Control</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-none">Supervisor</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Operations Control</p>
-            </div>
+            <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden p-2 text-slate-400 hover:text-slate-600">
+              <X size={20} />
+            </button>
           </div>
 
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
               { id: 'Inventory', icon: Package, label: 'Inventory Management' },
@@ -438,7 +458,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
               return (
                 <button 
                   key={item.id}
-                  onClick={() => setSupervisorTab(item.id as any)}
+                  onClick={() => {
+                    setSupervisorTab(item.id as any);
+                    setIsMobileMenuOpen(false);
+                  }}
                   className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                     isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
@@ -464,37 +487,37 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
 
         {/* Main Content */}
         <div className="flex-1 lg:ml-72">
-          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <button className="lg:hidden p-2 text-slate-500">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors">
                 <LayoutGrid size={24} />
               </button>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">{supervisorTab}</h2>
-                <p className="text-xs text-slate-500">Welcome back, {profile?.name || 'Agent'}</p>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900">{supervisorTab}</h2>
+                <p className="text-[10px] sm:text-xs text-slate-500">Welcome, {profile?.name?.split(' ')[0] || 'Agent'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4">
-                <button className="relative w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
-                  <AlertCircle size={20} />
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+            <div className="flex items-center gap-2 sm:gap-6">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button className="relative w-9 h-9 sm:w-10 sm:h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                  <AlertCircle size={18} />
+                  <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full border-2 border-white"></span>
                 </button>
-                <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-xs font-bold text-slate-900">{profile?.name || 'Agent'}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.role || 'Line Supervisor'}</div>
+                <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-slate-100">
+                  <div className="text-right hidden xs:block sm:block">
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-900 truncate max-w-[60px] sm:max-w-none">{profile?.name?.split(' ')[0] || 'Agent'}</div>
+                    <div className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">{profile?.role || 'Supervisor'}</div>
                   </div>
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-100">
-                    SM
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg shadow-indigo-100">
+                    {(profile?.name || 'SM').charAt(0)}
                   </div>
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="p-8 max-w-7xl mx-auto">
+          <main className="p-4 sm:p-8 max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={supervisorTab}

@@ -19,6 +19,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
   const AdminDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const { profile } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
     const renderAdminSales = () => {
       if (selectedAdminSalesAgent && salesAgents.length > 0) {
@@ -1658,16 +1659,37 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
     return (
       <div className="flex min-h-screen bg-slate-50 font-sans">
+        {/* Mobile Backdrop */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden"
+            />
+          )}
+        </AnimatePresence>
+
         {/* Sidebar */}
-        <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 p-8 fixed h-full z-50">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
-              <Shield size={24} />
+        <aside className={`fixed inset-y-0 left-0 flex flex-col w-72 bg-white border-r border-slate-100 p-4 sm:p-8 h-full z-[70] transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
+                <Shield size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 leading-none">Admin</h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Enterprise v2.4</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-none">Admin</h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Enterprise v2.4</p>
-            </div>
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="lg:hidden p-2 hover:bg-slate-50 rounded-xl text-slate-400"
+            >
+              <X size={20} />
+            </button>
           </div>
 
           <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2">
@@ -1686,7 +1708,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               return (
                 <button 
                   key={item.id}
-                  onClick={() => setAdminTab(item.id as any)}
+                  onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
                   className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
@@ -1711,7 +1733,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               return (
                 <button 
                   key={item.id}
-                  onClick={() => setAdminTab(item.id as any)}
+                  onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
                   className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
@@ -1736,46 +1758,49 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         </aside>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-72">
-          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+        <div className="flex-1 lg:ml-72 min-w-0">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <button className="lg:hidden p-2 text-slate-500">
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-colors"
+              >
                 <LayoutGrid size={24} />
               </button>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">{adminTab}</h2>
-                <p className="text-xs text-slate-500">Real-time system insights</p>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 truncate max-w-[150px] sm:max-w-none">{adminTab}</h2>
+                <p className="hidden sm:block text-xs text-slate-500">Real-time system insights</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
-              <div className="hidden md:flex relative group">
+            <div className="flex items-center gap-2 sm:gap-6">
+              <div className="flex relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Search analytics..." 
-                  className="bg-slate-50 border border-slate-100 rounded-xl py-2.5 pl-12 pr-4 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
+                  placeholder="Search..." 
+                  className="bg-slate-50 border border-slate-100 rounded-xl py-2 sm:py-2.5 pl-10 sm:pl-12 pr-4 text-xs sm:text-sm w-32 sm:w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all"
                 />
               </div>
-              <div className="flex items-center gap-4">
-                <button className="relative w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
-                  <AlertCircle size={20} />
-                  <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button className="relative w-9 h-9 sm:w-10 sm:h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                  <AlertCircle size={18} />
+                  <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-rose-500 rounded-full border-2 border-white"></span>
                 </button>
-                <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
-                  <div className="text-right hidden sm:block">
-                    <div className="text-xs font-bold text-slate-900">{profile?.name || 'Admin User'}</div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{profile?.role || 'Super Admin'}</div>
+                <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-4 border-l border-slate-100">
+                  <div className="text-right hidden xs:block sm:block">
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-900 truncate max-w-[60px] sm:max-w-none">{profile?.name?.split(' ')[0] || 'Admin'}</div>
+                    <div className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Admin</div>
                   </div>
-                  <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-rose-100">
-                    AD
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg shadow-rose-100">
+                    {(profile?.name || 'AD').charAt(0)}
                   </div>
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="p-8 max-w-7xl mx-auto">
+          <main className="p-4 sm:p-8 max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={adminTab}
@@ -1816,27 +1841,6 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           </main>
         </div>
 
-        {/* Mobile Navigation (Only visible on small screens) */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-          {[
-            { id: 'Overview', icon: LayoutGrid, label: 'Home' },
-            { id: 'Users', icon: Users, label: 'Users' },
-            { id: 'System', icon: Server, label: 'System' },
-            { id: 'Logs', icon: History, label: 'Logs' },
-          ].map((tab) => {
-            const isActive = adminTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button key={tab.id} onClick={() => setAdminTab(tab.id as any)} className="relative flex flex-col items-center justify-center py-1 px-4 transition-all duration-300 outline-none group">
-                {isActive && <motion.div layoutId="activeAdminTabMobile" className="absolute inset-0 bg-rose-50 rounded-2xl -z-10" />}
-                <Icon size={isActive ? 22 : 20} className={`transition-all duration-300 ${isActive ? 'text-rose-600 scale-110' : 'text-slate-400'}`} />
-                <span className={`text-[9px] font-bold uppercase mt-1 tracking-wider ${isActive ? 'text-rose-700' : 'text-slate-400'}`}>
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
-        </nav>
       </div>
     );
   };

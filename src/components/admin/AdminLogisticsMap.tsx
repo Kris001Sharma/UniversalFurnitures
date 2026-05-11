@@ -1,8 +1,27 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+const STYLE = {
+  version: 8,
+  sources: {
+    'osm': {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors'
+    }
+  },
+  layers: [
+    {
+      id: 'osm-layer',
+      type: 'raster',
+      source: 'osm',
+      minzoom: 0,
+      maxzoom: 19
+    }
+  ]
+};
 const NEPAL_BOUNDS: [[number, number], [number, number]] = [[80.0, 26.0], [89.0, 31.0]];
 
 interface AgentMarkerData {
@@ -26,28 +45,46 @@ export const AdminLogisticsMap = ({ agents, onAgentClick, selectedAgentId }: Adm
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef<Record<string, maplibregl.Marker>>({});
 
+  const [isLoaded, setIsLoaded] = useState(false);
+
   useEffect(() => {
     if (map.current) return;
 
     if (mapContainer.current) {
-      map.current = new maplibregl.Map({
-        container: mapContainer.current,
-        style: STYLE_URL,
-        center: [85.3240, 27.7172], // Kathmandu
-        zoom: 12,
-        attributionControl: false,
-        maxBounds: NEPAL_BOUNDS
-      });
+      try {
+        map.current = new maplibregl.Map({
+          container: mapContainer.current,
+          style: STYLE as any,
+          center: [85.3240, 27.7172], // Kathmandu
+          zoom: 12,
+          attributionControl: false,
+          maxBounds: NEPAL_BOUNDS
+        });
 
-      map.current.addControl(new maplibregl.NavigationControl({
-        showCompass: false
-      }), 'top-right');
+        map.current.on('load', () => {
+          setIsLoaded(true);
+          map.current?.resize();
+        });
+
+        map.current.addControl(new maplibregl.NavigationControl({
+          showCompass: false
+        }), 'top-right');
+
+        // Ensure map resizes with container
+        const resizeObserver = new ResizeObserver(() => {
+          map.current?.resize();
+        });
+        resizeObserver.observe(mapContainer.current);
+
+        return () => {
+          resizeObserver.disconnect();
+          map.current?.remove();
+          map.current = null;
+        };
+      } catch (err) {
+        console.error('Map initialization failed:', err);
+      }
     }
-
-    return () => {
-      map.current?.remove();
-      map.current = null;
-    };
   }, []);
 
   // Update Markers when agents change
@@ -110,9 +147,19 @@ export const AdminLogisticsMap = ({ agents, onAgentClick, selectedAgentId }: Adm
   }, [agents, selectedAgentId, onAgentClick]);
 
   return (
-    <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-inner bg-slate-100">
+    <div className="relative w-full h-[500px] lg:h-full rounded-3xl overflow-hidden shadow-inner bg-slate-50 border border-slate-100">
+      <div className="absolute top-4 right-4 z-50 text-[10px] font-bold text-slate-300 pointer-events-none">MAP_ENGINE_V1</div>
       <div ref={mapContainer} className="absolute inset-0" />
       
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-20">
+          <div className="flex flex-col items-center gap-3">
+             <div className="w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-sm font-bold text-slate-400 animate-pulse">Establishing Live Feed...</p>
+          </div>
+        </div>
+      )}
+
       {/* Legend */}
       <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-100 shadow-xl z-10 flex flex-col gap-3">
         <div className="flex items-center gap-3">
