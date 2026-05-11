@@ -312,7 +312,7 @@ export default function App() {
   };
 
   const [supervisorTab, setSupervisorTab] = useState<'Overview' | 'Inventory' | 'Production Log' | 'Active Manufacturing' | 'Team' | 'Alerts' | 'Settings'>('Overview');
-  const [adminTab, setAdminTab] = useState<'Overview' | 'Sales' | 'Clients & Orders' | 'Manufacturing' | 'Delivery' | 'Finance' | 'Users' | 'System' | 'Logs' | 'Data Sync' | 'Settings'>('Overview');
+  const [adminTab, setAdminTab] = useState<'Overview' | 'Logistics' | 'Sales' | 'Clients & Orders' | 'Manufacturing' | 'Delivery' | 'Finance' | 'Users' | 'System' | 'Logs' | 'Data Sync' | 'Settings'>('Overview');
   const [selectedAdminSalesAgent, setSelectedAdminSalesAgent] = useState<string | null>(null);
   const [selectedAgentTile, setSelectedAgentTile] = useState<'clients' | 'leads' | 'schedule' | null>(null);
   const [agentDetailTab, setAgentDetailTab] = useState<string>('active');

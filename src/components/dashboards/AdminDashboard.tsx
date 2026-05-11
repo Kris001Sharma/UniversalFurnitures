@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import ProfileModal from '../ProfileModal';
 import { DataSync } from '../admin/DataSync';
 import { dataService } from '../../services/data.service';
+import { LogisticsDashboard } from '../admin/LogisticsDashboard';
 import { Order, Transaction, Product, CartItem, ProductionLine, ProductionRecord, InventoryItem, DeliveryTask, Organization, OrderStatus } from '../../types';
 import { ResponsiveContainer, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Area, BarChart, Bar, Legend } from 'recharts';
 
@@ -1673,6 +1674,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 mt-4">Dashboards</div>
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Overview' },
+              { id: 'Logistics', icon: Navigation, label: 'Logistics' },
               { id: 'Sales', icon: TrendingUp, label: 'Sales' },
               { id: 'Clients & Orders', icon: Briefcase, label: 'Clients & Orders' },
               { id: 'Manufacturing', icon: Factory, label: 'Manufacturing' },
@@ -1783,6 +1785,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 transition={{ duration: 0.2 }}
               >
                 {adminTab === 'Overview' && renderOverview()}
+                {adminTab === 'Logistics' && <LogisticsDashboard />}
                 {adminTab === 'Sales' && renderAdminSales()}
                 {adminTab === 'Clients & Orders' && renderAdminClientsOrders()}
                 {adminTab === 'Manufacturing' && <SupervisorDashboard isAdminView={true} />}
