@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../../lib/supabase';
 import { dataService } from '../../services/data.service';
+import { useAppState } from '../../contexts/AppStateContext';
 import MapComponent from '../MapComponent';
 import { ActivityFeed } from '../unified/ActivityFeed';
 import { 
@@ -26,6 +27,13 @@ import {
 const HUB_LOCATION = { latitude: 27.6687, longitude: 84.4264 };
 
 export const LogisticsDashboard = () => {
+  const { 
+    setAdminTab, 
+    setSelectedAdminSalesAgent, 
+    setSelectedAdminDeliveryAgent, 
+    setSelectedClientDetails,
+    setClientsOrdersMainTab
+  } = useAppState();
   const [agents, setAgents] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -209,32 +217,32 @@ export const LogisticsDashboard = () => {
   }, [activeSidebarTab, agents, clients, searchQuery]);
 
   return (
-    <div className="flex flex-col gap-2 pb-8 lg:pb-0 h-auto lg:h-[calc(100vh-120px)]">
+    <div className="flex flex-col gap-2 pb-8 lg:pb-0 min-h-0 h-full lg:h-[calc(100vh-120px)]">
       {/* Top Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
         {[
           { label: 'Active Agents', value: agents.filter(a => a.isActive).length, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Active Clients', value: clients.filter(c => c.isActive).length, icon: Star, color: 'text-sky-600', bg: 'bg-sky-50' },
           { label: 'Avg Efficiency', value: '94%', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'System Alerts', value: 3, icon: AlertCircle, color: 'text-indigo-600', bg: 'bg-indigo-50' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-2">
-            <div className={`w-8 h-8 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center`}>
+          <div key={i} className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-2">
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center shrink-0`}>
               <stat.icon size={16} />
             </div>
-            <div>
-              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</div>
-              <div className="text-base font-bold text-slate-900 leading-none">{stat.value}</div>
+            <div className="min-w-0">
+              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 truncate">{stat.label}</div>
+              <div className="text-base sm:text-lg font-bold text-slate-900 leading-none">{stat.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-2 min-h-0 lg:flex-1">
+      <div className="flex flex-col lg:flex-row gap-2 min-h-0 flex-1 h-full">
         {/* Main Map Area */}
-        <div className="w-full lg:flex-1 bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden relative h-[350px] sm:h-[450px] lg:h-full">
+        <div className="w-full lg:flex-1 bg-white rounded-xl border border-slate-50 shadow-sm overflow-hidden relative h-[400px] sm:h-[500px] lg:h-full z-10 shrink-0">
           {/* Map Filters Overlay */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 max-w-[calc(100%-24px)]">
             <div className="bg-white/90 backdrop-blur-md p-2 rounded-lg border border-slate-100 shadow-lg w-56 transition-all">
               <button 
                 onClick={() => setIsMapConfigOpen(!isMapConfigOpen)}
@@ -384,7 +392,7 @@ export const LogisticsDashboard = () => {
           </div>
 
           {/* List Content */}
-          <div className="flex-1 overflow-y-auto no-scrollbar p-2">
+          <div className="flex-1 overflow-y-auto p-2 minimal-scrollbar transition-all">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeSidebarTab}
@@ -442,66 +450,77 @@ export const LogisticsDashboard = () => {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden px-3 pb-3"
+                              className="overflow-hidden px-2 pb-2"
                             >
-                              <div className="bg-slate-50 rounded-xl p-3 space-y-3 border border-slate-100">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="bg-white p-2 rounded-xl border border-slate-100">
-                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Focus</div>
-                                    <div className="text-[10px] font-bold text-slate-700 truncate">{item.role || item.status}</div>
+                              <div className="bg-slate-50/40 rounded-xl p-2 space-y-2 border border-slate-100">
+                                <div className="grid grid-cols-2 gap-1">
+                                  <div className="bg-white p-1 rounded-lg border border-slate-50">
+                                    <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Focus</div>
+                                    <div className="text-[9px] font-bold text-slate-600 truncate leading-none">{item.role || item.status}</div>
                                   </div>
-                                  <div className="bg-white p-2 rounded-xl border border-slate-100">
-                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Load</div>
-                                    <div className="text-[10px] font-bold text-slate-700 truncate">
+                                  <div className="bg-white p-1 rounded-lg border border-slate-50">
+                                    <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Load</div>
+                                    <div className="text-[9px] font-bold text-slate-600 truncate leading-none">
                                       {item.taskCount !== undefined ? `${item.taskCount} Tasks` : `${item.orderCount || 0} Orders`}
                                     </div>
                                   </div>
                                 </div>
 
                                 {activeSidebarTab === 'agents' ? (
-                                  <div className="space-y-2">
-                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                      <Activity size={12} /> Recent Movement
+                                  <div className="space-y-1">
+                                    <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 px-0.5 opacity-70">
+                                      <Activity size={8} /> Movement
                                     </div>
-                                    <ActivityFeed userId={item.id} />
+                                    <ActivityFeed userId={item.id} compact={true} />
                                   </div>
                                 ) : (
-                                  <div className="space-y-2">
-                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                      <Clock size={12} /> History
+                                  <div className="space-y-1">
+                                    <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 px-0.5 opacity-70">
+                                      <Clock size={8} /> History
                                     </div>
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-0.5">
                                       {item.interactions?.slice(0, 3).map((interaction: any) => (
-                                        <div key={interaction.id} className="bg-white p-2 rounded-lg border border-slate-100 text-[10px]">
-                                          <div className="flex justify-between font-bold text-slate-900 mb-0.5">
-                                            <span>{interaction.type}</span>
-                                            <span className="text-[8px] text-slate-400">{new Date(interaction.created_at).toLocaleDateString()}</span>
+                                        <div key={interaction.id} className="bg-white px-1.5 py-1 rounded-lg border border-slate-50 text-[9px]">
+                                          <div className="flex justify-between font-bold text-slate-700 leading-none mb-0.5">
+                                            <span className="truncate max-w-[100px]">{interaction.type}</span>
+                                            <span className="text-[7px] text-slate-400 shrink-0">{new Date(interaction.created_at).toLocaleDateString()}</span>
                                           </div>
-                                          <p className="text-slate-500 line-clamp-1">{interaction.notes}</p>
+                                          <p className="text-slate-500 line-clamp-1 leading-tight text-[8px]">{interaction.notes}</p>
                                         </div>
                                       ))}
                                       {(!item.interactions || item.interactions.length === 0) && (
-                                        <div className="text-[10px] text-slate-400 italic text-center py-2">No recent interactions</div>
+                                        <div className="text-[8px] text-slate-400 italic text-center py-1 opacity-60">No recent activity</div>
                                       )}
                                     </div>
                                   </div>
                                 )}
 
-                                <div className="flex gap-2">
+                                <div className="flex gap-1 pt-0.5">
                                   <button 
                                     onClick={() => {
-                                      setMapCenter({ latitude: item.latitude, longitude: item.longitude });
-                                      setMapZoom(18);
+                                      if (activeSidebarTab === 'agents') {
+                                        if (item.role === 'SALES') {
+                                          setAdminTab('Sales');
+                                          setSelectedAdminSalesAgent(item.id);
+                                        } else {
+                                          setAdminTab('Delivery');
+                                          setSelectedAdminDeliveryAgent(item.id);
+                                        }
+                                      } else {
+                                        setAdminTab('Clients & Orders');
+                                        setClientsOrdersMainTab('allClients');
+                                        setSelectedClientDetails(item.name || item.company_name);
+                                      }
                                     }}
-                                    className="flex-1 py-1.5 bg-slate-900 text-white rounded-lg text-[9px] font-bold hover:bg-slate-800 transition-all"
+                                    className="flex-1 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-bold hover:bg-slate-800 transition-all shadow-sm"
                                   >
-                                    Precision Zoom
+                                    View Details
                                   </button>
                                   <a 
                                     href={`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-[9px] font-bold hover:bg-slate-50 transition-all"
+                                    className="px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-50 transition-all flex items-center justify-center"
                                   >
                                     Route
                                   </a>

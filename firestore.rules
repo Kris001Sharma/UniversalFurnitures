@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isEmailVerified() { return request.auth.token.email_verified == true; }
+    
+    // Admin check - needs verified email and entry in admins collection
+    function isAdmin() { 
+      return isSignedIn() && isEmailVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); 
+    }
+
+    // 1. User Profiles
+    match /user_profiles/{userId} {
+      function isValidUserProfile(data) {
+        return data.keys().hasAll(['id', 'name', 'role', 'email']) &&
+               data.keys().size() <= 10 &&
+               data.id == userId &&
+               data.id == request.auth.uid &&
+               data.name is string && data.name.size() <= 100 &&
+               data.role in ['SALES', 'DELIVERY', 'ADMIN', 'ACCOUNTANT'] &&
+               data.email == request.auth.token.email;
+      }
+
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      allow create: if isSignedIn() && isEmailVerified() && isValidUserProfile(incoming());
+      
+      allow update: if isSignedIn() && isEmailVerified() && (
+        // Self-update restricted fields
+        (request.auth.uid == userId && 
+         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'status', 'duty_status']) &&
+         incoming().name is string && incoming().name.size() <= 100) ||
+        // Admin update
+        isAdmin()
+      );
+    }
+
+    // 2. User Tracking
+    match /user_tracking/{trackingId} {
+      function isValidTracking(data) {
+        return data.keys().hasAll(['userId', 'latitude', 'longitude', 'timestamp']) &&
+               data.userId == request.auth.uid &&
+               data.latitude is number && data.latitude >= -90 && data.latitude <= 90 &&
+               data.longitude is number && data.longitude >= -180 && data.longitude <= 180 &&
+               data.timestamp == request.time;
+      }
+
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isEmailVerified() && isValidTracking(incoming());
+    }
+
+    // 3. Orders
+    match /orders/{orderId} {
+      function isValidOrder(data) {
+        return data.keys().hasAll(['id', 'clientId', 'status', 'value']) &&
+               data.id == orderId &&
+               data.clientId is string &&
+               data.status is string &&
+               data.value is number && data.value >= 0;
+      }
+
+      allow read: if isSignedIn();
+      allow create: if (isAdmin() || (isSignedIn() && isEmailVerified())) && isValidOrder(incoming());
+      allow update: if (isAdmin() || (isSignedIn() && isEmailVerified())) && isValidOrder(incoming()) && (
+        // Only allow status updates or full admin update
+        isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['status', 'items', 'value'])
+      );
+    }
+
+    // 4. Clients
+    match /clients/{clientId} {
+      function isValidClient(data) {
+        return data.keys().hasAll(['id', 'name', 'is_client']) &&
+               data.id == clientId &&
+               data.name is string && data.name.size() <= 200 &&
+               data.is_client is bool;
+      }
+
+      allow read: if isSignedIn();
+      allow create: if (isAdmin() || (isSignedIn() && isEmailVerified())) && isValidClient(incoming());
+      allow update: if (isAdmin() || (isSignedIn() && isEmailVerified())) && isValidClient(incoming());
+    }
+
+    // 5. Admins Collection (Bootstrapped)
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      // Creation only possible via system (no client create unless admin)
+      allow write: if false; 
+    }
+  }
+}

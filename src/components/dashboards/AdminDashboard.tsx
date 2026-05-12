@@ -20,7 +20,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
   const AdminDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const { profile } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
+  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
     const renderAdminSales = () => {
       if (selectedAdminSalesAgent && salesAgents.length > 0) {
         const agent = salesAgents.find(a => a.id === selectedAdminSalesAgent);
@@ -348,93 +348,206 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
       const manager = salesAgents.find(a => !a.reportsTo);
       const reports = salesAgents.filter(a => a.reportsTo === manager?.id);
 
+      const renderMetricCard = (title: string, value: string | number, trend: string, isPositive: boolean) => (
+        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-all">
+          <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</div>
+          <div className="flex items-end gap-2">
+            <div className="text-2xl font-bold text-slate-900">{value}</div>
+            <div className={`text-[10px] font-bold pb-1 flex items-center gap-0.5 ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {isPositive ? <TrendingUp size={10} /> : <ArrowDown size={10} />}
+              {trend}
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 h-1 bg-slate-100 group-hover:bg-indigo-500 transition-all w-full opacity-20"></div>
+        </div>
+      );
+
       return (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Overview Section */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Sales Executed</div>
-              <div className="text-2xl font-bold text-slate-900">142</div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Active Execs Today</div>
-              <div className="text-2xl font-bold text-slate-900">12 <span className="text-sm font-normal text-slate-400">/ 15</span></div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Planned Visits Today</div>
-              <div className="text-2xl font-bold text-slate-900">28</div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">New Leads Ready</div>
-              <div className="text-2xl font-bold text-slate-900">45</div>
-            </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-              <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Active Clients</div>
-              <div className="text-2xl font-bold text-slate-900">89</div>
-            </div>
+            {renderMetricCard("Sales Value", "₹14.2L", "+22%", true)}
+            {renderMetricCard("Active Execs", "12 / 15", "+5%", true)}
+            {renderMetricCard("Client Visits", "28", "-12%", false)}
+            {renderMetricCard("New Leads", "45", "+18%", true)}
+            {renderMetricCard("Active Clients", "89", "+2%", true)}
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Sales Hierarchy</h2>
-              <p className="text-slate-500 text-sm mt-1">Manage and monitor your sales team structure</p>
+              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Sales Forces Network</h2>
             </div>
-            <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm">
-              <Plus size={16} /> Add Agent
-            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
+                <button 
+                  onClick={() => setSalesViewMode('hierarchy')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${salesViewMode === 'hierarchy' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <Users size={14} /> Hierarchy
+                </button>
+                <button 
+                  onClick={() => setSalesViewMode('list')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${salesViewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <ClipboardList size={14} /> List View
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* Hierarchical View */}
-          <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
-            <div className="min-w-[600px] flex flex-col items-center">
-              {/* Manager Level */}
-              {manager && (
-                <div 
-                  onClick={() => setSelectedAdminSalesAgent(manager.id)}
-                  className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl w-64 text-center cursor-pointer hover:shadow-md transition-all relative z-10"
-                >
-                  <div className="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2 shadow-sm">
-                    {manager?.name?.charAt(0) || '?'}
-                  </div>
-                  <h3 className="font-bold text-slate-900">{manager.name}</h3>
-                  <p className="text-xs text-indigo-600 font-bold mb-2">{manager.role}</p>
-                  <div className="flex justify-center gap-4 text-xs text-slate-600">
-                    <span>{manager.activeClients} Clients</span>
-                    <span>{manager.leads} Leads</span>
+          {salesViewMode === 'hierarchy' ? (
+            <div className="bg-slate-50/50 p-8 rounded-2xl border border-slate-100 shadow-inner overflow-x-auto minimal-scrollbar">
+              <div className="min-w-[800px] flex flex-col items-center">
+                {/* Chairperson / Top Level */}
+                <div className="flex flex-col items-center">
+                  <div className="bg-slate-900/90 backdrop-blur-lg border border-white/10 p-5 rounded-2xl w-64 text-center text-white shadow-2xl relative mb-12">
+                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-3 backdrop-blur-xl border border-white/20">
+                      JD
+                    </div>
+                    <h3 className="font-bold text-white tracking-tight">John Doe</h3>
+                    <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">Chairperson / Owner</p>
                   </div>
                 </div>
-              )}
 
-              {/* Connecting Lines */}
-              <div className="w-px h-8 bg-slate-300"></div>
-              <div className="w-[400px] h-px bg-slate-300"></div>
-              <div className="flex justify-between w-[400px]">
-                <div className="w-px h-8 bg-slate-300"></div>
-                <div className="w-px h-8 bg-slate-300"></div>
-              </div>
+                {/* Level 1: Sales Agents / Managers */}
+                <div className="relative">
+                  {/* Horizontal Connector */}
+                  {salesAgents.filter(a => !a.reportsTo).length > 1 && (
+                    <div className="absolute -top-6 left-0 right-0 h-0.5 bg-slate-200 mx-[140px]"></div>
+                  )}
+                  
+                  <div className="flex gap-12">
+                    {salesAgents.filter(a => !a.reportsTo).map((agent, idx) => (
+                      <div key={agent.id} className="relative flex flex-col items-center">
+                        {/* Vertical line to horizontal Connector */}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
+                        
+                        <div 
+                          onClick={() => setSelectedAdminSalesAgent(agent.id)}
+                          className="bg-white/40 backdrop-blur-md border border-white/20 p-4 rounded-2xl w-60 text-center cursor-pointer hover:shadow-2xl hover:bg-white/60 hover:scale-[1.02] transition-all relative z-10 group shadow-lg"
+                        >
+                          <div className="w-12 h-12 bg-indigo-600/80 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2 shadow-inner border border-white/20 group-hover:scale-110 transition-transform">
+                            {agent.name?.charAt(0) || '?'}
+                          </div>
+                          <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{agent.name}</h3>
+                          <p className="text-[10px] text-indigo-600 font-bold mb-2 uppercase tracking-tight">{agent.role}</p>
+                          <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
+                            <span>{agent.activeClients} Clients</span>
+                            <span>{agent.leads} Leads</span>
+                          </div>
+                        </div>
 
-              {/* Reports Level */}
-              <div className="flex gap-16">
-                {reports.map(agent => (
-                  <div 
-                    key={agent.id}
-                    onClick={() => setSelectedAdminSalesAgent(agent.id)}
-                    className="bg-white border border-slate-200 p-4 rounded-2xl w-64 text-center cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all relative z-10"
-                  >
-                    <div className="w-10 h-10 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold mx-auto mb-2">
-                      {agent.name?.charAt(0) || '?'}
-                    </div>
-                    <h3 className="font-bold text-slate-900">{agent.name}</h3>
-                    <p className="text-xs text-slate-500 mb-2">{agent.role}</p>
-                    <div className="flex justify-center gap-4 text-xs text-slate-600">
-                      <span>{agent.activeClients} Clients</span>
-                      <span>{agent.leads} Leads</span>
-                    </div>
+                        {/* Level 2: Sub-reports */}
+                        {salesAgents.some(a => a.reportsTo === agent.id) && (
+                          <div className="mt-12 relative flex flex-col items-center">
+                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-0.5 h-12 bg-slate-200"></div>
+                            
+                            {/* Horizontal Connector for Level 2 */}
+                            {salesAgents.filter(a => a.reportsTo === agent.id).length > 1 && (
+                              <div className="absolute -top-6 left-0 right-0 h-0.5 bg-slate-200 mx-[80px]"></div>
+                            )}
+
+                            <div className="flex gap-8">
+                              {salesAgents.filter(a => a.reportsTo === agent.id).map(subAgent => (
+                                <div key={subAgent.id} className="relative pt-6">
+                                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
+                                  <div 
+                                    onClick={() => setSelectedAdminSalesAgent(subAgent.id)}
+                                    className="bg-white/30 backdrop-blur-sm border border-white/10 p-3 rounded-xl w-48 text-center cursor-pointer hover:shadow-xl hover:bg-white/50 transition-all relative z-10 group shadow-sm"
+                                  >
+                                    <div className="w-8 h-8 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-xs mx-auto mb-2 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                      {subAgent.name?.charAt(0) || '?'}
+                                    </div>
+                                    <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors text-sm">{subAgent.name}</h3>
+                                    <p className="text-[9px] text-slate-500 mb-1 font-bold uppercase tracking-tight">{subAgent.role}</p>
+                                    <div className="flex justify-center gap-3 text-[9px] font-bold text-slate-400">
+                                      <span>{subAgent.activeClients} C</span>
+                                      <span>{subAgent.leads} L</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto minimal-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agent</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Performance</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Revenue</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {salesAgents.map(agent => (
+                      <tr key={agent.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs uppercase">
+                              {agent.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors line-clamp-1">{agent.name}</div>
+                              <div className="text-[10px] text-slate-400">ID: {agent.id.substring(0, 8)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-600">{agent.role}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                              <span>Conversion</span>
+                              <span className="text-emerald-600">{agent.conversion}</span>
+                            </div>
+                            <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-emerald-500 rounded-full" 
+                                style={{ width: agent.conversion }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-bold text-slate-900">{agent.revenue}</div>
+                          <div className="text-[10px] text-emerald-600 font-bold">+12.4%</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${agent.status === 'Online' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                            <span className="text-xs text-slate-600">{agent.status}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button 
+                            onClick={() => setSelectedAdminSalesAgent(agent.id)}
+                            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -1684,7 +1797,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   }`}
                 >
                   <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
-                  <span className="text-sm font-bold truncate whitespace-nowrap">{item.label}</span>
+                  <span className={`text-sm font-bold leading-tight ${item.id === 'Clients & Orders' ? 'whitespace-nowrap' : ''}`}>{item.label}</span>
                   {isActive && <ChevronRight size={16} className="ml-auto flex-shrink-0" />}
                 </button>
               );
@@ -1709,7 +1822,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   }`}
                 >
                   <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
-                  <span className="text-sm font-bold truncate whitespace-nowrap">{item.label}</span>
+                  <span className={`text-sm font-bold leading-tight ${item.id === 'Clients & Orders' ? 'whitespace-nowrap' : ''}`}>{item.label}</span>
                   {isActive && <ChevronRight size={16} className="ml-auto flex-shrink-0" />}
                 </button>
               );

@@ -68,39 +68,36 @@ export const ActivityFeed = ({ userId, limit = 10, compact = false }: ActivityFe
   }
 
   return (
-    <div className={`space-y-6 relative ${!compact ? 'before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100' : ''}`}>
+    <div className={`space-y-2 relative ${!compact ? 'before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-px before:bg-slate-100' : ''}`}>
       {activities.map((activity, idx) => (
         <motion.div 
           key={activity.id}
-          initial={{ opacity: 0, x: -10 }}
+          initial={{ opacity: 0, x: -5 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: idx * 0.1 }}
-          className="flex gap-4 relative"
+          transition={{ delay: idx * 0.05 }}
+          className="flex gap-2 relative group"
         >
-          <div className="w-8 h-8 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center z-10 shadow-sm">
+          <div className="w-6 h-6 rounded-lg bg-white border border-slate-100 flex items-center justify-center z-10 shadow-sm shrink-0">
             {getIcon(activity.action)}
           </div>
-          <div className={`flex-1 ${idx !== activities.length - 1 ? 'pb-4 border-b border-slate-50' : ''}`}>
-            <div className="flex justify-between items-start">
-              <p className="text-sm font-medium text-slate-800 leading-tight">
-                {activity.action}
+          <div className={`flex-1 min-w-0 ${idx !== activities.length - 1 ? 'pb-1.5 border-b border-slate-50' : ''}`}>
+            <div className="flex justify-between items-center">
+              <div className="text-[9px] leading-none truncate">
+                <span className="font-bold text-slate-700 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{activity.action}</span>
                 {activity.metadata?.entity_name && (
-                  <span className="text-slate-400 font-normal"> at </span>
+                  <span className="text-slate-400 font-medium ml-1 truncate">@ {activity.metadata.entity_name}</span>
                 )}
-                {activity.metadata?.entity_name && (
-                  <span className="font-bold text-slate-900">{activity.metadata.entity_name}</span>
-                )}
-              </p>
+              </div>
               {activity.status === 'Completed' ? (
-                <CheckCircle2 size={12} className="text-emerald-500 shrink-0 mt-1" />
+                <CheckCircle2 size={10} className="text-emerald-500 shrink-0" />
               ) : (
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0 mt-1.5" />
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
               )}
             </div>
-            <p className="text-[10px] text-slate-400 font-mono uppercase mt-1 flex items-center gap-1">
-              <Clock size={10} />
+            <div className="text-[8px] text-slate-400 font-medium mt-0.5 flex items-center gap-1 opacity-70">
+              <Clock size={8} />
               {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-            </p>
+            </div>
           </div>
         </motion.div>
       ))}

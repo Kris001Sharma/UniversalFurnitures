@@ -1,0 +1,75 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Public and private user information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["SALES", "DELIVERY", "ADMIN", "ACCOUNTANT"] },
+        "email": { "type": "string", "format": "email" },
+        "status": { "type": "string", "enum": ["Online", "Offline", "Away"] },
+        "duty_status": { "type": "string", "enum": ["On Duty", "Off Duty"] }
+      },
+      "required": ["id", "name", "role", "email"]
+    },
+    "UserTracking": {
+      "title": "User Tracking",
+      "description": "Real-time location data for agents",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "latitude", "longitude", "timestamp"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Client order records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "salesAgentId": { "type": "string" },
+        "status": { "type": "string" },
+        "value": { "type": "number" },
+        "items": { "type": "array" }
+      },
+      "required": ["id", "clientId", "status", "value"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Client and Lead records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "is_client": { "type": "boolean" },
+        "status": { "type": "string" },
+        "assignedAgentId": { "type": "string" }
+      },
+      "required": ["id", "name", "is_client"]
+    }
+  },
+  "firestore": {
+    "/user_profiles/{userId}": {
+      "schema": "UserProfile",
+      "description": "Registry of all users in the system"
+    },
+    "/user_tracking/{trackingId}": {
+      "schema": "UserTracking",
+      "description": "Location history for agents"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Sales orders"
+    },
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Client database"
+    }
+  }
+}

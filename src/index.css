@@ -52,6 +52,30 @@
     background: #94a3b8; /* slate-400 */
   }
 
+  .minimal-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  
+  .minimal-scrollbar::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  .minimal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .minimal-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  
+  .minimal-scrollbar:hover::-webkit-scrollbar-thumb,
+  .minimal-scrollbar:active::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+  }
+
   /* Other field standards */
   .section-heading {
     @apply text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-3;
