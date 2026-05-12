@@ -384,6 +384,7 @@ export default function App() {
   const [productionLog, setProductionLog] = useState<ProductionRecord[]>([]);
   const [salesAgents, setSalesAgents] = useState<any[]>([]);
   const [salesViewMode, setSalesViewMode] = useState<'list' | 'hierarchy'>('hierarchy');
+  const [deliveryViewMode, setDeliveryViewMode] = useState<'list' | 'hierarchy'>('hierarchy');
   const [deliveryAgents, setDeliveryAgents] = useState<any[]>([]);
   const [accountants, setAccountants] = useState<any[]>([]);
   const [flipText, setFlipText] = useState(false);
@@ -627,7 +628,7 @@ export default function App() {
         className="w-full max-w-md text-center space-y-8"
       >
         <div className="space-y-2">
-          <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100 mb-6">
+          <div className="w-20 h-20 bg-emerald-600 rounded-xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100 mb-6">
             <Monitor className="text-white" size={40} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">Developer Mode</h1>
@@ -641,7 +642,7 @@ export default function App() {
                 setSelectedDashboard('sales'); 
                 setAppView('dashboard'); 
               }}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
               <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                 <TrendingUp size={24} />
@@ -660,7 +661,7 @@ export default function App() {
                 setSelectedDashboard('supervisor'); 
                 setAppView('dashboard'); 
               }}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
               <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                 <ShieldCheck size={24} />
@@ -679,7 +680,7 @@ export default function App() {
                 setSelectedDashboard('admin'); 
                 setAppView('dashboard'); 
               }}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
               <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
                 <Shield size={24} />
@@ -698,7 +699,7 @@ export default function App() {
                 setSelectedDashboard('accountant'); 
                 setAppView('dashboard'); 
               }}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
               <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
                 <Wallet size={24} />
@@ -717,7 +718,7 @@ export default function App() {
                 setSelectedDashboard('delivery'); 
                 setAppView('dashboard'); 
               }}
-              className="group relative bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
+              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
               <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
                 <Truck size={24} />
@@ -769,7 +770,7 @@ export default function App() {
         className="flex-1 max-w-md mx-auto w-full flex flex-col"
       >
         <div className="mb-12 text-center">
-          <div className={`w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-xl ${
+          <div className={`w-20 h-20 mx-auto rounded-xl flex items-center justify-center mb-6 shadow-xl ${
             loginStep === 1 ? 'bg-slate-800 shadow-slate-200' :
             selectedDashboard === 'sales' ? 'bg-emerald-600 shadow-emerald-100' : 
             selectedDashboard === 'supervisor' ? 'bg-indigo-600 shadow-indigo-100' :
@@ -906,7 +907,7 @@ export default function App() {
 
 
 
-  const appState = { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon, addToCart, updateCartQuantity, cartCount, cartTotal, today, endOfNextWeek };
+  const appState = { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, deliveryViewMode, setDeliveryViewMode, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon, addToCart, updateCartQuantity, cartCount, cartTotal, today, endOfNextWeek };
   return (
     <AppStateProvider state={appState}>
     <AnimatePresence mode="wait">

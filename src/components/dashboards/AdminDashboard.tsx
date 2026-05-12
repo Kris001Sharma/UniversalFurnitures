@@ -20,7 +20,16 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
   const AdminDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const { profile } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
+  const [metricInterval, setMetricInterval] = useState<'7d' | '30d'>('7d');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetricInterval(prev => prev === '7d' ? '30d' : '7d');
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, deliveryViewMode, setDeliveryViewMode, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
     const renderAdminSales = () => {
       if (selectedAdminSalesAgent && salesAgents.length > 0) {
         const agent = salesAgents.find(a => a.id === selectedAdminSalesAgent);
@@ -305,13 +314,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   {chatContext ? (
                     <>
                       <div className="flex flex-col gap-1 items-start">
-                        <div className="bg-white border border-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
+                        <div className="bg-white border border-slate-100 px-4 py-2.5 rounded-xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
                           Hi Admin, regarding {chatContext === 'client1' ? 'TechCorp' : 'Global Industries'}, they asked for a discount on bulk orders.
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 px-1">10:30 AM</span>
                       </div>
                       <div className="flex flex-col gap-1 items-end">
-                        <div className="bg-indigo-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
+                        <div className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
                           We can offer 5% if they order more than 50 units.
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 px-1">10:32 AM</span>
@@ -348,17 +357,42 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
       const manager = salesAgents.find(a => !a.reportsTo);
       const reports = salesAgents.filter(a => a.reportsTo === manager?.id);
 
-      const renderMetricCard = (title: string, value: string | number, trend: string, isPositive: boolean) => (
-        <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-all">
-          <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">{title}</div>
-          <div className="flex items-end gap-2">
-            <div className="text-2xl font-bold text-slate-900">{value}</div>
-            <div className={`text-[10px] font-bold pb-1 flex items-center gap-0.5 ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {isPositive ? <TrendingUp size={10} /> : <ArrowDown size={10} />}
-              {trend}
-            </div>
+      const renderMetricCard = (title: string, value7d: string | number, trend7d: string, value30d: string | number, trend30d: string, isPositive: boolean, Icon: any) => (
+        <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-200 transition-all h-[100px] flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-slate-500 text-xs font-bold uppercase tracking-widest">{title}</div>
+            <Icon size={14} className="text-slate-300 group-hover:text-indigo-400 transition-colors" />
           </div>
-          <div className="absolute bottom-0 left-0 h-1 bg-slate-100 group-hover:bg-indigo-500 transition-all w-full opacity-20"></div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={metricInterval}
+              initial={{ y: 5, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -5, opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="flex items-end gap-2.5"
+            >
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
+              <div className="flex flex-col mb-0.5 leading-none">
+                <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {isPositive ? <TrendingUp size={12} className="mr-0.5" /> : <ArrowDown size={12} className="mr-0.5" />}
+                  {metricInterval === '7d' ? trend7d : trend30d}
+                </div>
+                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tight mt-1 whitespace-nowrap">
+                  {metricInterval === '7d' ? '7 Days' : '30 Days'}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-slate-50 overflow-hidden">
+            <motion.div 
+              className={`h-full ${isPositive ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 5, ease: "linear" }}
+              key={metricInterval}
+            />
+          </div>
         </div>
       );
 
@@ -366,11 +400,11 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         <div className="space-y-6">
           {/* Overview Section */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {renderMetricCard("Sales Value", "₹14.2L", "+22%", true)}
-            {renderMetricCard("Active Execs", "12 / 15", "+5%", true)}
-            {renderMetricCard("Client Visits", "28", "-12%", false)}
-            {renderMetricCard("New Leads", "45", "+18%", true)}
-            {renderMetricCard("Active Clients", "89", "+2%", true)}
+            {renderMetricCard("Sales Value", "₹14.2L", "22%", "₹58.4L", "18%", true, DollarSign)}
+            {renderMetricCard("Active Execs", "12 / 15", "5%", "14 / 15", "2%", true, Briefcase)}
+            {renderMetricCard("Client Visits", "28", "12%", "112", "15%", false, Eye)}
+            {renderMetricCard("New Leads", "45", "18%", "184", "22%", true, Zap)}
+            {renderMetricCard("Active Clients", "89", "2%", "92", "4%", true, Users)}
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
@@ -397,13 +431,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           </div>
 
           {salesViewMode === 'hierarchy' ? (
-            <div className="bg-slate-50/50 p-8 rounded-2xl border border-slate-100 shadow-inner overflow-x-auto minimal-scrollbar">
+            <div className="bg-slate-50/50 p-8 rounded-lg border border-slate-100 shadow-inner overflow-x-auto minimal-scrollbar">
               <div className="min-w-[800px] flex flex-col items-center">
                 {/* Chairperson / Top Level */}
                 <div className="flex flex-col items-center">
-                  <div className="bg-slate-900/90 backdrop-blur-lg border border-white/10 p-5 rounded-2xl w-64 text-center text-white shadow-2xl relative mb-12">
+                  <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-5 rounded-xl w-64 text-center text-white shadow-2xl relative mb-12">
                     <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
-                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-3 backdrop-blur-xl border border-white/20">
+                    <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-3 backdrop-blur-3xl border border-white/10">
                       JD
                     </div>
                     <h3 className="font-bold text-white tracking-tight">John Doe</h3>
@@ -426,14 +460,14 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                         
                         <div 
                           onClick={() => setSelectedAdminSalesAgent(agent.id)}
-                          className="bg-white/40 backdrop-blur-md border border-white/20 p-4 rounded-2xl w-60 text-center cursor-pointer hover:shadow-2xl hover:bg-white/60 hover:scale-[1.02] transition-all relative z-10 group shadow-lg"
+                          className="bg-white/60 backdrop-blur-xl border border-white/40 p-4 rounded-xl w-60 text-center cursor-pointer hover:shadow-2xl hover:bg-white/80 hover:scale-[1.02] transition-all relative z-10 group shadow-xl"
                         >
-                          <div className="w-12 h-12 bg-indigo-600/80 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2 shadow-inner border border-white/20 group-hover:scale-110 transition-transform">
+                          <div className="w-12 h-12 bg-indigo-600/90 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2 shadow-lg border border-white/20 group-hover:scale-110 transition-transform">
                             {agent.name?.charAt(0) || '?'}
                           </div>
-                          <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{agent.name}</h3>
-                          <p className="text-[10px] text-indigo-600 font-bold mb-2 uppercase tracking-tight">{agent.role}</p>
-                          <div className="flex justify-center gap-4 text-[10px] font-bold text-slate-500 uppercase">
+                          <h3 className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors uppercase tracking-tight text-sm">{agent.name}</h3>
+                          <p className="text-[9px] text-indigo-600 font-bold mb-2 uppercase tracking-widest opacity-80">{agent.role}</p>
+                          <div className="flex justify-center gap-4 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
                             <span>{agent.activeClients} Clients</span>
                             <span>{agent.leads} Leads</span>
                           </div>
@@ -584,15 +618,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <button className="text-sm font-bold text-indigo-600 hover:underline" onClick={() => { setSelectedClientDetails(order?.customer || order?.client || null); setSelectedAdminOrderDetails(null); }}>View Client Profile</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-slate-50 rounded-2xl">
+                <div className="p-4 bg-slate-50 rounded-xl">
                   <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Order Value</div>
                   <div className="text-2xl font-bold text-slate-900">₹{(order?.value || 0).toLocaleString()}</div>
                 </div>
-                <div className="p-4 bg-emerald-50 rounded-2xl">
+                <div className="p-4 bg-emerald-50 rounded-xl">
                   <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Advance Received</div>
                   <div className="text-2xl font-bold text-emerald-700">₹{(order?.advance || 0).toLocaleString()}</div>
                 </div>
-                <div className="p-4 bg-rose-50 rounded-2xl">
+                <div className="p-4 bg-rose-50 rounded-xl">
                   <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">Pending Dues</div>
                   <div className="text-2xl font-bold text-rose-700">₹{(order?.pending || 0).toLocaleString()}</div>
                 </div>
@@ -670,7 +704,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <div className="space-y-4">
                 {order?.notes && order.notes.length > 0 ? (
                   order.notes.map((note: any) => (
-                    <div key={note.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div key={note.id} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-bold text-slate-900 text-sm">{note.author}</span>
                         <span className="text-xs text-slate-500">{note.time}</span>
@@ -824,7 +858,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 </div>
                 <div className="space-y-4">
                   {clientDetailTab === 'active' && activeOrders.filter(o => o.customer === client.name || o.client === client.name).map((order) => (
-                    <div key={order.orderId || order.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div key={order.orderId || order.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
                           <Package size={20} />
@@ -845,7 +879,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   )}
 
                   {clientDetailTab === 'draft' && orders.filter(o => o.category === 'Open' && o.orgId === client.id).map((draft) => (
-                    <div key={draft.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div key={draft.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
                           <FileText size={20} />
@@ -866,7 +900,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   )}
 
                   {clientDetailTab === 'past' && (
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                           <CheckCircle size={20} />
@@ -893,7 +927,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-indigo-100 text-indigo-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                       <MessageSquare size={16} />
                     </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 bg-white shadow-sm">
                       <div className="flex items-center justify-between mb-1">
                         <div className="font-bold text-slate-900 text-sm">Sales Call</div>
                         <div className="text-[10px] text-slate-500">Today, 10:30 AM</div>
@@ -906,7 +940,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-emerald-100 text-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2">
                       <DollarSign size={16} />
                     </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl border border-slate-100 bg-white shadow-sm">
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-100 bg-white shadow-sm">
                       <div className="flex items-center justify-between mb-1">
                         <div className="font-bold text-slate-900 text-sm">Payment Received</div>
                         <div className="text-[10px] text-slate-500">Oct 12, 2023</div>
@@ -924,23 +958,41 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
       }
 
       return (
-        <div className="space-y-4">
-          <div className="flex gap-8 border-b border-slate-200">
-            <button onClick={() => setClientsOrdersMainTab('activeOrders')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'activeOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Active Orders</button>
-            <button onClick={() => setClientsOrdersMainTab('draftOrders')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'draftOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Draft Orders</button>
-            <button onClick={() => setClientsOrdersMainTab('leads')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'leads' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Active Leads</button>
-            <button onClick={() => setClientsOrdersMainTab('allClients')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'allClients' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>All Clients</button>
-          </div>
-
-          {clientsOrdersMainTab === 'allClients' && (
-            <div className="flex gap-2 py-2">
-              <button onClick={() => setAllClientsFilter('All')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'All' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>All</button>
-              <button onClick={() => setAllClientsFilter('Active Client')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Active Client' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Active Clients</button>
-              <button onClick={() => setAllClientsFilter('Past Client')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Past Client' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Past Clients</button>
-              <button onClick={() => setAllClientsFilter('Active Lead')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Active Lead' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Active Leads</button>
-              <button onClick={() => setAllClientsFilter('Inactive Lead')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Inactive Lead' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Inactive</button>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center mb-2">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Clients & Orders</h1>
+              <p className="text-sm text-slate-500">Track client relationships and order lifecycle</p>
             </div>
-          )}
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1">
+                <button 
+                  onClick={() => setClientsOrdersMainTab('activeOrders')} 
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'activeOrders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Active Orders
+                </button>
+                <button 
+                  onClick={() => setClientsOrdersMainTab('draftOrders')} 
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'draftOrders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Drafts
+                </button>
+                <button 
+                  onClick={() => setClientsOrdersMainTab('leads')} 
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'leads' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Leads
+                </button>
+                <button 
+                  onClick={() => setClientsOrdersMainTab('allClients')} 
+                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'allClients' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Clients
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -1096,8 +1148,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
     };
 
     const renderAdminDelivery = () => {
-
-      if (selectedAdminDeliveryAgent) {
+      if (selectedAdminDeliveryAgent && deliveryAgents.length > 0) {
         const agent = deliveryAgents.find(a => a.id === selectedAdminDeliveryAgent);
 
         const renderAgentDetailContent = () => {
@@ -1105,9 +1156,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             return (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
-                  <button onClick={() => setDeliveryAgentDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'active' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Active Tasks</button>
-                  <button onClick={() => setDeliveryAgentDetailTab('complete')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'complete' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Complete Tasks</button>
-                  <button onClick={() => setDeliveryAgentDetailTab('today')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'today' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Completed Today</button>
+                  <button onClick={() => setDeliveryAgentDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'active' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-50'}`}>Active Tasks</button>
+                  <button onClick={() => setDeliveryAgentDetailTab('complete')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'complete' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-50'}`}>Complete Tasks</button>
+                  <button onClick={() => setDeliveryAgentDetailTab('today')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'today' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-50'}`}>Completed Today</button>
                 </div>
                 <div className="space-y-4">
                   {deliveryAgentDetailTab === 'active' ? (
@@ -1182,7 +1233,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
 
             {/* Top Tiles */}
-            <div className="flex gap-3 overflow-x-auto pb-4">
+            <div className="flex gap-3 overflow-x-auto pb-4 minimal-scrollbar">
               <div 
                 onClick={() => { setSelectedDeliveryAgentTile('tasks'); setDeliveryAgentDetailTab('active'); }}
                 className={`bg-white p-4 rounded-xl border-2 min-w-[240px] flex-1 ${selectedDeliveryAgentTile === 'tasks' ? 'border-orange-500' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
@@ -1351,39 +1402,191 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         );
       }
 
+      const renderDeliveryMetricCard = (title: string, value7d: string | number, trend7d: string, value30d: string | number, trend30d: string, isPositive: boolean, Icon: any) => (
+        <div className="bg-white p-4 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden group hover:border-orange-200 transition-all h-[100px] flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-slate-500 text-xs font-bold uppercase tracking-widest">{title}</div>
+            <Icon size={14} className="text-slate-300 group-hover:text-orange-400 transition-colors" />
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={metricInterval}
+              initial={{ y: 5, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -5, opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="flex items-end gap-2.5"
+            >
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
+              <div className="flex flex-col mb-0.5 leading-none">
+                <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {isPositive ? <TrendingUp size={12} className="mr-0.5" /> : <ArrowDown size={12} className="mr-0.5" />}
+                  {metricInterval === '7d' ? trend7d : trend30d}
+                </div>
+                <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tight mt-1 whitespace-nowrap">
+                  {metricInterval === '7d' ? '7 Days' : '30 Days'}
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-slate-50 overflow-hidden">
+            <motion.div 
+              className={`h-full ${isPositive ? 'bg-emerald-500' : 'bg-rose-500'}`}
+              initial={{ width: "0%" }}
+              animate={{ width: "100%" }}
+              transition={{ duration: 5, ease: "linear" }}
+              key={metricInterval}
+            />
+          </div>
+        </div>
+      );
+
       return (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Delivery Fleet</h2>
-              <p className="text-slate-500 text-sm mt-1">Monitor and manage delivery personnel</p>
-            </div>
-            <button className="btn-standard bg-orange-600 text-white py-2 px-4 rounded-xl shadow-sm hover:bg-orange-700">
-              <Plus size={16} /> Add Agent
-            </button>
+          {/* Overview Section */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {renderDeliveryMetricCard("Deliveries Executed", "842", "15%", "3,642", "18%", true, CheckCircle)}
+            {renderDeliveryMetricCard("Active Fleet", "8 / 10", "2%", "10 / 10", "0%", true, Truck)}
+            {renderDeliveryMetricCard("Pending Tasks", "14", "5%", "42", "12%", false, Clock)}
+            {renderDeliveryMetricCard("On-Time Rate", "98.2%", "0.5%", "97.5%", "0.2%", true, Activity)}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {deliveryAgents.map(agent => (
-              <div 
-                key={agent.id} 
-                onClick={() => setSelectedAdminDeliveryAgent(agent.id)}
-                className="bg-orange-50 border border-orange-100 p-4 rounded-xl text-center cursor-pointer hover:shadow-md transition-all relative z-10"
-              >
-                <div className="w-16 h-16 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-3 shadow-sm">
-                  {agent.name?.charAt(0) || '?'}
-                </div>
-                <h3 className="font-bold text-slate-900 text-lg">{agent.name}</h3>
-                <p className="text-sm text-orange-600 font-bold mb-3">{agent.role}</p>
-                <div className="flex justify-center gap-4 text-sm text-slate-600 mb-4">
-                  <span className="font-medium"><strong className="text-slate-900">{agent.activeToday}</strong> Active</span>
-                  <span className="font-medium"><strong className="text-slate-900">{agent.doneToday}</strong> Done</span>
-                </div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Current Client</div>
-                <div className="font-bold text-indigo-600 truncate text-sm">{agent.currentClient}</div>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Fleet Network</h2>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1">
+                <button 
+                  onClick={() => setDeliveryViewMode('hierarchy')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${deliveryViewMode === 'hierarchy' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <Users size={14} /> Hierarchy
+                </button>
+                <button 
+                  onClick={() => setDeliveryViewMode('list')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all flex items-center gap-2 ${deliveryViewMode === 'list' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <ClipboardList size={14} /> List View
+                </button>
               </div>
-            ))}
+            </div>
           </div>
+
+          {deliveryViewMode === 'hierarchy' ? (
+            <div className="bg-slate-50/50 p-8 rounded-lg border border-slate-100 shadow-inner overflow-x-auto minimal-scrollbar">
+              <div className="min-w-[800px] flex flex-col items-center">
+                {/* Head of Delivery / Top Level */}
+                <div className="flex flex-col items-center">
+                  <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 p-5 rounded-xl w-64 text-center text-white shadow-2xl relative mb-12">
+                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
+                    <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center font-bold text-xl mx-auto mb-3 backdrop-blur-3xl border border-white/10">
+                      AS
+                    </div>
+                    <h3 className="font-bold text-white tracking-tight">Amit Sharma</h3>
+                    <p className="text-[10px] text-orange-300 font-bold uppercase tracking-widest">Head of Operations</p>
+                  </div>
+                </div>
+
+                {/* Level 1: Fleet Managers / Supervisors */}
+                <div className="relative">
+                  {/* Horizontal Connector */}
+                  {deliveryAgents.filter(a => a.role === 'DELIVERY_SUPERVISOR' || !a.reportsTo).length > 1 && (
+                    <div className="absolute -top-6 left-0 right-0 h-0.5 bg-slate-200 mx-[140px]"></div>
+                  )}
+                  
+                  <div className="flex gap-12">
+                    {deliveryAgents.filter(a => a.role === 'DELIVERY' || a.role === 'DELIVERY_SUPERVISOR').slice(0, 3).map((agent, idx) => (
+                      <div key={agent.id} className="relative flex flex-col items-center">
+                        {/* Vertical line to horizontal Connector */}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-0.5 h-6 bg-slate-200"></div>
+                        
+                        <div 
+                          onClick={() => setSelectedAdminDeliveryAgent(agent.id)}
+                          className="bg-white/60 backdrop-blur-xl border border-white/40 p-4 rounded-xl w-60 text-center cursor-pointer hover:shadow-2xl hover:bg-white/80 hover:scale-[1.02] transition-all relative z-10 group shadow-xl"
+                        >
+                          <div className="w-12 h-12 bg-orange-600/90 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-2 shadow-lg border border-white/20 group-hover:scale-110 transition-transform">
+                            {agent.name?.charAt(0) || '?'}
+                          </div>
+                          <h3 className="font-bold text-slate-800 group-hover:text-orange-600 transition-colors uppercase tracking-tight text-sm">{agent.name}</h3>
+                          <p className="text-[9px] text-orange-600 font-bold mb-2 uppercase tracking-widest opacity-80">{agent.role}</p>
+                          <div className="flex justify-center gap-4 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span>{agent.activeToday} Active</span>
+                            <span>{agent.doneToday} Done</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto minimal-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Agent</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tasks</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Efficiency</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {deliveryAgents.map(agent => (
+                      <tr key={agent.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center font-bold text-xs uppercase">
+                              {agent.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 text-sm group-hover:text-orange-600 transition-colors line-clamp-1">{agent.name}</div>
+                              <div className="text-[10px] text-slate-400">ID: {agent.id.substring(0, 8)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-slate-600">{agent.role}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-bold text-slate-900">{agent.doneToday} <span className="text-slate-400 font-normal">/ {agent.activeToday + agent.doneToday}</span></div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                              <span>94%</span>
+                            </div>
+                            <div className="w-24 h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-orange-500 rounded-full" style={{ width: '94%' }}></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className={`w-1.5 h-1.5 rounded-full ${agent.status === 'On Route' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                            <span className="text-xs text-slate-600">{agent.status}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button 
+                            onClick={() => setSelectedAdminDeliveryAgent(agent.id)}
+                            className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline"
+                          >
+                            View Fleet
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       );
     };
@@ -1759,7 +1962,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         <aside className={`fixed inset-y-0 left-0 flex flex-col w-72 bg-white border-r border-slate-100 p-3 sm:p-4 h-full z-[70] transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
+              <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-rose-100">
                 <Shield size={24} />
               </div>
               <div>
@@ -1769,21 +1972,21 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
-              className="lg:hidden p-2 hover:bg-slate-50 rounded-xl text-slate-400"
+              className="lg:hidden p-2 hover:bg-slate-50 rounded-lg text-slate-400"
             >
               <X size={20} />
             </button>
           </div>
 
-          <nav className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2">
+          <nav className="flex-1 space-y-1 overflow-y-auto minimal-scrollbar pr-2">
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 mt-4">Dashboards</div>
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Overview' },
               { id: 'Logistics', icon: Navigation, label: 'Logistics' },
-              { id: 'Sales', icon: TrendingUp, label: 'Sales' },
               { id: 'Clients & Orders', icon: Briefcase, label: 'Clients & Orders' },
-              { id: 'Manufacturing', icon: Factory, label: 'Manufacturing' },
+              { id: 'Sales', icon: TrendingUp, label: 'Sales' },
               { id: 'Delivery', icon: Truck, label: 'Delivery' },
+              { id: 'Manufacturing', icon: Factory, label: 'Manufacturing' },
               { id: 'Finance', icon: DollarSign, label: 'Finance' },
             ].map((item) => {
               const isActive = adminTab === item.id;
@@ -1792,7 +1995,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <button 
                   key={item.id}
                   onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
@@ -1817,7 +2020,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <button 
                   key={item.id}
                   onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
+                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
@@ -1832,7 +2035,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           <div className="mt-auto pt-8 border-t border-slate-50">
             <button 
               onClick={handleSignOut}
-              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
             >
               <LogIn size={20} className="text-slate-400 group-hover:text-rose-600 rotate-180" />
               <span className="text-sm font-bold truncate whitespace-nowrap">Sign Out</span>

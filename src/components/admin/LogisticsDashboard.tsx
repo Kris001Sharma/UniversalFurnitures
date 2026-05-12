@@ -243,7 +243,7 @@ export const LogisticsDashboard = () => {
         <div className="w-full lg:flex-1 bg-white rounded-xl border border-slate-50 shadow-sm overflow-hidden relative h-[400px] sm:h-[500px] lg:h-full z-10 shrink-0">
           {/* Map Filters Overlay */}
           <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 max-w-[calc(100%-24px)]">
-            <div className="bg-white/90 backdrop-blur-md p-2 rounded-lg border border-slate-100 shadow-lg w-56 transition-all">
+            <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-md border border-slate-100 shadow-lg w-56 transition-all">
               <button 
                 onClick={() => setIsMapConfigOpen(!isMapConfigOpen)}
                 className="w-full flex items-center justify-between mb-1 px-1 focus:outline-none"
@@ -268,16 +268,16 @@ export const LogisticsDashboard = () => {
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Sales Agents
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, salesActive: !f.salesActive }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.salesActive ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.salesActive ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Active
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, salesInactive: !f.salesInactive }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.salesInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.salesInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Offline
                     </button>
@@ -289,16 +289,16 @@ export const LogisticsDashboard = () => {
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div> Delivery Agents
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, deliveryActive: !f.deliveryActive }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.deliveryActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.deliveryActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       On Task
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, deliveryInactive: !f.deliveryInactive }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.deliveryInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.deliveryInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Standby
                     </button>
@@ -310,22 +310,22 @@ export const LogisticsDashboard = () => {
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Customers & Leads
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, clientsActive: !f.clientsActive }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.clientsActive ? 'bg-sky-50 border-sky-100 text-sky-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.clientsActive ? 'bg-sky-50 border-sky-100 text-sky-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Clients
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, clientsPriority: !f.clientsPriority }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.clientsPriority ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.clientsPriority ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Priority
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, leadsNew: !f.leadsNew }))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all ${filters.leadsNew ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.leadsNew ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Leads
                     </button>
@@ -420,13 +420,13 @@ export const LogisticsDashboard = () => {
                               }
                             }
                           }}
-                          className={`w-full p-2.5 rounded-xl text-left border transition-all flex items-center gap-3 ${
+                          className={`w-full p-2 rounded-lg text-left border transition-all flex items-center gap-2.5 ${
                             isSelected 
                               ? 'bg-rose-50 border-rose-100 shadow-sm' 
                               : 'border-transparent hover:bg-slate-50'
                           }`}
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm ${
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow-sm ${
                             item.role === 'SALES' ? 'bg-emerald-500' : 
                             item.role === 'DELIVERY' ? 'bg-indigo-500' :
                             item.status === 'Priority' ? 'bg-rose-500' : 
@@ -435,10 +435,10 @@ export const LogisticsDashboard = () => {
                             {(item.name || item.company_name || '?').charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold text-slate-900 truncate">{item.name || item.company_name}</div>
-                            <div className="text-[9px] text-slate-400 truncate flex items-center gap-1">
+                            <div className="text-[10px] font-bold text-slate-900 truncate">{item.name || item.company_name}</div>
+                            <div className="text-[8px] text-slate-400 truncate flex items-center gap-1">
                               {item.role || item.status}
-                              {item.isActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+                              {item.isActive && <span className="w-1 h-1 rounded-full bg-emerald-500"></span>}
                             </div>
                           </div>
                           <ChevronRight size={14} className={`transition-transform ${isSelected ? 'text-rose-500 rotate-90' : 'text-slate-300'}`} />
@@ -452,15 +452,15 @@ export const LogisticsDashboard = () => {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden px-2 pb-2"
                             >
-                              <div className="bg-slate-50/40 rounded-xl p-2 space-y-2 border border-slate-100">
+                              <div className="bg-slate-50/40 rounded-lg p-1.5 space-y-1.5 border border-slate-100">
                                 <div className="grid grid-cols-2 gap-1">
-                                  <div className="bg-white p-1 rounded-lg border border-slate-50">
-                                    <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Focus</div>
-                                    <div className="text-[9px] font-bold text-slate-600 truncate leading-none">{item.role || item.status}</div>
+                                  <div className="bg-white p-1 rounded-md border border-slate-50">
+                                    <div className="text-[5px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Focus</div>
+                                    <div className="text-[8px] font-bold text-slate-600 truncate leading-none">{item.role || item.status}</div>
                                   </div>
-                                  <div className="bg-white p-1 rounded-lg border border-slate-50">
-                                    <div className="text-[6px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Load</div>
-                                    <div className="text-[9px] font-bold text-slate-600 truncate leading-none">
+                                  <div className="bg-white p-1 rounded-md border border-slate-50">
+                                    <div className="text-[5px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Load</div>
+                                    <div className="text-[8px] font-bold text-slate-600 truncate leading-none">
                                       {item.taskCount !== undefined ? `${item.taskCount} Tasks` : `${item.orderCount || 0} Orders`}
                                     </div>
                                   </div>
@@ -480,12 +480,12 @@ export const LogisticsDashboard = () => {
                                     </div>
                                     <div className="space-y-0.5">
                                       {item.interactions?.slice(0, 3).map((interaction: any) => (
-                                        <div key={interaction.id} className="bg-white px-1.5 py-1 rounded-lg border border-slate-50 text-[9px]">
-                                          <div className="flex justify-between font-bold text-slate-700 leading-none mb-0.5">
+                                        <div key={interaction.id} className="bg-white px-1 py-0.5 rounded-md border border-slate-50 text-[8px]">
+                                          <div className="flex justify-between font-bold text-slate-700 leading-tight mb-0.5">
                                             <span className="truncate max-w-[100px]">{interaction.type}</span>
-                                            <span className="text-[7px] text-slate-400 shrink-0">{new Date(interaction.created_at).toLocaleDateString()}</span>
+                                            <span className="text-[6px] text-slate-400 shrink-0">{new Date(interaction.created_at).toLocaleDateString()}</span>
                                           </div>
-                                          <p className="text-slate-500 line-clamp-1 leading-tight text-[8px]">{interaction.notes}</p>
+                                          <p className="text-slate-500 line-clamp-1 leading-tight text-[7px]">{interaction.notes}</p>
                                         </div>
                                       ))}
                                       {(!item.interactions || item.interactions.length === 0) && (
