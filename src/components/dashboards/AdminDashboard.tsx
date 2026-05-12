@@ -28,7 +28,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         const renderAgentDetailContent = () => {
           if (selectedAgentTile === 'clients') {
             return (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="segmented-control mb-4">
                   <button 
                     onClick={() => setAgentDetailTab('active')} 
@@ -53,9 +53,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   )}
                   {/* Mock List */}
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                       <div>
-                        <div className="font-bold text-slate-900">Client Company {i}</div>
+                        <div className="font-bold text-slate-900 text-sm">Client Company {i}</div>
                         <div className="text-xs text-slate-500">Last interaction: 2 days ago</div>
                       </div>
                       <button className="text-indigo-600 text-sm font-bold hover:underline">View Details</button>
@@ -67,7 +67,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           }
           if (selectedAgentTile === 'leads') {
             return (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="segmented-control mb-4">
                   <button 
                     onClick={() => setAgentDetailTab('active')} 
@@ -91,9 +91,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     <div className="text-sm text-slate-600">Showing new leads assigned by admin...</div>
                   )}
                   {[1, 2].map(i => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                       <div>
-                        <div className="font-bold text-slate-900">Potential Lead {i}</div>
+                        <div className="font-bold text-slate-900 text-sm">Potential Lead {i}</div>
                         <div className="text-xs text-slate-500">Status: In Discussion</div>
                       </div>
                       <button className="text-indigo-600 text-sm font-bold hover:underline">View Details</button>
@@ -105,7 +105,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           }
           if (selectedAgentTile === 'schedule') {
             return (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="segmented-control mb-4">
                   <button 
                     onClick={() => setAgentDetailTab('today')} 
@@ -174,10 +174,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
 
             {/* Top Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div 
                 onClick={() => { setSelectedAgentTile('clients'); setAgentDetailTab('active'); }}
-                className={`bg-white p-4 rounded-2xl border ${selectedAgentTile === 'clients' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                className={`bg-white p-4 rounded-xl border ${selectedAgentTile === 'clients' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="card-info-text">Clients</div>
@@ -187,7 +187,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
               <div 
                 onClick={() => { setSelectedAgentTile('leads'); setAgentDetailTab('active'); }}
-                className={`bg-white p-4 rounded-2xl border ${selectedAgentTile === 'leads' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                className={`bg-white p-4 rounded-xl border ${selectedAgentTile === 'leads' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-slate-500 text-xs font-bold uppercase tracking-wider">Leads</div>
@@ -197,7 +197,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
               <div 
                 onClick={() => { setSelectedAgentTile('schedule'); setAgentDetailTab('today'); }}
-                className={`bg-white p-4 rounded-2xl border ${selectedAgentTile === 'schedule' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                className={`bg-white p-4 rounded-xl border ${selectedAgentTile === 'schedule' ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-slate-500 text-xs font-bold uppercase tracking-wider">Schedule</div>
@@ -222,7 +222,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </AnimatePresence>
 
             {/* Graphical Representation */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-slate-900">Performance Metrics</h3>
                 <select className="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-indigo-500">
@@ -260,7 +260,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Recent Activity */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                 <h3 className="font-bold text-slate-900 mb-4">Recent Activity</h3>
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -279,7 +279,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
 
               {/* Contextual Chat */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[500px]">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col h-[500px]">
                 <div className="p-4 border-b border-slate-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
@@ -351,7 +351,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
       return (
         <div className="space-y-8">
           {/* Overview Section */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
               <div className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">Sales Executed</div>
               <div className="text-2xl font-bold text-slate-900">142</div>
@@ -385,7 +385,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           </div>
 
           {/* Hierarchical View */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm overflow-x-auto">
+          <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
             <div className="min-w-[600px] flex flex-col items-center">
               {/* Manager Level */}
               {manager && (
@@ -463,7 +463,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
 
             {/* Client Finances Summary */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
+            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mb-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900 text-lg cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => { setSelectedClientDetails(order?.customer || order?.client || null); setSelectedAdminOrderDetails(null); }}>
                   Client: {order?.customer || order?.client}
@@ -488,8 +488,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Order Details */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 className="font-bold text-slate-900 mb-4">Order Details</h3>
+            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-900 mb-4">Order Details</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-slate-50">
                     <span className="text-slate-500 text-sm">Expected Delivery</span>
@@ -526,8 +526,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
 
               {/* Financial Details */}
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <h3 className="font-bold text-slate-900 mb-4">Financial Breakdown</h3>
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+              <h3 className="font-bold text-slate-900 mb-4">Financial Breakdown</h3>
                 <div className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-slate-50">
                     <span className="text-slate-500 text-sm">Draft Amount</span>
@@ -552,7 +552,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
 
             {/* Conversations / Notes */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
               <h3 className="font-bold text-slate-900 mb-4">Conversations & Notes</h3>
               <div className="space-y-4">
                 {order?.notes && order.notes.length > 0 ? (
@@ -600,7 +600,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
             {/* Client Info & Financials */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-1">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 lg:col-span-1">
                 <h3 className="font-bold text-slate-900 mb-4">Contact Information</h3>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -637,22 +637,22 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
 
               {!isLeadOnly && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-2">
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 lg:col-span-2">
                   <h3 className="font-bold text-slate-900 mb-4">Financial Overview</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl">
+                    <div className="p-3 bg-slate-50 rounded-lg">
                       <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Value</div>
                       <div className="text-xl font-bold text-slate-900">₹{((client as any).totalValue || 0).toLocaleString()}</div>
                     </div>
-                    <div className="p-4 bg-emerald-50 rounded-2xl">
+                    <div className="p-3 bg-emerald-50 rounded-lg">
                       <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Total Paid</div>
                       <div className="text-xl font-bold text-emerald-700">₹{(((client as any).totalValue || 0) * 0.8).toLocaleString()}</div>
                     </div>
-                    <div className="p-4 bg-rose-50 rounded-2xl">
+                    <div className="p-3 bg-rose-50 rounded-lg">
                       <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-1">Due Amount</div>
                       <div className="text-xl font-bold text-rose-700">₹{(((client as any).totalValue || 0) * 0.2).toLocaleString()}</div>
                     </div>
-                    <div className="p-4 bg-indigo-50 rounded-2xl">
+                    <div className="p-3 bg-indigo-50 rounded-lg">
                       <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Advance</div>
                       <div className="text-xl font-bold text-indigo-700">₹5,000</div>
                     </div>
@@ -661,12 +661,12 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               )}
               
               {isLeadOnly && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-2">
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 lg:col-span-2">
                   <h3 className="font-bold text-slate-900 mb-4">Conversations & Notes</h3>
                   <div className="space-y-4">
                     {(client as any).notes && (client as any).notes.length > 0 ? (
                       (client as any).notes.map((note: any) => (
-                        <div key={note.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div key={note.id} className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                           <div className="flex items-center justify-between mb-2">
                             <span className="font-bold text-slate-900 text-sm">{note.author}</span>
                             <span className="text-xs text-slate-500">{note.time}</span>
@@ -685,7 +685,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             {!isLeadOnly && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Orders Tabs */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 lg:col-span-2">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 lg:col-span-2">
                 <div className="segmented-control mb-6">
                   <button 
                     onClick={() => setClientDetailTab('active')} 
@@ -773,7 +773,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
 
               {/* Conversation Records */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 lg:col-span-1">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 lg:col-span-1">
                 <h3 className="font-bold text-slate-900 mb-4">Interaction History</h3>
                 <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
                   <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
@@ -811,201 +811,171 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
       }
 
       return (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Clients & Orders</h2>
-              <p className="text-slate-500 text-sm mt-1">Manage all clients, leads, and their respective orders</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input 
-                  type="text" 
-                  value={clientsSearchQuery}
-                  onChange={(e) => setClientsSearchQuery(e.target.value)}
-                  placeholder="Search..." 
-                  className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all w-64"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-6 border-b border-slate-200">
-            <button onClick={() => setClientsOrdersMainTab('activeOrders')} className={`pb-4 text-sm font-bold border-b-2 transition-colors ${clientsOrdersMainTab === 'activeOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Active Orders</button>
-            <button onClick={() => setClientsOrdersMainTab('draftOrders')} className={`pb-4 text-sm font-bold border-b-2 transition-colors ${clientsOrdersMainTab === 'draftOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Draft Orders</button>
-            <button onClick={() => setClientsOrdersMainTab('leads')} className={`pb-4 text-sm font-bold border-b-2 transition-colors ${clientsOrdersMainTab === 'leads' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Active Leads</button>
-            <button onClick={() => setClientsOrdersMainTab('allClients')} className={`pb-4 text-sm font-bold border-b-2 transition-colors ${clientsOrdersMainTab === 'allClients' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>All Clients</button>
+        <div className="space-y-4">
+          <div className="flex gap-8 border-b border-slate-200">
+            <button onClick={() => setClientsOrdersMainTab('activeOrders')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'activeOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Active Orders</button>
+            <button onClick={() => setClientsOrdersMainTab('draftOrders')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'draftOrders' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Draft Orders</button>
+            <button onClick={() => setClientsOrdersMainTab('leads')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'leads' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>Active Leads</button>
+            <button onClick={() => setClientsOrdersMainTab('allClients')} className={`pb-3 text-xs font-bold uppercase tracking-widest border-b-2 transition-all ${clientsOrdersMainTab === 'allClients' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>All Clients</button>
           </div>
 
           {clientsOrdersMainTab === 'allClients' && (
-            <div className="flex gap-2">
-              <button onClick={() => setAllClientsFilter('All')} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${allClientsFilter === 'All' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>All</button>
-              <button onClick={() => setAllClientsFilter('Active Client')} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${allClientsFilter === 'Active Client' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Active Clients</button>
-              <button onClick={() => setAllClientsFilter('Past Client')} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${allClientsFilter === 'Past Client' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Past Clients</button>
-              <button onClick={() => setAllClientsFilter('Active Lead')} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${allClientsFilter === 'Active Lead' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Active Leads</button>
-              <button onClick={() => setAllClientsFilter('Inactive Lead')} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${allClientsFilter === 'Inactive Lead' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Inactive</button>
+            <div className="flex gap-2 py-2">
+              <button onClick={() => setAllClientsFilter('All')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'All' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>All</button>
+              <button onClick={() => setAllClientsFilter('Active Client')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Active Client' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Active Clients</button>
+              <button onClick={() => setAllClientsFilter('Past Client')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Past Client' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Past Clients</button>
+              <button onClick={() => setAllClientsFilter('Active Lead')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Active Lead' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Active Leads</button>
+              <button onClick={() => setAllClientsFilter('Inactive Lead')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${allClientsFilter === 'Inactive Lead' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-white border border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Inactive</button>
             </div>
           )}
 
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-900">
-                {clientsOrdersMainTab === 'activeOrders' && 'Active Orders'}
-                {clientsOrdersMainTab === 'draftOrders' && 'Draft Orders'}
-                {clientsOrdersMainTab === 'leads' && 'Active Leads'}
-                {clientsOrdersMainTab === 'allClients' && (
-                  <>
-                    {allClientsFilter === 'All' && 'All Clients'}
-                    {allClientsFilter === 'Active Client' && 'Active Clients'}
-                    {allClientsFilter === 'Past Client' && 'Past Clients'}
-                    {allClientsFilter === 'Active Lead' && 'Active Leads'}
-                    {allClientsFilter === 'Inactive Lead' && 'Inactive Leads'}
-                  </>
-                )}
-              </h3>
-            </div>
+          <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
+                  <tr className="bg-white border-b border-slate-100">
                     {clientsOrdersMainTab === 'activeOrders' && (
                       <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('id')}>Order {renderSortIcon('id')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('client')}>Client {renderSortIcon('client')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('date')}>Dates {renderSortIcon('date')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('salesAgent')}>Team {renderSortIcon('salesAgent')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('id')}>Order {renderSortIcon('id')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('client')}>Client {renderSortIcon('client')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('date')}>Dates {renderSortIcon('date')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('status')}>Status {renderSortIcon('status')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                       </>
                     )}
                     {clientsOrdersMainTab === 'draftOrders' && (
                       <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('id')}>Draft Order {renderSortIcon('id')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('client')}>Client / Org {renderSortIcon('client')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('priority')}>Priority {renderSortIcon('priority')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('salesAgent')}>Sales Agent {renderSortIcon('salesAgent')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('id')}>Draft Order {renderSortIcon('id')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('client')}>Client / Org {renderSortIcon('client')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('priority')}>Priority {renderSortIcon('priority')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                       </>
                     )}
                     {clientsOrdersMainTab === 'leads' && (
                       <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('name')}>Lead Name {renderSortIcon('name')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('contactPerson')}>Contact {renderSortIcon('contactPerson')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('interest')}>Interest {renderSortIcon('interest')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('salesAgent')}>Sales Agent {renderSortIcon('salesAgent')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('name')}>Lead Name {renderSortIcon('name')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('contactPerson')}>Contact {renderSortIcon('contactPerson')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('interest')}>Interest {renderSortIcon('interest')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                       </>
                     )}
                     {clientsOrdersMainTab === 'allClients' && (
                       <>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('name')}>Client Name {renderSortIcon('name')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('type')}>Status {renderSortIcon('type')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('totalOrders')}>Total Orders {renderSortIcon('totalOrders')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('totalValue')}>Total Value {renderSortIcon('totalValue')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider cursor-pointer group hover:text-slate-700 transition-colors" onClick={() => handleSort('lastInteraction')}>Last Interaction {renderSortIcon('lastInteraction')}</th>
-                        <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('name')}>Client Name {renderSortIcon('name')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('type')}>Type {renderSortIcon('type')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('totalOrders')}>Orders {renderSortIcon('totalOrders')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('totalValue')}>Revenue {renderSortIcon('totalValue')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                       </>
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-50">
                   {clientsOrdersMainTab === 'activeOrders' && sortData(activeOrders.filter(o => (o.customer || o.client || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (o.orderId || o.id || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((order) => (
-                    <tr key={order.orderId || order.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{order.orderId || order.id}</div>
-                        <div className="text-xs text-indigo-600 font-bold mt-1">{order.overallStage || order.status}</div>
+                    <tr key={order.orderId || order.id} className="hover:bg-slate-50/50 transition-all group">
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{order.orderId || order.id}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900 cursor-pointer hover:text-indigo-600" onClick={() => setSelectedClientDetails(order.customer || order.client)}>{order.customer || order.client}</div>
-                        <div className="text-xs text-slate-500 font-medium">₹{(order.value || 0).toLocaleString()}</div>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900 cursor-pointer hover:text-indigo-600 transition-colors" onClick={() => setSelectedClientDetails(order.customer || order.client)}>{order.customer || order.client}</div>
+                        <div className="text-[11px] text-slate-400 font-medium">₹{(order.value || 0).toLocaleString()}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900"><span className="text-slate-500 text-xs">Placed:</span> {order.date || new Date().toISOString().split('T')[0]}</div>
-                        <div className="text-sm text-slate-900 mt-1"><span className="text-slate-500 text-xs">Delivery:</span> {order.expectedDelivery || new Date().toISOString().split('T')[0]}</div>
+                      <td className="px-6 py-4">
+                        <div className="text-[11px] text-slate-600"><span className="text-slate-400 uppercase tracking-tighter mr-1">Exp:</span> {order.expectedDelivery || new Date().toISOString().split('T')[0]}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Sales:</span> {order.salesAgent || 'System'}</div>
-                        <div className="text-xs text-slate-600 my-0.5"><span className="font-bold text-slate-500">Prod:</span> {order.supervisor || 'System'}</div>
-                        <div className="text-xs text-slate-600"><span className="font-bold text-slate-500">Acc:</span> {order.accountant || 'System'}</div>
+                      <td className="px-6 py-4">
+                        <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-50 text-sky-700">
+                          {order.overallStage || order.status}
+                        </span>
                       </td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setSelectedAdminOrderDetails(order.orderId || order.id)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => setSelectedAdminOrderDetails(order.orderId || order.id)} className="text-slate-400 hover:text-indigo-600 transition-all">
+                          <ChevronRight size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
 
                   {clientsOrdersMainTab === 'draftOrders' && sortData(orders.filter(o => o.category === 'Open').filter(o => (clients.find(c => c.id === o.orgId)?.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((draft) => (
-                    <tr key={draft.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{draft.id}</div>
-                        <div className="text-xs text-slate-500 font-medium mt-1">Est. ₹{(draft.totalAmount || 0).toLocaleString()}</div>
+                    <tr key={draft.id} className="hover:bg-slate-50/50 transition-all group">
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{draft.id}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{clients.find(c => c.id === draft.orgId)?.name || 'Unknown Client'}</div>
-                        <div className="text-xs text-slate-500">{clients.find(c => c.id === draft.orgId)?.type || 'N/A'}</div>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900">{clients.find(c => c.id === draft.orgId)?.name || 'Unknown Client'}</div>
+                        <div className="text-[11px] text-slate-400 font-medium">Est. ₹{(draft.totalAmount || 0).toLocaleString()}</div>
                       </td>
-                      <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${draft.priority === 'High' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${draft.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
                           {draft.priority || 'Normal'}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{draft.salesAgent || 'System'}</div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setSelectedAdminOrderDetails(draft.id)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => setSelectedAdminOrderDetails(draft.id)} className="text-slate-400 hover:text-indigo-600 transition-all">
+                          <ChevronRight size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
 
                   {clientsOrdersMainTab === 'leads' && sortData(clients.filter(c => !c.is_client).filter(l => (l.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (l.contactPerson || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((lead) => (
-                    <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{lead.name}</div>
-                        <div className="text-xs text-slate-500 mt-1">Last Contact: {lead.interactions?.[0]?.date || 'N/A'}</div>
+                    <tr key={lead.id} className="hover:bg-slate-50/50 transition-all group">
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{lead.name}</div>
+                        <div className="text-[11px] text-slate-400">Since: {lead.interactions?.[0]?.date || 'N/A'}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.contactPerson || 'N/A'}</div>
-                        <div className="text-xs text-slate-500">{lead.contact || 'N/A'}</div>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900">{lead.contactPerson || 'N/A'}</div>
+                        <div className="text-[11px] text-slate-400">{lead.contact || 'N/A'}</div>
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.interest || 'N/A'}</div>
+                      <td className="px-6 py-4 text-[11px] text-slate-600">
+                        {lead.interest || 'N/A'}
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{lead.salesAgent || 'System'}</div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setSelectedClientDetails(lead.name)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => setSelectedClientDetails(lead.name)} className="text-slate-400 hover:text-indigo-600 transition-all">
+                          <ChevronRight size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
 
                   {clientsOrdersMainTab === 'allClients' && sortData(clients.filter(c => allClientsFilter === 'All' || (allClientsFilter === 'Active Client' && c.is_client) || (allClientsFilter === 'Active Lead' && !c.is_client && c.status === 'Active') || (allClientsFilter === 'Inactive Lead' && !c.is_client && c.status === 'Inactive')).filter(c => (c.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((client) => (
-                    <tr key={client.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-slate-900">{client.name}</div>
+                    <tr key={client.id} className="hover:bg-slate-50/50 transition-all group">
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{client.name}</div>
+                        <div className="text-[11px] text-slate-400">{client.location || 'N/A'}</div>
                       </td>
-                      <td className="p-4">
-                        <span className={`status-tag ${client.is_client ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${client.is_client ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}`}>
                           {client.is_client ? 'Client' : 'Lead'}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{orders.filter(o => o.orgId === client.id).length}</div>
+                      <td className="px-6 py-4 text-[13px] text-slate-900 font-medium">
+                        {orders.filter(o => o.orgId === client.id).length}
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900 font-bold">₹{(client.totalValue || 0).toLocaleString()}</div>
+                      <td className="px-6 py-4 text-[13px] font-bold text-slate-900">
+                        ₹{(client.totalValue || 0).toLocaleString()}
                       </td>
-                      <td className="p-4">
-                        <div className="text-sm text-slate-900">{client.interactions?.[0]?.date || 'N/A'}</div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button onClick={() => setSelectedClientDetails(client.name)} className="text-indigo-600 hover:text-indigo-800 text-sm font-bold transition-colors">View Details</button>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => setSelectedClientDetails(client.name)} className="text-slate-400 hover:text-indigo-600 transition-all">
+                          <ChevronRight size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Pagination Placeholder (Match Ref Image 2) */}
+            <div className="px-6 py-4 bg-white border-t border-slate-50 flex items-center justify-between">
+              <div className="text-[11px] text-slate-400">
+                Showing 1-{activeOrders.length > 5 ? 5 : activeOrders.length} of {activeOrders.length} records
+              </div>
+              <div className="flex gap-2">
+                <button className="px-3 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-400 hover:bg-slate-50 disabled:opacity-50" disabled>Prev</button>
+                <button className="px-3 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all">Next</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1020,7 +990,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         const renderAgentDetailContent = () => {
           if (selectedDeliveryAgentTile === 'tasks') {
             return (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
                   <button onClick={() => setDeliveryAgentDetailTab('active')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'active' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Active Tasks</button>
                   <button onClick={() => setDeliveryAgentDetailTab('complete')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'complete' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Complete Tasks</button>
@@ -1035,7 +1005,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     <div className="text-sm text-slate-600">Showing {agent?.doneToday} tasks completed today...</div>
                   )}
                   {[1, 2].map(i => (
-                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                       <div>
                         <div className="font-bold text-slate-900">Task #{2000 + i}</div>
                         <div className="text-xs text-slate-500">Client: {agent?.currentClient}</div>
@@ -1049,7 +1019,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           }
           if (selectedDeliveryAgentTile === 'schedule') {
             return (
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mb-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 mb-4">
                 <div className="flex gap-4 border-b border-slate-100 pb-4 mb-4">
                   <button onClick={() => setDeliveryAgentDetailTab('week')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'week' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Upcoming Week</button>
                   <button onClick={() => setDeliveryAgentDetailTab('available')} className={`text-sm font-bold pb-2 border-b-2 ${deliveryAgentDetailTab === 'available' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500'}`}>Available Tasks</button>
@@ -1099,10 +1069,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
 
             {/* Top Tiles */}
-            <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="flex gap-3 overflow-x-auto pb-4">
               <div 
                 onClick={() => { setSelectedDeliveryAgentTile('tasks'); setDeliveryAgentDetailTab('active'); }}
-                className={`bg-white p-4 rounded-2xl border-2 min-w-[240px] flex-1 ${selectedDeliveryAgentTile === 'tasks' ? 'border-orange-500' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                className={`bg-white p-4 rounded-xl border-2 min-w-[240px] flex-1 ${selectedDeliveryAgentTile === 'tasks' ? 'border-orange-500' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-slate-500 text-xs font-bold uppercase tracking-wider">TASKS</div>
@@ -1116,7 +1086,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               
               <div 
                 onClick={() => { setSelectedDeliveryAgentTile('schedule'); setDeliveryAgentDetailTab('week'); }}
-                className={`bg-white p-4 rounded-2xl border-2 min-w-[240px] flex-1 ${selectedDeliveryAgentTile === 'schedule' ? 'border-orange-500' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
+                className={`bg-white p-4 rounded-xl border-2 min-w-[240px] flex-1 ${selectedDeliveryAgentTile === 'schedule' ? 'border-orange-500' : 'border-slate-100'} shadow-sm cursor-pointer hover:shadow-md transition-all`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-slate-500 text-xs font-bold uppercase tracking-wider">SCHEDULE</div>
@@ -1144,7 +1114,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </AnimatePresence>
 
             {/* Graphical Representation */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-bold text-slate-900">Delivery Performance</h3>
                 <select className="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-1.5 outline-none focus:border-orange-500">
@@ -1184,7 +1154,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Current Route / Activity */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                 <h3 className="font-bold text-slate-900 mb-4">Current Route</h3>
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
@@ -1202,7 +1172,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               </div>
 
               {/* Contextual Chat */}
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[500px]">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col h-[500px]">
                 <div className="p-4 border-b border-slate-100">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600">
@@ -1228,13 +1198,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   {deliveryChatContext ? (
                     <>
                       <div className="flex flex-col gap-1 items-start">
-                        <div className="bg-white border border-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
+                        <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
                           Hi Admin, traffic is heavy on I-95, might be delayed by 10 mins for the {deliveryChatContext === 'client1' ? agent?.currentClient : 'Global Logistics'} delivery.
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 px-1">10:30 AM</span>
                       </div>
                       <div className="flex flex-col gap-1 items-end">
-                        <div className="bg-orange-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
+                        <div className="bg-orange-600 text-white px-4 py-2 rounded-xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
                           Noted. I'll update the client. Drive safe!
                         </div>
                         <span className="text-[10px] font-bold text-slate-400 px-1">10:32 AM</span>
@@ -1285,7 +1255,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <div 
                 key={agent.id} 
                 onClick={() => setSelectedAdminDeliveryAgent(agent.id)}
-                className="bg-orange-50 border border-orange-100 p-6 rounded-3xl text-center cursor-pointer hover:shadow-md transition-all relative z-10"
+                className="bg-orange-50 border border-orange-100 p-4 rounded-xl text-center cursor-pointer hover:shadow-md transition-all relative z-10"
               >
                 <div className="w-16 h-16 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-3 shadow-sm">
                   {agent.name?.charAt(0) || '?'}
@@ -1331,27 +1301,27 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                     <div className="card-info-text mb-1">Processed</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.processedInvoices}</div>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                     <div className="card-info-text mb-1">Pending</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.pendingApprovals}</div>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                     <div className="card-info-text mb-1">Accuracy</div>
                     <div className="text-xl font-bold text-slate-900">{agent?.accuracy}</div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
                   <h3 className="font-bold text-slate-900 mb-4">Recent Approvals</h3>
                   <div className="space-y-4">
                     {[1, 2].map((i) => (
                       <div key={i} className="flex items-start gap-4 pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                        <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                        <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600 shrink-0">
                           <Receipt size={18} />
                         </div>
                         <div>
@@ -1364,9 +1334,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 </div>
               </div>
 
-              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col h-[600px]">
+              <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex flex-col h-[600px]">
                 <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                  <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
                     <MessageSquare size={20} />
                   </div>
                   <div>
@@ -1376,13 +1346,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 </div>
                 <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
                   <div className="flex flex-col gap-1 items-start">
-                    <div className="bg-white border border-slate-100 px-4 py-2.5 rounded-2xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
+                    <div className="bg-white border border-slate-100 px-4 py-2 rounded-xl rounded-tl-sm text-sm text-slate-700 shadow-sm max-w-[85%]">
                       Hi Admin, I need approval for the new equipment purchase order.
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 px-1">11:15 AM</span>
                   </div>
                   <div className="flex flex-col gap-1 items-end">
-                    <div className="bg-amber-600 text-white px-4 py-2.5 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
+                    <div className="bg-amber-600 text-white px-4 py-2 rounded-xl rounded-tr-sm text-sm shadow-sm max-w-[85%]">
                       Sure, I'll review it and get back to you shortly.
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 px-1">11:20 AM</span>
@@ -1423,7 +1393,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               <div 
                 key={agent.id} 
                 onClick={() => setSelectedAdminAccountant(agent.id)}
-                className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer group"
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
@@ -1444,17 +1414,17 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="p-3 bg-slate-50 rounded-2xl">
+                  <div className="p-2.5 bg-slate-50 rounded-xl">
                     <div className="card-info-text mb-1">Processed</div>
-                    <div className="font-bold text-slate-900">{agent.processedInvoices}</div>
+                    <div className="font-bold text-slate-900 text-sm">{agent.processedInvoices}</div>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-2xl">
+                  <div className="p-2.5 bg-slate-50 rounded-xl">
                     <div className="card-info-text mb-1">Pending</div>
-                    <div className="font-bold text-slate-900">{agent.pendingApprovals}</div>
+                    <div className="font-bold text-slate-900 text-sm">{agent.pendingApprovals}</div>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-2xl">
+                  <div className="p-2.5 bg-slate-50 rounded-xl">
                     <div className="card-info-text mb-1">Acc.</div>
-                    <div className="font-bold text-emerald-600">{agent.accuracy}</div>
+                    <div className="font-bold text-emerald-600 text-sm">{agent.accuracy}</div>
                   </div>
                 </div>
               </div>
@@ -1467,41 +1437,41 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
     const renderOverview = () => (
       <div className="space-y-8">
         {/* KPI Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                <TrendingUp size={24} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600">
+                <TrendingUp size={20} />
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+12.5%</span>
             </div>
             <div className="text-3xl font-bold text-slate-900">₹124,500</div>
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Revenue</div>
           </div>
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                <ShoppingBasket size={24} />
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                <ShoppingBasket size={20} />
               </div>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">+8%</span>
             </div>
             <div className="text-3xl font-bold text-slate-900">1,240</div>
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Total Orders</div>
           </div>
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-                <Users size={24} />
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600">
+                <Users size={20} />
               </div>
               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">24 Active</span>
             </div>
             <div className="text-3xl font-bold text-slate-900">45</div>
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Sales Agents</div>
           </div>
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
-                <ShieldAlert size={24} />
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-3">
+              <div className="w-10 h-10 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600">
+                <ShieldAlert size={20} />
               </div>
               <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded-full">3 Critical</span>
             </div>
@@ -1511,9 +1481,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-            <div className="flex justify-between items-center mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Revenue Overview</h3>
                 <p className="text-xs text-slate-500">Weekly revenue trends</p>
@@ -1536,7 +1506,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#e11d48" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                 </AreaChart>
@@ -1544,7 +1514,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="bg-white p-8 rounded-xl border border-slate-100 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Production Status</h3>
@@ -1561,7 +1531,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#94a3b8'}} />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                   />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 10, paddingTop: 20 }} />
                   <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
@@ -1574,7 +1544,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
         {/* Agents and Leads Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
             <div className="flex justify-between items-center mb-8">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">Agent Performance</h3>
@@ -1617,7 +1587,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
             <h3 className="text-lg font-bold text-slate-900 mb-6">Active Leads Status</h3>
             <div className="space-y-6">
               {[
@@ -1642,12 +1612,12 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               ))}
             </div>
             <div className="mt-8 pt-8 border-t border-slate-50">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm">
+              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-rose-600 shadow-sm">
                   <PieChart size={20} />
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-slate-900">Conversion Rate</div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Conversion</div>
                   <div className="text-lg font-bold text-rose-600">18.4%</div>
                 </div>
               </div>
@@ -1673,10 +1643,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
         </AnimatePresence>
 
         {/* Sidebar */}
-        <aside className={`fixed inset-y-0 left-0 flex flex-col w-72 bg-white border-r border-slate-100 p-4 sm:p-8 h-full z-[70] transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-          <div className="flex items-center justify-between mb-12">
+        <aside className={`fixed inset-y-0 left-0 flex flex-col w-72 bg-white border-r border-slate-100 p-3 sm:p-4 h-full z-[70] transition-transform duration-300 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
+              <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-rose-100">
                 <Shield size={24} />
               </div>
               <div>
@@ -1709,13 +1679,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <button 
                   key={item.id}
                   onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group ${
+                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
-                  <span className="text-sm font-bold">{item.label}</span>
-                  {isActive && <ChevronRight size={16} className="ml-auto" />}
+                  <span className="text-sm font-bold truncate whitespace-nowrap">{item.label}</span>
+                  {isActive && <ChevronRight size={16} className="ml-auto flex-shrink-0" />}
                 </button>
               );
             })}
@@ -1734,13 +1704,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <button 
                   key={item.id}
                   onClick={() => { setAdminTab(item.id as any); setIsMobileMenuOpen(false); }}
-                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 group ${
+                  className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 group ${
                     isActive ? 'bg-rose-600 text-white shadow-lg shadow-rose-100' : 'text-slate-500 hover:bg-slate-50'
                   }`}
                 >
                   <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600'} />
-                  <span className="text-sm font-bold">{item.label}</span>
-                  {isActive && <ChevronRight size={16} className="ml-auto" />}
+                  <span className="text-sm font-bold truncate whitespace-nowrap">{item.label}</span>
+                  {isActive && <ChevronRight size={16} className="ml-auto flex-shrink-0" />}
                 </button>
               );
             })}
@@ -1749,17 +1719,17 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
           <div className="mt-auto pt-8 border-t border-slate-50">
             <button 
               onClick={handleSignOut}
-              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-all group"
             >
               <LogIn size={20} className="text-slate-400 group-hover:text-rose-600 rotate-180" />
-              <span className="text-sm font-bold">Sign Out</span>
+              <span className="text-sm font-bold truncate whitespace-nowrap">Sign Out</span>
             </button>
           </div>
         </aside>
 
         {/* Main Content */}
         <div className="flex-1 lg:ml-72 min-w-0">
-          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-4 sm:py-6 border-b border-slate-100 flex justify-between items-center">
+          <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-100 flex justify-between items-center">
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => setIsMobileMenuOpen(true)}
@@ -1800,7 +1770,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
           </header>
 
-          <main className="p-4 sm:p-8 max-w-7xl mx-auto">
+          <main className="p-2 sm:p-4 max-w-7xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={adminTab}
@@ -1818,8 +1788,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 {adminTab === 'Finance' && renderAdminFinance()}
                 {adminTab === 'Data Sync' && <DataSync />}
                 {adminTab !== 'Overview' && adminTab !== 'Logistics' && adminTab !== 'Sales' && adminTab !== 'Clients & Orders' && adminTab !== 'Manufacturing' && adminTab !== 'Delivery' && adminTab !== 'Finance' && adminTab !== 'Data Sync' && (
-                  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
-                    <div className="w-24 h-24 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-600">
+                  <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
+                    <div className="w-24 h-24 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                       {adminTab === 'Users' && <Users size={48} />}
                       {adminTab === 'System' && <Server size={48} />}
                       {adminTab === 'Logs' && <History size={48} />}

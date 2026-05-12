@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Truck, Briefcase, Building, Home, School, ShieldPlus, Store, MapPin, Coffee, Dumbbell, Plane, Users, User } from 'lucide-react';
+import { Truck, Briefcase, Building, Home, School, ShieldPlus, Store, MapPin, Coffee, Dumbbell, Plane, Users, User, Target, Crosshair } from 'lucide-react';
 
 interface MarkerData {
   id: string;
@@ -21,6 +21,7 @@ interface MapComponentProps {
   zoom?: number;
   markers?: MarkerData[];
   selectedId?: string | null;
+  hubLocation?: { latitude: number; longitude: number };
   routePoints?: { latitude: number; longitude: number }[];
   onMarkerClick?: (marker: MarkerData) => void;
   onMapClick?: (coords: { latitude: number; longitude: number }) => void;
@@ -34,6 +35,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
   zoom = 13, 
   markers = [], 
   selectedId = null,
+  hubLocation,
   routePoints = [],
   onMarkerClick,
   onMapClick,
@@ -43,6 +45,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   const map = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Record<string, maplibregl.Marker>>({});
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
+  const hoveredIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (map.current) return;
@@ -111,19 +115,30 @@ const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, []);
 
-  // Update popup when selection changes
+  // Remove popup logic for selection as it's now redundant with the sidebar
   useEffect(() => {
-    if (!map.current || !selectedId) {
-      if (popupRef.current) {
-        popupRef.current.remove();
-        popupRef.current = null;
-      }
+    if (!map.current) return;
+    
+    // Clear selection popup if it exists
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
+
+    if (!selectedId) {
+      // Clear highlights when nothing is selected
+      Object.keys(markersRef.current).forEach(id => {
+        const marker = markersRef.current[id];
+        const el = marker.getElement();
+        el.style.transform = el.style.transform.replace(/scale\(.*?\)/g, '').trim();
+        el.style.filter = 'none';
+      });
       return;
     }
 
     const selectedMarker = markers.find(m => m.id === selectedId);
     if (selectedMarker) {
-      // Find the marker element to add highlighting
+      // Keep only highlighting logic for selection
       Object.keys(markersRef.current).forEach(id => {
         const marker = markersRef.current[id];
         const el = marker.getElement();
@@ -132,41 +147,11 @@ const MapComponent: React.FC<MapComponentProps> = ({
           el.style.filter = 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.4))';
           el.style.zIndex = '1000';
         } else {
-          el.style.transform = el.style.transform.replace(/scale\(.*?\)/g, '').trim();
+          const baseTransform = el.style.transform.replace(/scale\(.*?\)/g, '').trim();
+          el.style.transform = baseTransform;
           el.style.filter = 'none';
         }
       });
-
-      // Show popup
-      if (!map.current) return;
-      if (popupRef.current) popupRef.current.remove();
-
-      const popupNode = document.createElement('div');
-      const root = createRoot(popupNode);
-      root.render(
-        <div style={{ padding: '8px', minWidth: '140px' }}>
-          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0f172a', marginBottom: '2px' }}>{selectedMarker.label}</div>
-          <div style={{ fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', fontWeight: 'bold' }}>
-            {selectedMarker.type} {selectedMarker.category ? `• ${selectedMarker.category}` : ''}
-          </div>
-          {selectedMarker.statusInfo && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingTop: '4px', marginTop: '4px', borderTop: '1px solid #f1f5f9' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: selectedMarker.isActive ? '#10b981' : '#cbd5e1' }} />
-              <div style={{ fontSize: '10px', color: '#475569', fontWeight: '500' }}>{selectedMarker.statusInfo}</div>
-            </div>
-          )}
-        </div>
-      );
-
-      const popup = new maplibregl.Popup({
-        closeButton: false,
-        offset: [0, -35]
-      })
-        .setLngLat([selectedMarker.longitude, selectedMarker.latitude])
-        .setDOMContent(popupNode)
-        .addTo(map.current);
-
-      popupRef.current = popup;
     }
   }, [selectedId, markers]);
 
@@ -266,8 +251,14 @@ const MapComponent: React.FC<MapComponentProps> = ({
         const marker = markersRef.current[mData.id];
         marker.setLngLat([mData.longitude, mData.latitude]);
         
+        // Update hovered popup if this marker is being hovered
+        if (hoveredIdRef.current === mData.id && hoverPopupRef.current) {
+          hoverPopupRef.current.setLngLat([mData.longitude, mData.latitude]);
+        }
+        
         // Update styling if needed
         const el = marker.getElement();
+        (el as any).markerData = mData; // Sync fresh data for hover listeners
         el.style.width = size;
         el.style.height = size;
         el.style.zIndex = mData.type === 'ADMIN' ? '100' : (isSelected ? '1000' : (mData.isActive ? '10' : '1'));
@@ -302,6 +293,7 @@ const MapComponent: React.FC<MapComponentProps> = ({
         
         const root = createRoot(el);
         (el as any)._reactRoot = root;
+        (el as any).markerData = mData; // Attach data for listeners
         
         root.render(
           <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -325,16 +317,104 @@ const MapComponent: React.FC<MapComponentProps> = ({
           .addTo(map.current!);
 
         el.addEventListener('click', () => {
-          if (onMarkerClick) onMarkerClick(mData);
+          const data = (el as any).markerData;
+          if (onMarkerClick) onMarkerClick(data);
+        });
+
+        el.addEventListener('mouseenter', () => {
+          const data = (el as any).markerData;
+          if (!map.current) return;
+          
+          if (hoverPopupRef.current) hoverPopupRef.current.remove();
+
+          const popupNode = document.createElement('div');
+          const hr = createRoot(popupNode);
+          hr.render(
+            <div style={{ 
+              padding: '8px 10px', 
+              minWidth: '140px',
+              backgroundColor: 'white',
+              borderRadius: '12px'
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: '#0f172a', marginBottom: '1px' }}>{data.label}</div>
+              <div style={{ 
+                fontSize: '9px', 
+                textTransform: 'uppercase', 
+                color: data.type === 'ADMIN' ? '#6366f1' : '#94a3b8', 
+                fontWeight: 'bold',
+                letterSpacing: '0.025em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                {data.type === 'SALES' ? 'Sales Agent' : data.type === 'DELIVERY' ? 'Logistics Agent' : data.type === 'CLIENT' ? 'Client' : data.type === 'LEAD' ? 'Lead' : 'Hub'}
+                {data.category && <span style={{ opacity: 0.5 }}>• {data.category}</span>}
+              </div>
+              {data.statusInfo && (
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#475569', 
+                  marginTop: '6px', 
+                  borderTop: '1px solid #f1f5f9', 
+                  paddingTop: '6px',
+                  fontWeight: '500',
+                  lineHeight: '1.2'
+                }}>
+                  {data.statusInfo}
+                </div>
+              )}
+            </div>
+          );
+
+          const hoverPopup = new maplibregl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: [0, -35]
+          })
+            .setLngLat([data.longitude, data.latitude])
+            .setDOMContent(popupNode)
+            .addTo(map.current);
+
+          hoverPopupRef.current = hoverPopup;
+        });
+
+        el.addEventListener('mouseleave', () => {
+          hoveredIdRef.current = null;
+          if (hoverPopupRef.current) {
+            hoverPopupRef.current.remove();
+            hoverPopupRef.current = null;
+          }
         });
 
         markersRef.current[mData.id] = marker;
       }
     });
-  }, [markers, onMarkerClick]);
+  }, [markers, onMarkerClick, selectedId]);
 
   return (
-    <div ref={mapContainer} className="w-full h-full rounded-2xl overflow-hidden bg-slate-100 shadow-inner" />
+    <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner">
+      <div ref={mapContainer} className="w-full h-full bg-slate-100" />
+      
+      {/* Re-center Control */}
+      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10">
+        <button 
+          onClick={() => {
+            if (map.current) {
+              const target = hubLocation || center;
+              map.current.flyTo({
+                center: [target.longitude, target.latitude],
+                zoom: 13,
+                essential: true
+              });
+            }
+          }}
+          className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:shadow-indigo-100"
+          title="Return to Hub"
+        >
+          <Crosshair size={20} strokeWidth={2.5} />
+        </button>
+      </div>
+    </div>
   );
 };
 

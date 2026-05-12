@@ -23,6 +23,8 @@ import {
   Store
 } from 'lucide-react';
 
+const HUB_LOCATION = { latitude: 27.6687, longitude: 84.4264 };
+
 export const LogisticsDashboard = () => {
   const [agents, setAgents] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -179,15 +181,16 @@ export const LogisticsDashboard = () => {
       }
     });
 
-    // Add Admin center
+    // Add Admin Hub marker
     markers.push({
-      id: 'admin_center',
+      id: 'admin-hub',
       latitude: 27.6687,
       longitude: 84.4264,
-      color: '#000000',
+      color: '#4f46e5', // Indigo for Hub
       type: 'ADMIN',
       isActive: true,
-      label: 'Admin Hub'
+      label: 'Main Office Hub',
+      statusInfo: 'Central Operations'
     });
 
     return markers;
@@ -206,7 +209,7 @@ export const LogisticsDashboard = () => {
   }, [activeSidebarTab, agents, clients, searchQuery]);
 
   return (
-    <div className="flex flex-col gap-4 pb-20 lg:pb-0 h-auto lg:h-[calc(100vh-180px)]">
+    <div className="flex flex-col gap-2 pb-8 lg:pb-0 h-auto lg:h-[calc(100vh-120px)]">
       {/* Top Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-shrink-0">
         {[
@@ -215,21 +218,21 @@ export const LogisticsDashboard = () => {
           { label: 'Avg Efficiency', value: '94%', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
           { label: 'System Alerts', value: 3, icon: AlertCircle, color: 'text-indigo-600', bg: 'bg-indigo-50' },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm flex items-center gap-2">
-            <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center`}>
-              <stat.icon size={18} />
+          <div key={i} className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-2">
+            <div className={`w-8 h-8 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center`}>
+              <stat.icon size={16} />
             </div>
             <div>
-              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</div>
-              <div className="text-lg font-bold text-slate-900 leading-none">{stat.value}</div>
+              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</div>
+              <div className="text-base font-bold text-slate-900 leading-none">{stat.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-2 min-h-0 lg:flex-1">
         {/* Main Map Area */}
-        <div className="flex-1 bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden relative min-h-[400px]">
+        <div className="w-full lg:flex-1 bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden relative h-[350px] sm:h-[450px] lg:h-full">
           {/* Map Filters Overlay */}
           <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
             <div className="bg-white/90 backdrop-blur-md p-2 rounded-lg border border-slate-100 shadow-lg w-56 transition-all">
@@ -331,21 +334,26 @@ export const LogisticsDashboard = () => {
             zoom={mapZoom}
             markers={filteredMarkers}
             selectedId={selectedId}
+            hubLocation={HUB_LOCATION}
             onMarkerClick={(m) => {
               setSelectedId(m.id);
               setMapCenter({ latitude: m.latitude, longitude: m.longitude });
               setMapZoom(16);
+              setIsMapConfigOpen(false); // Collapse on selection
+            }}
+            onMapClick={() => {
+              setIsMapConfigOpen(false); // Collapse on map interaction
             }}
           />
         </div>
 
         {/* Sidebar Panel */}
-        <div className="w-full lg:w-[320px] bg-white border border-slate-100 rounded-lg shadow-sm flex flex-col overflow-hidden h-[500px] lg:h-full">
+        <div className="w-full lg:w-[300px] bg-white border border-slate-100 rounded-lg shadow-sm flex flex-col overflow-hidden h-[400px] lg:h-full flex-shrink-0">
           {/* Tabs */}
           <div className="flex border-b border-slate-50">
             <button 
               onClick={() => setActiveSidebarTab('agents')}
-              className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest transition-all ${
+              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all ${
                 activeSidebarTab === 'agents' ? 'text-rose-600 border-b-2 border-rose-600 bg-rose-50/30' : 'text-slate-400 hover:bg-slate-50'
               }`}
             >
@@ -353,7 +361,7 @@ export const LogisticsDashboard = () => {
             </button>
             <button 
               onClick={() => setActiveSidebarTab('customers')}
-              className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest transition-all ${
+              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all ${
                 activeSidebarTab === 'customers' ? 'text-rose-600 border-b-2 border-rose-600 bg-rose-50/30' : 'text-slate-400 hover:bg-slate-50'
               }`}
             >
@@ -362,15 +370,15 @@ export const LogisticsDashboard = () => {
           </div>
 
           {/* Search bar */}
-          <div className="p-4 border-b border-slate-50">
+          <div className="p-3 border-b border-slate-50">
             <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={14} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={12} />
               <input 
                 type="text" 
                 placeholder={`Search ${activeSidebarTab}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-100 rounded-lg py-1.5 pl-8 pr-3 text-[10px] focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all font-medium"
               />
             </div>
           </div>
@@ -390,20 +398,21 @@ export const LogisticsDashboard = () => {
                     const isSelected = selectedId === item.id;
                     return (
                       <div key={item.id} className="space-y-1">
-                        <button
+                <button
                           onClick={() => {
                             if (isSelected) {
                               setSelectedId(null);
                               setMapZoom(13);
                             } else {
                               setSelectedId(item.id);
+                              setIsMapConfigOpen(false); // Collapse on selection
                               if (item.latitude && item.longitude) {
                                 setMapCenter({ latitude: item.latitude, longitude: item.longitude });
                                 setMapZoom(16);
                               }
                             }
                           }}
-                          className={`w-full p-3 rounded-2xl text-left border transition-all flex items-center gap-3 ${
+                          className={`w-full p-2.5 rounded-xl text-left border transition-all flex items-center gap-3 ${
                             isSelected 
                               ? 'bg-rose-50 border-rose-100 shadow-sm' 
                               : 'border-transparent hover:bg-slate-50'
@@ -435,7 +444,7 @@ export const LogisticsDashboard = () => {
                               exit={{ height: 0, opacity: 0 }}
                               className="overflow-hidden px-3 pb-3"
                             >
-                              <div className="bg-slate-50 rounded-2xl p-4 space-y-4 border border-slate-100">
+                              <div className="bg-slate-50 rounded-xl p-3 space-y-3 border border-slate-100">
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="bg-white p-2 rounded-xl border border-slate-100">
                                     <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Focus</div>
