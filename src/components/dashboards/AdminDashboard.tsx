@@ -1817,7 +1817,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 {adminTab === 'Delivery' && renderAdminDelivery()}
                 {adminTab === 'Finance' && renderAdminFinance()}
                 {adminTab === 'Data Sync' && <DataSync />}
-                {adminTab !== 'Overview' && adminTab !== 'Sales' && adminTab !== 'Clients & Orders' && adminTab !== 'Manufacturing' && adminTab !== 'Delivery' && adminTab !== 'Finance' && adminTab !== 'Data Sync' && (
+                {adminTab !== 'Overview' && adminTab !== 'Logistics' && adminTab !== 'Sales' && adminTab !== 'Clients & Orders' && adminTab !== 'Manufacturing' && adminTab !== 'Delivery' && adminTab !== 'Finance' && adminTab !== 'Data Sync' && (
                   <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="w-24 h-24 bg-rose-50 rounded-3xl flex items-center justify-center text-rose-600">
                       {adminTab === 'Users' && <Users size={48} />}

@@ -9,7 +9,7 @@ import { uploadToCloudinary } from '../../utils/cloudinary';
 import { getGeolocation, handleGeolocationError } from '../../utils/location';
 import { ActivityFeed } from '../unified/ActivityFeed';
 import { DutyStatusBar } from '../unified/DutyStatusBar';
-const DeliveryMap = React.lazy(() => import('../../DeliveryMap'));
+import MapComponent from '../MapComponent';
 
 const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
   const { profile } = useAuth();
@@ -914,16 +914,25 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
           <div className={`w-full overflow-hidden ${isMapFullscreen ? 'h-full' : 'h-48'}`}>
             <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">Loading map...</div>}>
               {activeTab === 'Route' && (
-                <DeliveryMap 
-                  userLocation={userLocation}
-                  isMapFullscreen={isMapFullscreen}
-                  mapCenterTrigger={mapCenterTrigger}
-                  routePoints={routePoints}
-                  navigatingTaskId={navigatingTaskId}
-                  targetTasks={targetTasks}
-                  optimizedTasks={optimizedTasks}
-                  handleStartDelivery={handleStartDelivery}
-                />
+            <MapComponent 
+              center={userLocation || { latitude: 27.7172, longitude: 85.3240 }}
+              zoom={13}
+              markers={[
+                ...(userLocation ? [{ id: 'user', ...userLocation, color: '#10b981', isActive: true }] : []),
+                ...targetTasks.filter((t: any) => t.latitude && t.longitude).map((t: any) => ({
+                  id: t.id,
+                  latitude: t.latitude,
+                  longitude: t.longitude,
+                  color: t.status === 'InProgress' ? '#3b82f6' : '#f59e0b',
+                  label: t.orgName,
+                  type: 'DELIVERY'
+                }))
+              ]}
+              routePoints={routePoints}
+              onMarkerClick={(m) => {
+                if (m.type === 'DELIVERY') handleStartDelivery(m.id);
+              }}
+            />
               )}
             </React.Suspense>
           </div>

@@ -1957,7 +1957,7 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
             <MapComponent
               center={mapLocation || { latitude: 27.7172, longitude: 85.3240 }}
               zoom={15}
-              marker={mapLocation}
+              markers={mapLocation ? [{ id: 'target', latitude: mapLocation.latitude, longitude: mapLocation.longitude, color: '#10b981' }] : []}
               onMapClick={(coords) => {
                 setMapLocation(coords);
                 setLocationSearchResults([]);

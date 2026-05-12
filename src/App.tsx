@@ -91,7 +91,6 @@ const StatusBadge = ({ status }: { status: string }) => {
     </span>
   );
 };
-const DeliveryMap = React.lazy(() => import('./DeliveryMap'));
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LineChart, 
