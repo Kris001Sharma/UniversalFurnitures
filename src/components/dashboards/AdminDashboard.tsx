@@ -372,7 +372,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               transition={{ duration: 0.4 }}
               className="flex items-end gap-2.5"
             >
-              <div className="text-xl sm:text-2xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
               <div className="flex flex-col mb-0.5 leading-none">
                 <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {isPositive ? <TrendingUp size={12} className="mr-0.5" /> : <ArrowDown size={12} className="mr-0.5" />}
@@ -409,7 +409,6 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Sales Forces Network</h2>
             </div>
             
             <div className="flex items-center gap-3">
@@ -1417,7 +1416,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
               transition={{ duration: 0.4 }}
               className="flex items-end gap-2.5"
             >
-              <div className="text-xl sm:text-2xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
+              <div className="text-lg sm:text-xl font-bold text-slate-900 leading-none">{metricInterval === '7d' ? value7d : value30d}</div>
               <div className="flex flex-col mb-0.5 leading-none">
                 <div className={`flex items-center text-[11px] font-bold ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {isPositive ? <TrendingUp size={12} className="mr-0.5" /> : <ArrowDown size={12} className="mr-0.5" />}
@@ -1453,7 +1452,6 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 tracking-tight">Fleet Network</h2>
             </div>
             
             <div className="flex items-center gap-3">
@@ -1982,7 +1980,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-4 mt-4">Dashboards</div>
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Overview' },
-              { id: 'Logistics', icon: Navigation, label: 'Logistics' },
+              { id: 'Live Map', icon: Navigation, label: 'Live Map' },
               { id: 'Clients & Orders', icon: Briefcase, label: 'Clients & Orders' },
               { id: 'Sales', icon: TrendingUp, label: 'Sales' },
               { id: 'Delivery', icon: Truck, label: 'Delivery' },
@@ -2086,7 +2084,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
             </div>
           </header>
 
-          <main className="p-2 sm:p-4 max-w-7xl mx-auto">
+          <main className={`mx-auto ${adminTab === 'Live Map' ? 'w-full h-[calc(100vh-64px)] sm:h-[calc(100vh-73px)]' : 'p-2 sm:p-4 max-w-7xl'}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={adminTab}
@@ -2094,16 +2092,17 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
+                className={adminTab === 'Live Map' ? 'h-full overflow-hidden' : ''}
               >
                 {adminTab === 'Overview' && renderOverview()}
-                {adminTab === 'Logistics' && <LogisticsDashboard />}
+                {adminTab === 'Live Map' && <LogisticsDashboard />}
                 {adminTab === 'Sales' && renderAdminSales()}
                 {adminTab === 'Clients & Orders' && renderAdminClientsOrders()}
                 {adminTab === 'Manufacturing' && <SupervisorDashboard isAdminView={true} />}
                 {adminTab === 'Delivery' && renderAdminDelivery()}
                 {adminTab === 'Finance' && renderAdminFinance()}
                 {adminTab === 'Data Sync' && <DataSync />}
-                {adminTab !== 'Overview' && adminTab !== 'Logistics' && adminTab !== 'Sales' && adminTab !== 'Clients & Orders' && adminTab !== 'Manufacturing' && adminTab !== 'Delivery' && adminTab !== 'Finance' && adminTab !== 'Data Sync' && (
+                {adminTab !== 'Overview' && adminTab !== 'Live Map' && adminTab !== 'Sales' && adminTab !== 'Clients & Orders' && adminTab !== 'Manufacturing' && adminTab !== 'Delivery' && adminTab !== 'Finance' && adminTab !== 'Data Sync' && (
                   <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="w-24 h-24 bg-rose-50 rounded-xl flex items-center justify-center text-rose-600">
                       {adminTab === 'Users' && <Users size={48} />}

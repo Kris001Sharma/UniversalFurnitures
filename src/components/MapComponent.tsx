@@ -25,6 +25,8 @@ interface MapComponentProps {
   routePoints?: { latitude: number; longitude: number }[];
   onMarkerClick?: (marker: MarkerData) => void;
   onMapClick?: (coords: { latitude: number; longitude: number }) => void;
+  onFullScreenToggle?: () => void;
+  isFullScreen?: boolean;
   style?: string;
 }
 
@@ -39,6 +41,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
   routePoints = [],
   onMarkerClick,
   onMapClick,
+  onFullScreenToggle,
+  isFullScreen = false,
   style = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -395,8 +399,8 @@ const MapComponent: React.FC<MapComponentProps> = ({
     <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner">
       <div ref={mapContainer} className="w-full h-full bg-slate-100" />
       
-      {/* Re-center Control */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10">
+      {/* Re-center and Fullscreen Controls */}
+      <div className="absolute bottom-6 right-6 flex items-center gap-2 z-10">
         <button 
           onClick={() => {
             if (map.current) {
@@ -413,6 +417,20 @@ const MapComponent: React.FC<MapComponentProps> = ({
         >
           <Crosshair size={20} strokeWidth={2.5} />
         </button>
+
+        {onFullScreenToggle && (
+          <button 
+            onClick={onFullScreenToggle}
+            className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-all active:scale-90 hover:shadow-indigo-100"
+            title={isFullScreen ? "Exit Full Screen" : "View Full Screen"}
+          >
+            {isFullScreen ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6m-6 0h6m0 0v-6M9 21H3v-6m6 0H3m0 0v6"/></svg>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

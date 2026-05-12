@@ -44,6 +44,7 @@ export const LogisticsDashboard = () => {
   const [mapCenter, setMapCenter] = useState({ latitude: 27.6687, longitude: 84.4264 });
   const [mapZoom, setMapZoom] = useState(13);
   const [isMapConfigOpen, setIsMapConfigOpen] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   
   // Map Visibility Filters
   const [filters, setFilters] = useState({
@@ -217,30 +218,32 @@ export const LogisticsDashboard = () => {
   }, [activeSidebarTab, agents, clients, searchQuery]);
 
   return (
-    <div className="flex flex-col gap-2 pb-8 lg:pb-0 min-h-0 h-full lg:h-[calc(100vh-120px)]">
+    <div className={`flex flex-col gap-2 min-h-0 h-full ${isFullScreen ? 'fixed inset-0 z-[100] bg-slate-50 p-4' : 'pb-0'}`}>
       {/* Top Summary Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
-        {[
-          { label: 'Active Agents', value: agents.filter(a => a.isActive).length, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Active Clients', value: clients.filter(c => c.isActive).length, icon: Star, color: 'text-sky-600', bg: 'bg-sky-50' },
-          { label: 'Avg Efficiency', value: '94%', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'System Alerts', value: 3, icon: AlertCircle, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-2 sm:p-2.5 rounded-lg border border-slate-100 shadow-sm flex items-center gap-2">
-            <div className={`w-8 h-8 sm:w-10 sm:h-10 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center shrink-0`}>
-              <stat.icon size={16} />
+      {!isFullScreen && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0 px-4 pt-2">
+          {[
+            { label: 'Active Agents', value: agents.filter(a => a.isActive).length, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Active Clients', value: clients.filter(c => c.isActive).length, icon: Star, color: 'text-sky-600', bg: 'bg-sky-50' },
+            { label: 'Avg Efficiency', value: '94%', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
+            { label: 'System Alerts', value: 3, icon: AlertCircle, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white p-3 sm:p-4 rounded-lg border border-slate-100 shadow-sm flex items-center gap-3">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 ${stat.bg} ${stat.color} rounded-lg flex items-center justify-center shrink-0`}>
+                <stat.icon size={20} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5 truncate">{stat.label}</div>
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 leading-none">{stat.value}</div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1 truncate">{stat.label}</div>
-              <div className="text-base sm:text-lg font-bold text-slate-900 leading-none">{stat.value}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div className="flex flex-col lg:flex-row gap-2 min-h-0 flex-1 h-full">
+      <div className="flex flex-col lg:flex-row gap-2 min-h-0 flex-1 h-full px-4 pb-4">
         {/* Main Map Area */}
-        <div className="w-full lg:flex-1 bg-white rounded-xl border border-slate-50 shadow-sm overflow-hidden relative h-[400px] sm:h-[500px] lg:h-full z-10 shrink-0">
+        <div className={`w-full bg-white rounded-xl border border-slate-50 shadow-sm overflow-hidden relative z-10 shrink-0 transition-all duration-300 ${isFullScreen ? 'flex-1 h-full' : 'lg:flex-1 h-[400px] sm:h-[500px] lg:h-full'}`}>
           {/* Map Filters Overlay */}
           <div className="absolute top-3 left-3 z-20 flex flex-col gap-2 max-w-[calc(100%-24px)]">
             <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-md border border-slate-100 shadow-lg w-56 transition-all">
@@ -249,10 +252,10 @@ export const LogisticsDashboard = () => {
                 className="w-full flex items-center justify-between mb-1 px-1 focus:outline-none"
               >
                 <div className="flex items-center gap-2">
-                  <Filter size={14} className="text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Map Configuration</span>
+                  <Filter size={15} className="text-slate-400" />
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Map Configuration</span>
                 </div>
-                <ChevronRight size={14} className={`text-slate-400 transition-transform ${isMapConfigOpen ? 'rotate-90' : ''}`} />
+                <ChevronRight size={15} className={`text-slate-400 transition-transform ${isMapConfigOpen ? 'rotate-90' : ''}`} />
               </button>
               
               <AnimatePresence>
@@ -265,19 +268,19 @@ export const LogisticsDashboard = () => {
                   >
                     {/* Sales Section */}
                     <div className="space-y-2">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Sales Agents
                   </div>
                     <div className="grid grid-cols-2 gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, salesActive: !f.salesActive }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.salesActive ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.salesActive ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Active
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, salesInactive: !f.salesInactive }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.salesInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.salesInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Offline
                     </button>
@@ -286,19 +289,19 @@ export const LogisticsDashboard = () => {
 
                 {/* Delivery Section */}
                 <div className="space-y-2">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div> Delivery Agents
                   </div>
                     <div className="grid grid-cols-2 gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, deliveryActive: !f.deliveryActive }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.deliveryActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.deliveryActive ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       On Task
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, deliveryInactive: !f.deliveryInactive }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.deliveryInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.deliveryInactive ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Standby
                     </button>
@@ -307,25 +310,25 @@ export const LogisticsDashboard = () => {
 
                 {/* Customers Section */}
                 <div className="space-y-2">
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Customers & Leads
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     <button 
                       onClick={() => setFilters(f => ({ ...f, clientsActive: !f.clientsActive }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.clientsActive ? 'bg-sky-50 border-sky-100 text-sky-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.clientsActive ? 'bg-sky-50 border-sky-100 text-sky-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Clients
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, clientsPriority: !f.clientsPriority }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.clientsPriority ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.clientsPriority ? 'bg-rose-50 border-rose-100 text-rose-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Priority
                     </button>
                     <button 
                       onClick={() => setFilters(f => ({ ...f, leadsNew: !f.leadsNew }))}
-                      className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-all ${filters.leadsNew ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                      className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all ${filters.leadsNew ? 'bg-amber-50 border-amber-100 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
                     >
                       Leads
                     </button>
@@ -343,6 +346,8 @@ export const LogisticsDashboard = () => {
             markers={filteredMarkers}
             selectedId={selectedId}
             hubLocation={HUB_LOCATION}
+            isFullScreen={isFullScreen}
+            onFullScreenToggle={() => setIsFullScreen(!isFullScreen)}
             onMarkerClick={(m) => {
               setSelectedId(m.id);
               setMapCenter({ latitude: m.latitude, longitude: m.longitude });
@@ -356,21 +361,22 @@ export const LogisticsDashboard = () => {
         </div>
 
         {/* Sidebar Panel */}
-        <div className="w-full lg:w-[300px] bg-white border border-slate-100 rounded-lg shadow-sm flex flex-col overflow-hidden h-[400px] lg:h-full flex-shrink-0">
-          {/* Tabs */}
+        {!isFullScreen && (
+          <div className="w-full lg:w-[300px] bg-white border border-slate-100 rounded-lg shadow-sm flex flex-col overflow-hidden h-[400px] lg:h-full flex-shrink-0">
+            {/* Tabs */}
           <div className="flex border-b border-slate-50">
             <button 
               onClick={() => setActiveSidebarTab('agents')}
-              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                activeSidebarTab === 'agents' ? 'text-rose-600 border-b-2 border-rose-600 bg-rose-50/30' : 'text-slate-400 hover:bg-slate-50'
+              className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${
+                activeSidebarTab === 'agents' ? 'text-rose-600 border-b-3 border-rose-600 bg-rose-50/50' : 'text-slate-400 hover:bg-slate-50'
               }`}
             >
               AGENTS
             </button>
             <button 
               onClick={() => setActiveSidebarTab('customers')}
-              className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest transition-all ${
-                activeSidebarTab === 'customers' ? 'text-rose-600 border-b-2 border-rose-600 bg-rose-50/30' : 'text-slate-400 hover:bg-slate-50'
+              className={`flex-1 py-3 text-[11px] font-bold uppercase tracking-widest transition-all ${
+                activeSidebarTab === 'customers' ? 'text-rose-600 border-b-3 border-rose-600 bg-rose-50/50' : 'text-slate-400 hover:bg-slate-50'
               }`}
             >
               CUSTOMERS
@@ -380,13 +386,13 @@ export const LogisticsDashboard = () => {
           {/* Search bar */}
           <div className="p-3 border-b border-slate-50">
             <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={12} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors" size={14} />
               <input 
                 type="text" 
                 placeholder={`Search ${activeSidebarTab}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-100 rounded-lg py-1.5 pl-8 pr-3 text-[10px] focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-100 rounded-lg py-2 pl-9 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all font-medium"
               />
             </div>
           </div>
@@ -426,7 +432,7 @@ export const LogisticsDashboard = () => {
                               : 'border-transparent hover:bg-slate-50'
                           }`}
                         >
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow-sm ${
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-sm ${
                             item.role === 'SALES' ? 'bg-emerald-500' : 
                             item.role === 'DELIVERY' ? 'bg-indigo-500' :
                             item.status === 'Priority' ? 'bg-rose-500' : 
@@ -435,10 +441,10 @@ export const LogisticsDashboard = () => {
                             {(item.name || item.company_name || '?').charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-bold text-slate-900 truncate">{item.name || item.company_name}</div>
-                            <div className="text-[8px] text-slate-400 truncate flex items-center gap-1">
+                            <div className="text-[11px] font-bold text-slate-900 truncate">{item.name || item.company_name}</div>
+                            <div className="text-[9px] text-slate-400 truncate flex items-center gap-1">
                               {item.role || item.status}
-                              {item.isActive && <span className="w-1 h-1 rounded-full bg-emerald-500"></span>}
+                              {item.isActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                             </div>
                           </div>
                           <ChevronRight size={14} className={`transition-transform ${isSelected ? 'text-rose-500 rotate-90' : 'text-slate-300'}`} />
@@ -453,49 +459,49 @@ export const LogisticsDashboard = () => {
                               className="overflow-hidden px-2 pb-2"
                             >
                               <div className="bg-slate-50/40 rounded-lg p-1.5 space-y-1.5 border border-slate-100">
-                                <div className="grid grid-cols-2 gap-1">
-                                  <div className="bg-white p-1 rounded-md border border-slate-50">
-                                    <div className="text-[5px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Focus</div>
-                                    <div className="text-[8px] font-bold text-slate-600 truncate leading-none">{item.role || item.status}</div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-white p-2 rounded-md border border-slate-50">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Focus</div>
+                                    <div className="text-[10px] font-bold text-slate-600 truncate leading-none">{item.role || item.status}</div>
                                   </div>
-                                  <div className="bg-white p-1 rounded-md border border-slate-50">
-                                    <div className="text-[5px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Load</div>
-                                    <div className="text-[8px] font-bold text-slate-600 truncate leading-none">
+                                  <div className="bg-white p-2 rounded-md border border-slate-50">
+                                    <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Load</div>
+                                    <div className="text-[10px] font-bold text-slate-600 truncate leading-none">
                                       {item.taskCount !== undefined ? `${item.taskCount} Tasks` : `${item.orderCount || 0} Orders`}
                                     </div>
                                   </div>
                                 </div>
 
                                 {activeSidebarTab === 'agents' ? (
-                                  <div className="space-y-1">
-                                    <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 px-0.5 opacity-70">
-                                      <Activity size={8} /> Movement
+                                  <div className="space-y-1.5">
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 px-0.5 opacity-70">
+                                      <Activity size={10} /> Movement
                                     </div>
                                     <ActivityFeed userId={item.id} compact={true} />
                                   </div>
                                 ) : (
-                                  <div className="space-y-1">
-                                    <div className="text-[7px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 px-0.5 opacity-70">
-                                      <Clock size={8} /> History
+                                  <div className="space-y-1.5">
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 px-0.5 opacity-70">
+                                      <Clock size={10} /> History
                                     </div>
-                                    <div className="space-y-0.5">
+                                    <div className="space-y-1">
                                       {item.interactions?.slice(0, 3).map((interaction: any) => (
-                                        <div key={interaction.id} className="bg-white px-1 py-0.5 rounded-md border border-slate-50 text-[8px]">
-                                          <div className="flex justify-between font-bold text-slate-700 leading-tight mb-0.5">
-                                            <span className="truncate max-w-[100px]">{interaction.type}</span>
-                                            <span className="text-[6px] text-slate-400 shrink-0">{new Date(interaction.created_at).toLocaleDateString()}</span>
+                                        <div key={interaction.id} className="bg-white px-2 py-1.5 rounded-md border border-slate-50 text-[10px]">
+                                          <div className="flex justify-between font-bold text-slate-700 leading-tight mb-1">
+                                            <span className="truncate max-w-[120px]">{interaction.type}</span>
+                                            <span className="text-[8px] text-slate-400 shrink-0">{new Date(interaction.created_at).toLocaleDateString()}</span>
                                           </div>
-                                          <p className="text-slate-500 line-clamp-1 leading-tight text-[7px]">{interaction.notes}</p>
+                                          <p className="text-slate-500 line-clamp-1 leading-tight text-[9px]">{interaction.notes}</p>
                                         </div>
                                       ))}
                                       {(!item.interactions || item.interactions.length === 0) && (
-                                        <div className="text-[8px] text-slate-400 italic text-center py-1 opacity-60">No recent activity</div>
+                                        <div className="text-[10px] text-slate-400 italic text-center py-2 opacity-60">No recent activity</div>
                                       )}
                                     </div>
                                   </div>
                                 )}
 
-                                <div className="flex gap-1 pt-0.5">
+                                <div className="flex gap-2 pt-1">
                                   <button 
                                     onClick={() => {
                                       if (activeSidebarTab === 'agents') {
@@ -512,7 +518,7 @@ export const LogisticsDashboard = () => {
                                         setSelectedClientDetails(item.name || item.company_name);
                                       }
                                     }}
-                                    className="flex-1 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-bold hover:bg-slate-800 transition-all shadow-sm"
+                                    className="flex-1 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all shadow-sm"
                                   >
                                     View Details
                                   </button>
@@ -520,7 +526,7 @@ export const LogisticsDashboard = () => {
                                     href={`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-[9px] font-bold hover:bg-slate-50 transition-all flex items-center justify-center"
+                                    className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50 transition-all flex items-center justify-center"
                                   >
                                     Route
                                   </a>
@@ -541,9 +547,9 @@ export const LogisticsDashboard = () => {
               </motion.div>
             </AnimatePresence>
           </div>
-
-          </div>
-      </div>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
