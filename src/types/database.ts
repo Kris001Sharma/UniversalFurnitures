@@ -50,7 +50,7 @@ export interface Organization {
 export interface Order {
   id: string;
   org_id: string;
-  status: 'Draft' | 'Active' | 'In Production' | 'Ready for Delivery' | 'Delivered' | 'Closed';
+  status: 'Draft' | 'Received' | 'Active' | 'In Production' | 'Ready for Delivery' | 'Out for Delivery' | 'Delivered' | 'Closed';
   category: 'Open' | 'Active' | 'Closed';
   payment_status: 'Pending' | 'Partial' | 'Paid';
   tracking_mode: 'Order Level' | 'Item Level' | null;

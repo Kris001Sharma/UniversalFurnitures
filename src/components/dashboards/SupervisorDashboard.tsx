@@ -26,40 +26,75 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
     const [movingOrder, setMovingOrder] = useState<{ order: any; targetStatus: OrderStatus } | null>(null);
     const [moveNote, setMoveNote] = useState('');
 
+    const [tick, setTick] = useState(0);
+
+    useEffect(() => {
+      const interval = setInterval(() => setTick(t => t + 1), 10 * 60 * 1000); // 10 minute refresh
+      return () => clearInterval(interval);
+    }, []);
+
     const getSLATime = (order: Order) => {
-      if (!order.createdAt) return { time: '0h 0m', isDelayed: false };
+      if (!order.createdAt) return { time: '0d 0h', isDelayed: false };
       try {
         const start = typeof order.createdAt === 'string' ? parseISO(order.createdAt) : order.createdAt;
         const now = new Date();
-        const hours = differenceInHours(now, start);
-        const minutes = differenceInMinutes(now, start) % 60;
-        const isDelayed = hours >= 48; // Threshold for delay
-        return { time: `${hours}h ${minutes}m`, isDelayed };
+        const totalMinutes = differenceInMinutes(now, start);
+        const totalHours = Math.floor(totalMinutes / 60);
+        
+        const isDelayed = totalHours >= 48; // Threshold for delay
+        
+        if (totalHours < 24) {
+          const minutes = totalMinutes % 60;
+          return { time: `${totalHours}h ${minutes}m`, isDelayed };
+        } else {
+          const days = Math.floor(totalHours / 24);
+          const remainingHours = totalHours % 24;
+          return { time: `${days}d ${remainingHours}h`, isDelayed };
+        }
       } catch (e) {
-        return { time: '0h 0m', isDelayed: false };
+        return { time: '0d 0h', isDelayed: false };
       }
     };
 
     const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note?: string) => {
-      // Optimistic update
+      // Mapping for database enum compatibility
+      const mapToDBStatus = (status: string): string => {
+        const mapping: Record<string, string> = {
+          'Queued': 'Received',
+          'Packaging': 'Active',
+          'Ready for Dispatch': 'Ready for Delivery',
+        };
+        return mapping[status] || status;
+      };
+
+      const dbStatus = mapToDBStatus(newStatus);
+
+      // Optimistic update for both orders and activeOrders
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      setActiveOrders(prev => {
+        if (newStatus === 'Closed') {
+          return prev.filter(o => o.orderId === orderId ? false : true);
+        }
+        return prev.map(o => o.orderId === orderId ? { ...o, overallStage: newStatus, status: newStatus } : o);
+      });
       
       try {
         await dataService.updateOrder(orderId, { 
-          status: newStatus,
-          updatedAt: new Date().toISOString()
+          status: dbStatus
         });
 
         // Log Activity
         await dataService.logActivity({
-          userId: profile?.id || 'system',
-          userName: profile?.name || 'In-Charge',
-          userRole: profile?.role || 'supervisor',
+          user_id: profile?.id || 'system',
           action: 'status_update',
-          targetType: 'order',
-          targetId: orderId,
-          details: `Order status moved to ${newStatus}. ${note ? `Note: ${note}` : ''}`,
-          timestamp: new Date().toISOString()
+          entity_type: 'order',
+          entity_id: orderId,
+          status: 'Completed',
+          metadata: {
+            userName: profile?.name || 'In-Charge',
+            userRole: profile?.role || 'supervisor',
+            details: `Order status moved to ${newStatus}. ${note ? `Note: ${note}` : ''}`
+          }
         });
 
         // if there's a real backend sync needed beyond optimistic
@@ -76,8 +111,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
       const targetStatus = result.destination.droppableId as OrderStatus;
       
       const order = orders.find(o => o.id === orderId);
+      
+      // Prevent moving orders that are already out for delivery or closed
+      const terminalStatuses = ['Out for Delivery', 'Delivered', 'Closed'];
+      if (order && terminalStatuses.includes(order.status)) {
+        return;
+      }
+
       if (order && order.status !== targetStatus) {
-        setMovingOrder({ order, targetStatus });
+        updateOrderStatus(order.id, targetStatus);
       }
     };
 
@@ -91,14 +133,14 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
   const renderAdminManufacturingView = () => {
     // Factory Pulse data (mock)
     const throughput = 45;
-    const wipItems = orders.filter(o => ['Queued', 'Received', 'In Production', 'Packaging'].includes(o.status)).length;
+    const wipItems = orders.filter(o => ['Queued', 'Received', 'In Production', 'Packaging', 'Active'].includes(o.status)).length;
     const avgCycleTime = '1.2 Days';
 
     // Funnel data
     const funnelStages = [
       { name: 'Queued', count: orders.filter(o => ['Queued', 'Received'].includes(o.status)).length, color: 'bg-slate-100', bar: 'bg-slate-400' },
       { name: 'In Production', count: orders.filter(o => o.status === 'In Production').length, color: 'bg-indigo-100', bar: 'bg-indigo-500' },
-      { name: 'Packaging', count: orders.filter(o => o.status === 'Packaging').length, color: 'bg-amber-100', bar: 'bg-amber-500' },
+      { name: 'Packaging', count: orders.filter(o => ['Packaging', 'Active'].includes(o.status)).length, color: 'bg-amber-100', bar: 'bg-amber-500' },
       { name: 'Ready for Dispatch', count: orders.filter(o => ['Ready for Dispatch', 'Ready for Delivery'].includes(o.status)).length, color: 'bg-emerald-100', bar: 'bg-emerald-500' }
     ];
     const maxFunnel = Math.max(...funnelStages.map(s => s.count), 1);
@@ -199,9 +241,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
 
   const renderProductionBoard = () => {
     const getOrdersByStatus = (status: string) => orders.filter(o => {
-      if (status === 'Queued') return o.status === 'Queued' || o.status === 'Received' || o.status === 'Active';
+      if (status === 'Queued') return o.status === 'Queued' || o.status === 'Received';
       if (status === 'In Production') return o.status === 'In Production';
-      if (status === 'Packaging') return o.status === 'Packaging';
+      if (status === 'Packaging') return o.status === 'Packaging' || o.status === 'Active';
       if (status === 'Ready for Dispatch') return o.status === 'Ready for Dispatch' || o.status === 'Ready for Delivery';
       return false;
     });
@@ -210,6 +252,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
       setIsDispatching(true);
       // Optimistic update
       setOrders(prev => prev.map(o => selectedForDispatch.includes(o.id) ? { ...o, status: 'Out for Delivery' } : o));
+      setActiveOrders(prev => prev.map(o => selectedForDispatch.includes(o.orderId) ? { ...o, overallStage: 'Out for Delivery', status: 'Out for Delivery' } : o));
       
       try {
         await Promise.all(selectedForDispatch.map(id => 
@@ -218,14 +261,16 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
         
         // Log bulk activity
         await dataService.logActivity({
-          userId: profile?.id || 'system',
-          userName: profile?.name || 'Supervisor',
-          userRole: profile?.role || 'supervisor',
+          user_id: profile?.id || 'system',
           action: 'bulk_dispatch',
-          targetType: 'order',
-          targetId: selectedForDispatch.join(','),
-          details: `Bulk dispatched ${selectedForDispatch.length} orders to agent ${agentId}.`,
-          timestamp: new Date().toISOString()
+          entity_type: 'order',
+          entity_id: selectedForDispatch.join(','),
+          status: 'Completed',
+          metadata: {
+            userName: profile?.name || 'Supervisor',
+            userRole: profile?.role || 'supervisor',
+            details: `Bulk dispatched ${selectedForDispatch.length} orders to agent ${agentId}.`
+          }
         });
 
         setSelectedForDispatch([]);
@@ -280,13 +325,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
           </div>
         </div>
 
-        {/* DragDrop Context */}
+                {/* DragDrop Context */}
         <DragDropContext onDragEnd={onDragEnd}>
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar h-full min-h-[600px] items-start">
+          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto md:overflow-x-hidden pb-4 custom-scrollbar h-full min-h-[600px] items-start w-full">
             {columns.map(col => {
               const colOrders = getOrdersByStatus(col.id);
               return (
-                <div key={col.id} className="w-[300px] shrink-0 bg-slate-50/50 rounded-xl border border-slate-100 flex flex-col max-h-full">
+                <div key={col.id} className="flex-1 min-w-[260px] md:min-w-0 bg-slate-50/50 rounded-xl border border-slate-100 flex flex-col max-h-full">
                   <div className="p-3 flex justify-between items-center border-b border-slate-100 bg-white/50 rounded-t-xl">
                     <h3 className="text-sm font-bold text-slate-900">{col.label}</h3>
                     <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
@@ -333,62 +378,99 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                         {colOrders.map((order, index) => {
                           const { time, isDelayed } = getSLATime(order);
                           const isSelected = selectedForDispatch.includes(order.id);
+                          const client = clients.find(c => (c.id === (order as any).orgId) || (c.id === (order as any).clientId) || (c.name === (order as any).customerName));
+                          const clientName = client?.name || order.orgName || (order as any).customerName || 'Unknown Client';
+                          const clientCategory = client?.client_type || 'General';
+
+                          const getCategoryStyles = (cat: string) => {
+                            const c = cat.toLowerCase();
+                            if (c.includes('school')) return 'bg-amber-50 text-amber-700 border-amber-200';
+                            if (c.includes('hospital') || c.includes('clinic')) return 'bg-rose-50 text-rose-700 border-rose-200';
+                            if (c.includes('mart') || c.includes('store') || c.includes('shop')) return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                            if (c.includes('hotel') || c.includes('resort')) return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                            if (c.includes('restaurant') || c.includes('cafe')) return 'bg-orange-50 text-orange-700 border-orange-200';
+                            return 'bg-slate-50 text-slate-600 border-slate-200';
+                          };
+                          
+                          const totalQty = order.items?.reduce((acc, item) => acc + (item.quantity || 0), 0) || 0;
+                          
+                          const productsText = order.items?.map(item => {
+                            const product = products.find(p => p.id === item.productId);
+                            const code = product?.code?.toUpperCase() || item.productId.slice(0, 4).toUpperCase();
+                            return `${code} x ${item.quantity}`;
+                          }).join(', ') || 'No Items';
                           
                           return (
+                            // @ts-ignore - dnd types sometimes complain about key but it's required for React lists
                             <Draggable key={order.id} draggableId={order.id} index={index}>
                               {(provided, snapshot) => (
                                 <div
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   {...provided.dragHandleProps}
-                                  className={`bg-white p-3 rounded-lg border shadow-sm group transition-all ${
-                                    snapshot.isDragging ? 'rotate-2 scale-105 shadow-xl border-indigo-400 z-50' : 
+                                  className={`bg-white p-3 rounded-lg border shadow-sm group transition-all cursor-grab active:cursor-grabbing ${
+                                    snapshot.isDragging ? 'rotate-2 scale-105 shadow-xl border-indigo-400 z-50 ring-2 ring-indigo-500/20' : 
                                     isDelayed ? 'border-rose-200 border-l-4 border-l-rose-500' : 'border-slate-100'
                                   } ${isSelected ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
                                 >
                                   {/* Order Header */}
                                   <div className="flex justify-between items-start mb-2">
                                     <button 
-                                      onClick={() => setSelectedAdminOrderDetails(order)}
-                                      className="text-[11px] font-bold text-slate-900 hover:text-indigo-600 transition-colors text-left"
+                                      onClick={() => {
+                                        setAdminTab('Clients & Orders');
+                                        setClientsOrdersMainTab('activeOrders');
+                                        setSelectedAdminOrderDetails(order.id);
+                                      }}
+                                      className="text-xs font-black text-slate-900 hover:text-indigo-600 transition-colors text-left font-mono"
                                     >
-                                      #{order.id.slice(-6).toUpperCase()}
+                                      #{order.id.slice(-8).toUpperCase()}
                                     </button>
-                                    <div className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
-                                      order.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'
-                                    }`}>
-                                      {order.priority || 'Normal'}
+                                    <div className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider border ${getCategoryStyles(clientCategory)}`}>
+                                      {clientCategory}
                                     </div>
                                   </div>
 
                                   {/* Client Info */}
-                                  <div className="mb-3">
+                                  <div className="mb-2">
                                     <button 
-                                      onClick={() => setSelectedClientDetails(clients.find(c => c.id === order.clientId) || null)}
-                                      className="text-xs font-medium text-slate-600 hover:text-indigo-600 flex items-center gap-1.5 group/btn text-left w-full"
+                                      onClick={() => {
+                                        if (client) setSelectedClientDetails(client);
+                                      }}
+                                      className="text-xs font-bold text-slate-700 hover:text-indigo-600 flex items-center gap-1.5 group/btn text-left w-full"
                                     >
                                       <UserCircle size={12} className="text-slate-400 group-hover/btn:text-indigo-600 shrink-0" />
-                                      <span className="truncate">{order.customerName || 'Unknown Client'}</span>
+                                      <span className="truncate">{clientName}</span>
                                     </button>
                                   </div>
 
-                                  {/* SLA Info */}
-                                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
-                                    <div className={`flex items-center gap-1 text-[10px] font-bold ${isDelayed ? 'text-rose-500' : 'text-slate-500'}`}>
-                                      <Clock size={10} />
-                                      {time}
+                                  {/* Product Details & SLA */}
+                                  <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-50 gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between mb-0.5">
+                                        <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Specifications</div>
+                                        <div className="text-[9px] font-black text-indigo-600 bg-indigo-50 px-1 rounded">Qty: {totalQty}</div>
+                                      </div>
+                                      <div className="text-[10px] font-bold text-slate-600 truncate bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                        {productsText}
+                                      </div>
                                     </div>
-                                    {col.id === 'Ready for Dispatch' && (
-                                      <button 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleSelectForDispatch(order.id);
-                                        }}
-                                        className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}`}
-                                      >
-                                        {isSelected && <CheckCircle2 size={10} className="text-white" />}
-                                      </button>
-                                    )}
+                                    <div className="flex flex-col items-end shrink-0">
+                                      <div className={`flex items-center gap-1 text-[10px] font-bold ${isDelayed ? 'text-rose-500' : 'text-slate-500'}`}>
+                                        <Clock size={10} />
+                                        {time}
+                                      </div>
+                                      {col.id === 'Ready for Dispatch' && (
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleSelectForDispatch(order.id);
+                                          }}
+                                          className={`w-4 h-4 rounded border mt-2 transition-colors flex items-center justify-center ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}`}
+                                        >
+                                          {isSelected && <CheckCircle2 size={10} className="text-white" />}
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -705,7 +787,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
             </div>
           </header>
 
-          <main className="p-4 sm:p-8 max-w-7xl mx-auto">
+          <main className={`p-4 sm:p-8 mx-auto ${supervisorTab === 'Production Board' ? 'max-w-none w-full' : 'max-w-7xl'}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={supervisorTab}
@@ -759,7 +841,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
           })}
         </nav>
 
-        {/* Moving Order Confirmation Modal */}
+        {/* Moving Order Confirmation Modal rendered only if needed, but we now move directly */}
         <AnimatePresence>
           {movingOrder && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">

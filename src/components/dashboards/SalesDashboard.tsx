@@ -1589,7 +1589,7 @@ const SalesDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
                     try {
                       // Update order in Supabase
                       await dataService.updateOrder(selectedOrder.id, {
-                        status: 'Active'
+                        status: 'Received'
                       });
 
                       const updatedOrders = orders.map(o => 
