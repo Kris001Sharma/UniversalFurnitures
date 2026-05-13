@@ -1,7 +1,7 @@
 export type InteractionType = 'Visit' | 'Call' | 'Meeting';
 export type Sentiment = 'High' | 'Medium' | 'Low';
 export type ClientStatus = 'Priority' | 'New' | 'Active';
-export type OrderStatus = 'Draft' | 'Received' | 'Active' | 'In Production' | 'Ready for Delivery' | 'Out for Delivery' | 'Delivered' | 'Closed';
+export type OrderStatus = 'Draft' | 'Queued' | 'Received' | 'Active' | 'In Production' | 'Packaging' | 'Ready for Dispatch' | 'Ready for Delivery' | 'Out for Delivery' | 'Delivered' | 'Closed';
 export type OrderCategory = 'Open' | 'Active' | 'Closed';
 export type PaymentStatus = 'Pending' | 'Partial' | 'Paid';
 export interface Contact { id: string; name: string; role: string; phone: string; email: string; is_primary?: boolean; client_id?: string; }

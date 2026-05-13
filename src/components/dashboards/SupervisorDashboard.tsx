@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, Factory, Hammer, Paintbrush, Box, CheckCircle, TrendingUp, Star, Hash, Settings, Edit, Trash2, ShoppingCart, ShoppingBasket, X, ShieldCheck, UserCircle, Lock, Eye, EyeOff, LogIn, Monitor, Activity, AlertCircle, Users2, ClipboardList, BarChart3, Zap, ShieldAlert, Shield, Key, UserPlus, Database, Server, Wallet, Receipt, CreditCard, FileText, PieChart, Coins, History, Bell, MessageSquare, Navigation, Maximize, Minimize, Compass, ArrowUp, ArrowDown, DollarSign, Briefcase } from 'lucide-react';
+import { LayoutGrid, Users, Package, Clock, Plus, Search, MapPin, Camera, ChevronRight, CheckCircle2, MoreVertical, Phone, Mail, Calendar, ArrowLeft, Filter, Truck, Factory, Hammer, Paintbrush, Box, CheckCircle, TrendingUp, Star, Hash, Settings, Edit, Trash2, ShoppingCart, ShoppingBasket, X, ShieldCheck, UserCircle, Lock, Eye, EyeOff, LogIn, Monitor, Activity, AlertCircle, Users2, ClipboardList, BarChart3, Zap, ShieldAlert, Shield, Key, UserPlus, Database, Server, Wallet, Receipt, CreditCard, FileText, PieChart, Coins, History, Bell, MessageSquare, Navigation, Maximize, Minimize, Compass, ArrowUp, ArrowDown, DollarSign, Briefcase, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { differenceInHours, differenceInMinutes, parseISO } from 'date-fns';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfileModal from '../ProfileModal';
@@ -19,225 +21,392 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
   const { profile } = useAuth();
   const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData } = useAppState();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [selectedForDispatch, setSelectedForDispatch] = useState<string[]>([]);
+    const [isDispatching, setIsDispatching] = useState(false);
+    const [movingOrder, setMovingOrder] = useState<{ order: any; targetStatus: OrderStatus } | null>(null);
+    const [moveNote, setMoveNote] = useState('');
 
-  const renderInventory = () => (
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Items</div>
-            <div className="text-3xl font-bold text-slate-900">{inventory.length}</div>
+    const getSLATime = (order: Order) => {
+      if (!order.createdAt) return { time: '0h 0m', isDelayed: false };
+      try {
+        const start = typeof order.createdAt === 'string' ? parseISO(order.createdAt) : order.createdAt;
+        const now = new Date();
+        const hours = differenceInHours(now, start);
+        const minutes = differenceInMinutes(now, start) % 60;
+        const isDelayed = hours >= 48; // Threshold for delay
+        return { time: `${hours}h ${minutes}m`, isDelayed };
+      } catch (e) {
+        return { time: '0h 0m', isDelayed: false };
+      }
+    };
+
+    const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note?: string) => {
+      // Optimistic update
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      
+      try {
+        await dataService.updateOrder(orderId, { 
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        });
+
+        // Log Activity
+        await dataService.logActivity({
+          userId: profile?.id || 'system',
+          userName: profile?.name || 'In-Charge',
+          userRole: profile?.role || 'supervisor',
+          action: 'status_update',
+          targetType: 'order',
+          targetId: orderId,
+          details: `Order status moved to ${newStatus}. ${note ? `Note: ${note}` : ''}`,
+          timestamp: new Date().toISOString()
+        });
+
+        // if there's a real backend sync needed beyond optimistic
+        // await refreshData(); 
+      } catch (err) {
+        console.error('Error updating status:', err);
+      }
+    };
+
+    const onDragEnd = (result: DropResult) => {
+      if (!result.destination) return;
+      
+      const orderId = result.draggableId;
+      const targetStatus = result.destination.droppableId as OrderStatus;
+      
+      const order = orders.find(o => o.id === orderId);
+      if (order && order.status !== targetStatus) {
+        setMovingOrder({ order, targetStatus });
+      }
+    };
+
+    const confirmMove = async () => {
+      if (!movingOrder) return;
+      await updateOrderStatus(movingOrder.order.id, movingOrder.targetStatus, moveNote);
+      setMovingOrder(null);
+      setMoveNote('');
+    };
+
+  const renderAdminManufacturingView = () => {
+    // Factory Pulse data (mock)
+    const throughput = 45;
+    const wipItems = orders.filter(o => ['Queued', 'Received', 'In Production', 'Packaging'].includes(o.status)).length;
+    const avgCycleTime = '1.2 Days';
+
+    // Funnel data
+    const funnelStages = [
+      { name: 'Queued', count: orders.filter(o => ['Queued', 'Received'].includes(o.status)).length, color: 'bg-slate-100', bar: 'bg-slate-400' },
+      { name: 'In Production', count: orders.filter(o => o.status === 'In Production').length, color: 'bg-indigo-100', bar: 'bg-indigo-500' },
+      { name: 'Packaging', count: orders.filter(o => o.status === 'Packaging').length, color: 'bg-amber-100', bar: 'bg-amber-500' },
+      { name: 'Ready for Dispatch', count: orders.filter(o => ['Ready for Dispatch', 'Ready for Delivery'].includes(o.status)).length, color: 'bg-emerald-100', bar: 'bg-emerald-500' }
+    ];
+    const maxFunnel = Math.max(...funnelStages.map(s => s.count), 1);
+
+    return (
+      <div className="space-y-4">
+        {/* Factory Pulse */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+              <CheckCircle size={20} />
+            </div>
+            <div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Throughput Yield</div>
+              <div className="text-xl font-bold text-slate-900">{throughput} <span className="text-xs font-medium text-slate-500">units/day</span></div>
+            </div>
           </div>
-          <div className="bg-rose-50 p-6 rounded-3xl border border-rose-100">
-            <div className="text-xs font-bold text-rose-600 uppercase tracking-wider mb-2">Low Stock Alerts</div>
-            <div className="text-3xl font-bold text-rose-700">2</div>
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-lg flex items-center justify-center">
+              <Activity size={20} />
+            </div>
+            <div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Current WIP</div>
+              <div className="text-xl font-bold text-slate-900">{wipItems} <span className="text-xs font-medium text-slate-500">orders</span></div>
+            </div>
           </div>
-          <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100">
-            <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2">To Be Manufactured</div>
-            <div className="text-3xl font-bold text-amber-700">1</div>
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center">
+              <Clock size={20} />
+            </div>
+            <div>
+              <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Avg Cycle Time</div>
+              <div className="text-xl font-bold text-slate-900 flex items-end gap-2">
+                {avgCycleTime} 
+                <span className="text-xs font-bold text-emerald-500 flex items-center mb-1"><TrendingUp size={12} className="mr-0.5" /> 5%</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-            <h3 className="font-bold text-slate-900">Inventory Details</h3>
-            <div className="flex gap-2">
-              <button className="p-2 hover:bg-slate-50 rounded-xl text-slate-400"><Search size={18} /></button>
-              <button className="p-2 hover:bg-slate-50 rounded-xl text-slate-400"><Filter size={18} /></button>
+        {/* Production Pipeline & SLA Alerts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-bold text-slate-900 text-base">Production Pipeline</h3>
+              <button 
+                onClick={() => setSupervisorTab('Production Board' as any)}
+                className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest flex items-center gap-1 hover:underline transition-all"
+              >
+                View Details <ChevronRight size={14} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {funnelStages.map((stage, idx) => (
+                <div key={idx} className="flex items-center gap-4">
+                  <div className="w-28 text-xs font-bold text-slate-500">{stage.name}</div>
+                  <div className="flex-1 h-6 bg-slate-50 rounded-lg overflow-hidden flex items-center">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(stage.count / maxFunnel) * 100}%` }}
+                      transition={{ duration: 1, delay: idx * 0.1 }}
+                      className={`h-full ${stage.bar} flex items-center px-3`}
+                    >
+                      {stage.count > 0 && <span className="text-white text-[10px] font-bold">{stage.count}</span>}
+                    </motion.div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Item Name</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stock Level</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {inventory.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-[10px] text-slate-400">{item.id}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${
-                        item.category === 'Raw Material' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                      }`}>
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-bold text-slate-700">{item.stock} {item.unit}</div>
-                        <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${
-                              item.status === 'Low Stock' ? 'bg-rose-500' : 
-                              item.status === 'Out of Stock' ? 'bg-slate-300' : 'bg-emerald-500'
-                            }`}
-                            style={{ width: `${Math.min((item.stock / (item.minStock * 2)) * 100, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${
-                        item.status === 'In Stock' ? 'bg-emerald-100 text-emerald-700' :
-                        item.status === 'Low Stock' ? 'bg-rose-100 text-rose-700' :
-                        item.status === 'To Be Manufactured' ? 'bg-amber-100 text-amber-700' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="text-indigo-600 font-bold text-xs hover:underline">Update</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center gap-3 mb-5">
+              <ShieldAlert size={18} className="text-rose-500" />
+              <h3 className="font-bold text-slate-900 text-base">SLA Alerts</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="p-3 bg-rose-50 rounded-lg border border-rose-100 flex gap-3 items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                <div>
+                  <div className="text-[11px] font-bold text-rose-900 mb-0.5">Bottleneck Detected</div>
+                  <div className="text-[10px] text-rose-700 leading-snug">5 High-Priority orders are stuck in 'In Production' for &gt; 48 hours.</div>
+                </div>
+              </div>
+              <div className="p-3 bg-amber-50 rounded-lg border border-amber-100 flex gap-3 items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                <div>
+                  <div className="text-[11px] font-bold text-amber-900 mb-0.5">Packaging Delay</div>
+                  <div className="text-[10px] text-amber-700 leading-snug">Station 2 is operating at 40% capacity.</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     );
+  };
 
-    const renderProductionLog = () => (
-      <div className="space-y-8">
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-            <h3 className="font-bold text-slate-900">Production & Delivery History</h3>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors">
-              <FileText size={14} /> Export Log
-            </button>
+  const renderProductionBoard = () => {
+    const getOrdersByStatus = (status: string) => orders.filter(o => {
+      if (status === 'Queued') return o.status === 'Queued' || o.status === 'Received' || o.status === 'Active';
+      if (status === 'In Production') return o.status === 'In Production';
+      if (status === 'Packaging') return o.status === 'Packaging';
+      if (status === 'Ready for Dispatch') return o.status === 'Ready for Dispatch' || o.status === 'Ready for Delivery';
+      return false;
+    });
+
+    const handleBulkDispatch = async (agentId: string) => {
+      setIsDispatching(true);
+      // Optimistic update
+      setOrders(prev => prev.map(o => selectedForDispatch.includes(o.id) ? { ...o, status: 'Out for Delivery' } : o));
+      
+      try {
+        await Promise.all(selectedForDispatch.map(id => 
+          dataService.updateOrder(id, { status: 'Out for Delivery' })
+        ));
+        
+        // Log bulk activity
+        await dataService.logActivity({
+          userId: profile?.id || 'system',
+          userName: profile?.name || 'Supervisor',
+          userRole: profile?.role || 'supervisor',
+          action: 'bulk_dispatch',
+          targetType: 'order',
+          targetId: selectedForDispatch.join(','),
+          details: `Bulk dispatched ${selectedForDispatch.length} orders to agent ${agentId}.`,
+          timestamp: new Date().toISOString()
+        });
+
+        setSelectedForDispatch([]);
+      } catch (err) {
+        console.error("Failed to bulk dispatch status:", err);
+      } finally {
+        setIsDispatching(false);
+      }
+    };
+
+    const toggleSelectForDispatch = (orderId: string) => {
+      setSelectedForDispatch(prev => 
+        prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
+      );
+    };
+
+    const columns = [
+      { id: 'Queued', label: 'Queued' },
+      { id: 'In Production', label: 'In Production' },
+      { id: 'Packaging', label: 'Packaging/QA' },
+      { id: 'Ready for Dispatch', label: 'Outbound Dock' }
+    ];
+
+    const todayTarget = 80;
+    const completed = orders.filter(o => ['Out for Delivery', 'Delivered', 'Closed'].includes(o.status)).length + 45; 
+    const remaining = Math.max(0, todayTarget - completed);
+
+    return (
+      <div className="flex flex-col h-full space-y-4">
+        {/* Mission Progress */}
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+              <Factory size={20} />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Shift Mission</div>
+              <div className="text-sm font-bold text-slate-900">{todayTarget} Units Today</div>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Item</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produced Date</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Delivered To</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tracking</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {productionLog.map((record) => (
-                  <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-slate-900">{record.itemName}</td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{record.producedDate}</td>
-                    <td className="px-6 py-4 text-sm text-slate-700 font-medium">{record.deliveredTo}</td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${
-                        record.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' :
-                        record.status === 'In Transit' ? 'bg-blue-100 text-blue-700' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="p-2 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors">
-                        <Truck size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex-1 max-w-md w-full">
+            <div className="flex justify-between text-[10px] font-bold mb-1 uppercase tracking-tighter">
+              <span className="text-emerald-600">{completed} Done</span>
+              <span className="text-slate-400">{remaining} to go</span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-500 transition-all duration-1000"
+                style={{ width: `${Math.min((completed / todayTarget) * 100, 100)}%` }}
+              />
+            </div>
           </div>
         </div>
-      </div>
-    );
 
-    const renderActiveManufacturing = () => (
-      <div className="space-y-8">
-        {activeOrders.map((order) => (
-          <div key={order.orderId} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="font-bold text-slate-900 text-lg">{order.orderId}</h3>
-                  <span className="status-tag bg-indigo-100 text-indigo-700 border border-indigo-200">In Manufacturing</span>
-                  <span className="status-tag bg-slate-100 text-slate-600 border border-slate-200">
-                    {order.tracking_mode || 'Item Level'} Tracking
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Customer: {order.customer}</p>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-bold text-slate-900">{order.completedUnits} / {order.totalUnits} Units Completed</div>
-                <div className="w-48 h-2 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                  <div 
-                    className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                    style={{ width: `${(order.completedUnits / order.totalUnits) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              {order.tracking_mode === 'Order Level' ? (
-                <div className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div>
-                    <h4 className="card-info-text mb-1">Overall Order Stage</h4>
-                    <div className="text-xl font-bold text-indigo-700 flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                      {order.overallStage || 'In Progress'}
+        {/* DragDrop Context */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar h-full min-h-[600px] items-start">
+            {columns.map(col => {
+              const colOrders = getOrdersByStatus(col.id);
+              return (
+                <div key={col.id} className="w-[300px] shrink-0 bg-slate-50/50 rounded-xl border border-slate-100 flex flex-col max-h-full">
+                  <div className="p-3 flex justify-between items-center border-b border-slate-100 bg-white/50 rounded-t-xl">
+                    <h3 className="text-sm font-bold text-slate-900">{col.label}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                      {colOrders.length}
+                    </span>
+                  </div>
+
+                  {col.id === 'Ready for Dispatch' && (
+                    <div className="p-3 bg-emerald-50/50 border-b border-emerald-100">
+                      <select 
+                        className="w-full text-[11px] font-bold border border-emerald-200 rounded-lg p-2 bg-white outline-none disabled:opacity-50"
+                        onChange={(e) => {
+                          if (e.target.value && selectedForDispatch.length > 0) {
+                            handleBulkDispatch(e.target.value);
+                            e.target.value = "";
+                          }
+                        }}
+                        defaultValue=""
+                        disabled={selectedForDispatch.length === 0 || isDispatching}
+                      >
+                         <option value="" disabled>{isDispatching ? 'Dispatching...' : `Dispatch ${selectedForDispatch.length} selected`}</option>
+                        {deliveryAgents.map(ag => (
+                          <option key={ag.id} value={ag.id}>{ag.name || ag.id}</option>
+                        ))}
+                      </select>
+                      {selectedForDispatch.length > 0 && (
+                        <button 
+                          onClick={() => setSelectedForDispatch([])}
+                          className="w-full text-[9px] font-bold text-slate-400 mt-2 hover:text-slate-600 text-center uppercase tracking-widest"
+                        >
+                          Clear Selection
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl btn-standard shadow-sm hover:bg-slate-50">
-                    Update Order Stage
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h4 className="card-info-text mb-4">Unit Level Progress</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {order.items.map((unit: any) => (
-                      <div key={unit.unitId} className={`p-4 rounded-2xl border transition-all ${
-                        unit.status === 'Completed' ? 'bg-emerald-50 border-emerald-100' :
-                        unit.status === 'In Progress' ? 'bg-indigo-50 border-indigo-100' :
-                        'bg-slate-50 border-slate-100'
-                      }`}>
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="text-[10px] font-bold text-slate-400">Unit {unit.unitId}</span>
-                          {unit.status === 'Completed' ? (
-                            <CheckCircle2 size={14} className="text-emerald-500" />
-                          ) : unit.status === 'In Progress' ? (
-                            <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Clock size={14} className="text-slate-300" />
-                          )}
-                        </div>
-                        <div className={`text-xs font-bold ${
-                          unit.status === 'Completed' ? 'text-emerald-700' :
-                          unit.status === 'In Progress' ? 'text-indigo-700' :
-                          'text-slate-500'
-                        }`}>{unit.stage}</div>
-                        <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">{unit.status}</div>
+                  )}
+
+                  <Droppable droppableId={col.id}>
+                    {(provided, snapshot) => (
+                      <div 
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className={`flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px] transition-colors ${snapshot.isDraggingOver ? 'bg-indigo-50/30' : ''}`}
+                      >
+                        {colOrders.map((order, index) => {
+                          const { time, isDelayed } = getSLATime(order);
+                          const isSelected = selectedForDispatch.includes(order.id);
+                          
+                          return (
+                            <Draggable key={order.id} draggableId={order.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`bg-white p-3 rounded-lg border shadow-sm group transition-all ${
+                                    snapshot.isDragging ? 'rotate-2 scale-105 shadow-xl border-indigo-400 z-50' : 
+                                    isDelayed ? 'border-rose-200 border-l-4 border-l-rose-500' : 'border-slate-100'
+                                  } ${isSelected ? 'ring-2 ring-emerald-500 ring-offset-1' : ''}`}
+                                >
+                                  {/* Order Header */}
+                                  <div className="flex justify-between items-start mb-2">
+                                    <button 
+                                      onClick={() => setSelectedAdminOrderDetails(order)}
+                                      className="text-[11px] font-bold text-slate-900 hover:text-indigo-600 transition-colors text-left"
+                                    >
+                                      #{order.id.slice(-6).toUpperCase()}
+                                    </button>
+                                    <div className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
+                                      order.priority === 'High' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'
+                                    }`}>
+                                      {order.priority || 'Normal'}
+                                    </div>
+                                  </div>
+
+                                  {/* Client Info */}
+                                  <div className="mb-3">
+                                    <button 
+                                      onClick={() => setSelectedClientDetails(clients.find(c => c.id === order.clientId) || null)}
+                                      className="text-xs font-medium text-slate-600 hover:text-indigo-600 flex items-center gap-1.5 group/btn text-left w-full"
+                                    >
+                                      <UserCircle size={12} className="text-slate-400 group-hover/btn:text-indigo-600 shrink-0" />
+                                      <span className="truncate">{order.customerName || 'Unknown Client'}</span>
+                                    </button>
+                                  </div>
+
+                                  {/* SLA Info */}
+                                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
+                                    <div className={`flex items-center gap-1 text-[10px] font-bold ${isDelayed ? 'text-rose-500' : 'text-slate-500'}`}>
+                                      <Clock size={10} />
+                                      {time}
+                                    </div>
+                                    {col.id === 'Ready for Dispatch' && (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleSelectForDispatch(order.id);
+                                        }}
+                                        className={`w-4 h-4 rounded border transition-colors flex items-center justify-center ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-slate-300'}`}
+                                      >
+                                        {isSelected && <CheckCircle2 size={10} className="text-white" />}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
                       </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-50 flex justify-between items-center">
-              <div className="text-xs text-slate-500">
-                <span className="font-bold text-indigo-600">{order.totalUnits - order.completedUnits} units remaining</span> to finish this order.
-              </div>
-              <button className="text-xs font-bold text-indigo-600 hover:underline">View Detailed Timeline</button>
-            </div>
+                    )}
+                  </Droppable>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        </DragDropContext>
       </div>
     );
+  };
 
     const renderOverview = () => (
       <div className="space-y-8">
@@ -373,38 +542,59 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
     );
 
     if (isAdminView) {
+      // Ensure we have a valid tab selected when in Admin View
+      const currentTab = (['Overview', 'Production Board'].includes(supervisorTab)) ? supervisorTab : 'Overview';
+      
       return (
-        <div className="space-y-8">
-        <div className="segmented-control overflow-x-auto no-scrollbar justify-start">
-          {['Overview', 'Inventory', 'Production Log', 'Active Manufacturing'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setSupervisorTab(tab as any)}
-              className={`segmented-item ${supervisorTab === tab ? 'segmented-item-active' : 'segmented-item-inactive'}`}
-            >
-              {supervisorTab === tab && (
-                <motion.div 
-                  layoutId="supervisorAdminTab" 
-                  className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-100 z-[-1]"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              {tab}
-            </button>
-          ))}
-        </div>
+        <div className="space-y-6 h-full flex flex-col min-h-[600px] animate-in fade-in duration-500">
+          {/* Sub-tabs for Manufacturing Admin - Polished Segmented Control */}
+          <div className="flex items-center justify-between">
+            <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner shadow-slate-200">
+              {[
+                { id: 'Overview', label: 'Operational Overview' },
+                { id: 'Production Board', label: 'Manufacturing Kanban' }
+              ].map((tab) => {
+                const isActive = currentTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSupervisorTab(tab.id as any)}
+                    className={`px-5 py-1.5 rounded-lg text-xs font-bold transition-all duration-300 relative ${
+                      isActive 
+                        ? 'bg-white text-indigo-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeAdminManufacturingTab"
+                        className="absolute inset-0 bg-white rounded-lg shadow-sm -z-[1]"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System Live</span>
+            </div>
+          </div>
+
           <AnimatePresence mode="wait">
             <motion.div
-              key={supervisorTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              key={currentTab}
+              initial={{ opacity: 0, x: -5 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 5 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="flex-1"
             >
-              {supervisorTab === 'Overview' && renderOverview()}
-              {supervisorTab === 'Inventory' && renderInventory()}
-              {supervisorTab === 'Production Log' && renderProductionLog()}
-              {supervisorTab === 'Active Manufacturing' && renderActiveManufacturing()}
+              {currentTab === 'Overview' && renderAdminManufacturingView()}
+              {currentTab === 'Production Board' && renderProductionBoard()}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -446,9 +636,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
           <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
             {[
               { id: 'Overview', icon: LayoutGrid, label: 'Dashboard' },
-              { id: 'Inventory', icon: Package, label: 'Inventory Management' },
-              { id: 'Production Log', icon: History, label: 'Production Log' },
-              { id: 'Active Manufacturing', icon: Factory, label: 'Active Manufacturing' },
+              { id: 'Production Board', icon: Factory, label: 'Production Board' },
               { id: 'Team', icon: Users2, label: 'Team Management' },
               { id: 'Alerts', icon: ShieldAlert, label: 'System Alerts' },
               { id: 'Settings', icon: Settings, label: 'Settings' },
@@ -527,9 +715,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                 transition={{ duration: 0.2 }}
               >
                 {supervisorTab === 'Overview' && renderOverview()}
-                {supervisorTab === 'Inventory' && renderInventory()}
-                {supervisorTab === 'Production Log' && renderProductionLog()}
-                {supervisorTab === 'Active Manufacturing' && renderActiveManufacturing()}
+                {supervisorTab === 'Production Board' && renderProductionBoard()}
+                {['Inventory', 'Production Log', 'Active Manufacturing'].includes(supervisorTab) && renderProductionBoard()}
                 {['Team', 'Alerts', 'Settings'].includes(supervisorTab) && (
                   <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-20 flex flex-col items-center justify-center text-center space-y-6">
                     <div className="w-24 h-24 bg-indigo-50 rounded-3xl flex items-center justify-center text-indigo-600">
@@ -555,9 +742,8 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100 px-6 py-4 flex justify-between items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] overflow-x-auto no-scrollbar">
           {[
             { id: 'Overview', icon: LayoutGrid, label: 'Home' },
-            { id: 'Inventory', icon: Package, label: 'Inventory' },
-            { id: 'Production Log', icon: History, label: 'Log' },
-            { id: 'Active Manufacturing', icon: Factory, label: 'Active' },
+            { id: 'Production Board', icon: Factory, label: 'Prod. Board' },
+            { id: 'Team', icon: Users2, label: 'Team' },
           ].map((tab) => {
             const isActive = supervisorTab === tab.id;
             const Icon = tab.icon;
@@ -572,6 +758,70 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
             );
           })}
         </nav>
+
+        {/* Moving Order Confirmation Modal */}
+        <AnimatePresence>
+          {movingOrder && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMovingOrder(null)}
+                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative z-10"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-inner">
+                      <Activity size={24} />
+                    </div>
+                    <button onClick={() => setMovingOrder(null)} className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Stage Transition</h3>
+                  <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                    Moving Order <span className="font-bold text-slate-900">#{movingOrder.order.id.slice(-6).toUpperCase()}</span> to <span className="font-bold text-indigo-600 underline">{movingOrder.targetStatus}</span>. This action will be recorded in the audit trail.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Optional Remark</label>
+                      <textarea 
+                        value={moveNote}
+                        onChange={(e) => setMoveNote(e.target.value)}
+                        placeholder="Add a reason or instruction for this transition..."
+                        className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 mt-8">
+                    <button 
+                      onClick={() => setMovingOrder(null)}
+                      className="flex-1 py-4 bg-slate-50 text-slate-500 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors uppercase tracking-widest"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={confirmMove}
+                      className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest"
+                    >
+                      Confirm Move
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };

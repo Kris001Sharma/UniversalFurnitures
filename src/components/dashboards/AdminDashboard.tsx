@@ -29,7 +29,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
     return () => clearInterval(interval);
   }, []);
 
-  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, deliveryViewMode, setDeliveryViewMode, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
+  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, clientCategoryFilter, setClientCategoryFilter, activeOrdersStatusFilter, setActiveOrdersStatusFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, deliveryViewMode, setDeliveryViewMode, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon } = useAppState();
     const renderAdminSales = () => {
       if (selectedAdminSalesAgent && salesAgents.length > 0) {
         const agent = salesAgents.find(a => a.id === selectedAdminSalesAgent);
@@ -677,7 +677,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                 <div className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-slate-50">
                     <span className="text-slate-500 text-sm">Draft Amount</span>
-                    <span className="font-bold text-slate-900 text-sm">₹{(order ? order.value + (order.discount || 0) : 0).toLocaleString()}</span>
+                    <span className="font-bold text-slate-900 text-sm">₹{((order?.value || 0) + (order?.discount || 0)).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-slate-50">
                     <span className="text-slate-500 text-sm">Discount Offered</span>
@@ -691,7 +691,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   )}
                   <div className="flex justify-between py-2 border-b border-slate-50">
                     <span className="text-slate-500 text-sm font-bold">Final Price</span>
-                    <span className="font-bold text-indigo-600 text-lg">₹{order?.value.toLocaleString()}</span>
+                    <span className="font-bold text-indigo-600 text-lg">₹{(order?.value || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -868,7 +868,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-slate-900">₹{order.value.toLocaleString()}</div>
+                        <div className="font-bold text-slate-900">₹{(order?.value || 0).toLocaleString()}</div>
                         <button onClick={() => setSelectedAdminOrderDetails(order.id)} className="text-indigo-600 text-xs font-bold hover:underline mt-1">View Details</button>
                       </div>
                     </div>
@@ -958,40 +958,145 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
 
       return (
         <div className="space-y-6">
-          <div className="flex justify-between items-center mb-2">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Clients & Orders</h1>
-              <p className="text-sm text-slate-500">Track client relationships and order lifecycle</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+            <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner shadow-slate-200 w-fit">
+              {[
+                { id: 'activeOrders', label: 'Active Orders' },
+                { id: 'draftOrders', label: 'Draft Orders' },
+                { id: 'leads', label: 'New Leads' },
+                { id: 'allClients', label: 'Clients' }
+              ].map((tab) => {
+                const isActive = clientsOrdersMainTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    id={`admin-tab-${tab.id}`}
+                    onClick={() => setClientsOrdersMainTab(tab.id as any)}
+                    className={`px-5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-300 relative ${
+                      isActive 
+                        ? 'bg-white text-indigo-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeAdminClientsTab"
+                        className="absolute inset-0 bg-white rounded-lg shadow-sm -z-[1]"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-3">
-              <div className="bg-slate-100 p-1 rounded-lg flex items-center gap-1">
-                <button 
-                  onClick={() => setClientsOrdersMainTab('activeOrders')} 
-                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'activeOrders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Active Orders
-                </button>
-                <button 
-                  onClick={() => setClientsOrdersMainTab('draftOrders')} 
-                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'draftOrders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Drafts
-                </button>
-                <button 
-                  onClick={() => setClientsOrdersMainTab('leads')} 
-                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'leads' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Leads
-                </button>
-                <button 
-                  onClick={() => setClientsOrdersMainTab('allClients')} 
-                  className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${clientsOrdersMainTab === 'allClients' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Clients
-                </button>
+
+            <div className="flex items-center gap-2">
+              <div className="relative group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={14} />
+                <input 
+                  type="text" 
+                  value={clientsSearchQuery}
+                  onChange={(e) => setClientsSearchQuery(e.target.value)}
+                  placeholder="Filter records..." 
+                  className="bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs w-full md:w-64 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm"
+                />
               </div>
+              <button 
+                onClick={() => setShowClientsFilters(!showClientsFilters)}
+                className={`p-2 rounded-xl border transition-all ${showClientsFilters ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50 shadow-sm'}`}
+              >
+                <Filter size={16} />
+              </button>
             </div>
           </div>
+
+          <AnimatePresence>
+            {showClientsFilters && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-slate-50 rounded-xl border border-slate-100 overflow-hidden"
+              >
+                <div className="p-4 flex flex-wrap gap-6">
+                  {/* Contextual Filters */}
+                  {clientsOrdersMainTab === 'activeOrders' && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['All', 'Active', 'In Production', 'Packaging', 'Delivered'].map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => setActiveOrdersStatusFilter(status)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeOrdersStatusFilter === status ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(clientsOrdersMainTab === 'draftOrders' || clientsOrdersMainTab === 'leads') && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['All', 'Mart', 'School', 'Office', 'Hospital', 'Independent'].map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => setClientCategoryFilter(cat)}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${clientCategoryFilter === cat ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {clientsOrdersMainTab === 'allClients' && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { id: 'All', label: 'All' },
+                            { id: 'Active Client', label: 'Active' },
+                            { id: 'Past Client', label: 'Past' },
+                            { id: 'Active Lead', label: 'Lead' },
+                            { id: 'Inactive Lead', label: 'Inactive' }
+                          ].map((type) => (
+                            <button
+                              key={type.id}
+                              onClick={() => setAllClientsFilter(type.id as any)}
+                              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${allClientsFilter === type.id ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                            >
+                              {type.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</label>
+                        <div className="flex flex-wrap gap-2">
+                          {['All', 'Mart', 'School', 'Office', 'Hospital', 'Independent'].map((cat) => (
+                            <button
+                              key={cat}
+                              onClick={() => setClientCategoryFilter(cat)}
+                              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${clientCategoryFilter === cat ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                            >
+                              {cat}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -1017,7 +1122,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     )}
                     {clientsOrdersMainTab === 'leads' && (
                       <>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('name')}>Lead Name {renderSortIcon('name')}</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('name')}>New Lead Name {renderSortIcon('name')}</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('contactPerson')}>Contact {renderSortIcon('contactPerson')}</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer group hover:text-indigo-600 transition-colors" onClick={() => handleSort('interest')}>Interest {renderSortIcon('interest')}</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -1035,7 +1140,11 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {clientsOrdersMainTab === 'activeOrders' && sortData(activeOrders.filter(o => (o.customer || o.client || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (o.orderId || o.id || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((order) => (
+                  {clientsOrdersMainTab === 'activeOrders' && sortData(activeOrders.filter(o => 
+                    ((o.customer || o.client || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || 
+                     (o.orderId || o.id || '').toLowerCase().includes(clientsSearchQuery.toLowerCase())) &&
+                    (activeOrdersStatusFilter === 'All' || o.overallStage === activeOrdersStatusFilter || o.status === activeOrdersStatusFilter)
+                  )).map((order) => (
                     <tr key={order.orderId || order.id} className="hover:bg-slate-50/50 transition-all group">
                       <td className="px-6 py-4">
                         <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{order.orderId || order.id}</div>
@@ -1060,7 +1169,13 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'draftOrders' && sortData(orders.filter(o => o.category === 'Open').filter(o => (clients.find(c => c.id === o.orgId)?.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((draft) => (
+                  {clientsOrdersMainTab === 'draftOrders' && sortData(orders.filter(o => o.category === 'Open').filter(o => {
+                    const client = clients.find(c => c.id === o.orgId);
+                    return (
+                      ((client?.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || o.id.toLowerCase().includes(clientsSearchQuery.toLowerCase())) &&
+                      (clientCategoryFilter === 'All' || client?.client_type === clientCategoryFilter)
+                    );
+                  })).map((draft) => (
                     <tr key={draft.id} className="hover:bg-slate-50/50 transition-all group">
                       <td className="px-6 py-4">
                         <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{draft.id}</div>
@@ -1082,7 +1197,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'leads' && sortData(clients.filter(c => !c.is_client).filter(l => (l.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (l.contactPerson || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((lead) => (
+                  {clientsOrdersMainTab === 'leads' && sortData(clients.filter(c => !c.is_client).filter(l => 
+                    ((l.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()) || (l.contactPerson || '').toLowerCase().includes(clientsSearchQuery.toLowerCase())) &&
+                    (clientCategoryFilter === 'All' || l.client_type === clientCategoryFilter)
+                  )).map((lead) => (
                     <tr key={lead.id} className="hover:bg-slate-50/50 transition-all group">
                       <td className="px-6 py-4">
                         <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{lead.name}</div>
@@ -1103,7 +1221,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     </tr>
                   ))}
 
-                  {clientsOrdersMainTab === 'allClients' && sortData(clients.filter(c => allClientsFilter === 'All' || (allClientsFilter === 'Active Client' && c.is_client) || (allClientsFilter === 'Active Lead' && !c.is_client && c.status === 'Active') || (allClientsFilter === 'Inactive Lead' && !c.is_client && c.status === 'Inactive')).filter(c => (c.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))).map((client) => (
+                  {clientsOrdersMainTab === 'allClients' && sortData(clients.filter(c => 
+                    (allClientsFilter === 'All' || 
+                     (allClientsFilter === 'Active Client' && c.is_client) || 
+                     (allClientsFilter === 'Past Client' && c.is_client && orders.some(o => o.orgId === c.id && o.status === 'Delivered')) ||
+                     (allClientsFilter === 'Active Lead' && !c.is_client && c.status === 'Active') || 
+                     (allClientsFilter === 'Inactive Lead' && !c.is_client && c.status === 'Inactive')) &&
+                    (clientCategoryFilter === 'All' || c.client_type === clientCategoryFilter) &&
+                    ((c.name || '').toLowerCase().includes(clientsSearchQuery.toLowerCase()))
+                  )).map((client) => (
                     <tr key={client.id} className="hover:bg-slate-50/50 transition-all group">
                       <td className="px-6 py-4">
                         <div className="text-[13px] font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{client.name}</div>
@@ -1890,7 +2016,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                       </td>
                       <td className="py-4 text-sm text-slate-600 font-medium">{agent.leads}</td>
                       <td className="py-4 text-sm text-slate-600 font-medium">{agent.conversions}</td>
-                      <td className="py-4 text-sm font-bold text-slate-900">₹{agent.revenue.toLocaleString()}</td>
+                      <td className="py-4 text-sm font-bold text-slate-900">₹{(agent?.revenue || 0).toLocaleString()}</td>
                       <td className="py-4">
                         <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full uppercase tracking-tighter">On Track</span>
                       </td>
