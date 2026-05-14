@@ -1,14 +1,22 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
+import { useSystem } from './SystemContext';
+import { useSales } from './SalesContext';
+import { useInventory } from './InventoryContext';
 
-// Create App State Context
-export const AppStateContext = createContext<any>(null);
+export const useAppState = () => {
+  const system = useSystem() || {};
+  const sales = useSales() || {};
+  const inventory = useInventory() || {};
 
-export const AppStateProvider = ({ children, state }: { children: React.ReactNode, state: any }) => {
-  return (
-    <AppStateContext.Provider value={state}>
-      {children}
-    </AppStateContext.Provider>
-  );
+  return {
+    ...system,
+    ...sales,
+    ...inventory,
+  };
 };
 
-export const useAppState = () => useContext(AppStateContext);
+// We don't need AppStateProvider anymore because we wrapped things in the specific providers in App.tsx
+// But if someone imports it, we can return a dummy Fragment.
+export const AppStateProvider = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+};

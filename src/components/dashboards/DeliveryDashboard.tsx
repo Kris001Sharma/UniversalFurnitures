@@ -11,7 +11,10 @@ import { ActivityFeed } from '../unified/ActivityFeed';
 import { DutyStatusBar } from '../unified/DutyStatusBar';
 import MapComponent from '../MapComponent';
 
-const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void, isAdminView?: boolean }) => {
+import { useSystem } from '../../contexts/SystemContext';
+
+const DeliveryDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
+  const { handleSignOut } = useSystem();
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'Tasks' | 'Activity' | 'Active' | 'Route'>('Tasks');
   const [view, setView] = useState<'List' | 'Add' | 'Detail'>('List');
@@ -1227,7 +1230,7 @@ const DeliveryDashboard = ({ onBack, isAdminView = false }: { onBack: () => void
       <ProfileModal 
         isOpen={showProfile} 
         onClose={() => setShowProfile(false)} 
-        onSignOut={onBack}
+        onSignOut={handleSignOut}
         stats={[
           { label: 'Deliveries This Month', value: 142 },
           { label: 'Success Rate', value: '98%' }
