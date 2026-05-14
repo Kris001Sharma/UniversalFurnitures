@@ -55,31 +55,33 @@ function AppContent() {
   const { appView, setAppView, selectedDashboard, setSelectedDashboard, loginStep, setLoginStep, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showPassword, setShowPassword } = useSystem();
 
   React.useEffect(() => {
-    if (!appConfig.devMode && user && appView === 'login') {
-      if (isLoading || isLoggingIn) return;
-      if (profile) {
-        const role = profile.role;
-        let inferred: 'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null = null;
-        if (role === 'SALES') inferred = 'sales';
-        else if (role === 'SUPERVISOR') inferred = 'supervisor';
-        else if (role === 'ADMIN') inferred = 'admin';
-        else if (role === 'ACCOUNTS') inferred = 'accountant';
-        else if (role === 'DELIVERY') inferred = 'delivery';
+    // Redirect if authenticated and on auth pages
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/' || location.pathname === '/selection';
+    
+    if (user && profile && isAuthPage) {
+      const role = profile.role;
+      let inferred: 'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null = null;
+      if (role === 'SALES') inferred = 'sales';
+      else if (role === 'SUPERVISOR') inferred = 'supervisor';
+      else if (role === 'ADMIN') inferred = 'admin';
+      else if (role === 'ACCOUNTS') inferred = 'accountant';
+      else if (role === 'DELIVERY') inferred = 'delivery';
 
-        if (inferred) {
-           setSelectedDashboard(inferred);
-           setAppView('dashboard');
-           setLoginError('');
-           navigate(`/${inferred}`);
-           return;
-        }
-      } else {
-        if (location.pathname === '/login') {
-            setLoginError('User profile not found. Please contact administrator.');
-        }
+      if (inferred) {
+         // Sync system state
+         setAppView('dashboard');
+         setSelectedDashboard(inferred);
+         setLoginError('');
+         
+         // Trigger navigation
+         navigate(`/${inferred}`, { replace: true });
       }
     }
-  }, [user, profile, isLoading, appView, isLoggingIn, navigate, location.pathname, setSelectedDashboard, setAppView, setLoginError]);
+  }, [user, profile, navigate, location.pathname, setSelectedDashboard, setAppView, setLoginError]);
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   const handleEmailCheck = async () => {
     if (!loginEmail.trim()) {
@@ -126,108 +128,6 @@ function AppContent() {
       setIsLoggingIn(false);
     }
   };
-
-  const renderSelection = () => (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md text-center space-y-8"
-      >
-        <div className="space-y-2">
-          <div className="w-20 h-20 bg-emerald-600 rounded-xl mx-auto flex items-center justify-center shadow-xl shadow-emerald-100 mb-6">
-            <Monitor className="text-white" size={40} />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900">Developer Mode</h1>
-          <p className="text-slate-500">Bypass auth and select a dashboard directly</p>
-        </div>
-
-        <div className="grid gap-4">
-          {appConfig.dashboards.sales.enabled && (
-            <button 
-              onClick={() => { setSelectedDashboard('sales'); setAppView('dashboard'); navigate('/sales'); }}
-              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-            >
-              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <TrendingUp size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Sales Dashboard</h3>
-                <p className="text-xs text-slate-500">Manage leads, catalog, and orders</p>
-              </div>
-              <ChevronRight className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-colors" size={20} />
-            </button>
-          )}
-
-          {appConfig.dashboards.supervisor.enabled && (
-            <button 
-              onClick={() => { setSelectedDashboard('supervisor'); setAppView('dashboard'); navigate('/supervisor'); }}
-              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-            >
-              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                <ShieldCheck size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Supervisor Dashboard</h3>
-                <p className="text-xs text-slate-500">Monitor production and team performance</p>
-              </div>
-              <ChevronRight className="ml-auto text-slate-300 group-hover:text-indigo-500 transition-colors" size={20} />
-            </button>
-          )}
-
-          {appConfig.dashboards.admin.enabled && (
-            <button 
-              onClick={() => { setSelectedDashboard('admin'); setAppView('dashboard'); navigate('/admin'); }}
-              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-            >
-              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
-                <Shield size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Admin Dashboard</h3>
-                <p className="text-xs text-slate-500">System settings and user management</p>
-              </div>
-              <ChevronRight className="ml-auto text-slate-300 group-hover:text-rose-500 transition-colors" size={20} />
-            </button>
-          )}
-
-          {appConfig.dashboards.accountant.enabled && (
-            <button 
-              onClick={() => { setSelectedDashboard('accountant'); setAppView('dashboard'); navigate('/accountant'); }}
-              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-            >
-              <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <Wallet size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Accountant Dashboard</h3>
-                <p className="text-xs text-slate-500">Financial reports and transactions</p>
-              </div>
-              <ChevronRight className="ml-auto text-slate-300 group-hover:text-amber-500 transition-colors" size={20} />
-            </button>
-          )}
-
-          {appConfig.dashboards.delivery.enabled && (
-            <button 
-              onClick={() => { setSelectedDashboard('delivery'); setAppView('dashboard'); navigate('/delivery'); }}
-              className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
-            >
-              <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-                <Truck size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900">Delivery Dashboard</h3>
-                <p className="text-xs text-slate-500">Order handover and client delivery</p>
-              </div>
-              <ChevronRight className="ml-auto text-slate-300 group-hover:text-orange-500 transition-colors" size={20} />
-            </button>
-          )}
-        </div>
-
-        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Enterprise Resource Planning v2.4</p>
-      </motion.div>
-    </div>
-  );
 
   const renderLogin = () => (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -331,11 +231,6 @@ function AppContent() {
         </div>
         <div className="bg-slate-50 p-4 border-t border-slate-100 text-center">
           <p className="text-xs text-slate-500">Secure enterprise access. Protected by standard encryption.</p>
-          {appConfig.devMode && (
-            <button onClick={() => setAppView('selection')} className="mt-2 text-xs font-medium text-emerald-600 hover:text-emerald-700">
-              Return to Selection Menu (Dev Mode)
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -344,13 +239,7 @@ function AppContent() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location}>
-        <Route path="/selection" element={
-          appConfig.devMode ? (
-            <motion.div key="selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {renderSelection()}
-            </motion.div>
-          ) : <Navigate to="/login" replace />
-        } />
+        <Route path="/selection" element={<Navigate to="/login" replace />} />
         
         <Route path="/login" element={
           <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -424,8 +313,8 @@ function AppContent() {
           </ProtectedRoute>
         } />
 
-        <Route path="/" element={<Navigate to={appConfig.devMode ? "/selection" : "/login"} replace />} />
-        <Route path="*" element={<Navigate to={appConfig.devMode ? "/selection" : "/login"} replace />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AnimatePresence>
   );

@@ -59,7 +59,25 @@ export const authService = {
       .single();
     
     if (error) {
-      console.error('Error fetching profile:', error);
+      console.warn('Profile not found by ID, this is expected for new users or ID mismatches:', error.message);
+      return null;
+    }
+    return data as UserProfile;
+  },
+
+  /**
+   * Get user profile by Email
+   */
+  async getProfileByEmail(email: string): Promise<UserProfile | null> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', email)
+      .limit(1)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching profile by email:', error);
       return null;
     }
     return data as UserProfile;

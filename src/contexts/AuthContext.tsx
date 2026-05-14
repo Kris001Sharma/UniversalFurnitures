@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user) {
         // If a user is logged in, fetch their profile (role, name, etc.)
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         // If no user, stop loading immediately
         setIsLoading(false);
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user) {
         setIsLoading(true);
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.email);
       } else {
         setProfile(null);
         setIsLoading(false);
@@ -70,9 +70,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * This is crucial because Supabase's default auth.users table doesn't store
    * our custom roles (ADMIN, SALES, etc.). We store those in `user_profiles`.
    */
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, email?: string) => {
     try {
-      const userProfile = await authService.getProfile(userId);
+      let userProfile = await authService.getProfile(userId);
+      
+      // Fallback: If not found by ID, try by email (handles cases where ID mapping is broken)
+      if (!userProfile && email) {
+        console.log('Profile not found by ID, trying fallback by email:', email);
+        userProfile = await authService.getProfileByEmail(email);
+        
+        // Optional: If we found it by email but ID is different, we should ideally update the record
+        // but for now we just use the fetched profile to allow the user to log in.
+      }
+      
       setProfile(userProfile);
     } catch (error) {
       console.error('Failed to fetch profile:', error);

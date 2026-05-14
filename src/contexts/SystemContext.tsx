@@ -7,7 +7,7 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 export const SystemContext = createContext<any>(null);
 
 export const SystemProvider = ({ children }: { children: React.ReactNode }) => {
-  const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>(appConfig.devMode ? 'selection' : 'login');
+  const [appView, setAppView] = useState<'login' | 'dashboard'>('login');
   const [selectedDashboard, setSelectedDashboard] = useState<'sales' | 'supervisor' | 'admin' | 'accountant' | 'delivery' | null>(null);
   
   const [showPassword, setShowPassword] = useState(false);
@@ -48,19 +48,13 @@ export const SystemProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const [flipText, setFlipText] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
-
-  useEffect(() => {
-    const interval = setInterval(() => setFlipText(prev => !prev), 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSignOut = async () => {
     try {
       setLoginError('');
-      if (!appConfig.devMode) await authService.logout();
-      setAppView(appConfig.devMode ? 'selection' : 'login');
+      await authService.logout();
+      setAppView('login');
       setSelectedDashboard(null);
       setLoginStep(1);
       setLoginRole(null);
@@ -76,7 +70,7 @@ export const SystemProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SystemContext.Provider value={{
-      appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, adminTab, setAdminTab, sortConfig, setSortConfig, clientsSortBy, setClientsSortBy, handleSort, sortData, renderSortIcon, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, today, endOfNextWeek
+      appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, adminTab, setAdminTab, sortConfig, setSortConfig, clientsSortBy, setClientsSortBy, handleSort, sortData, renderSortIcon, isLoadingData, setIsLoadingData, handleSignOut, today, endOfNextWeek
     }}>
       {children}
     </SystemContext.Provider>
