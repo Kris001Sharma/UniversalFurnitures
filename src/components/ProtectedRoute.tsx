@@ -1,25 +1,39 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { UserRole } from '../types';
-import { authorize, getCurrentRole } from '../lib/auth';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { appConfig } from '../config/appConfig';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles: UserRole[];
+  allowedRoles: string[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const role = getCurrentRole();
-  const location = useLocation();
+  const { user, profile, isLoading } = useAuth();
 
-  if (!role) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>;
   }
 
-  if (!authorize(role, allowedRoles)) {
-    // Redirect to unauthorized if authenticated but not allowed
-    return <Navigate to="/unauthorized" replace />;
+  // Developer mode bypass auth completely for the dashboard view
+  if (appConfig.devMode) {
+    return <>{children}</>;
+  }
+
+  if (!user || !profile) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(profile.role)) {
+    // Redirect to home dashboard based on role
+    const role = profile.role;
+    let homePath = '/login';
+    if (role === 'SALES') homePath = '/sales';
+    else if (role === 'SUPERVISOR') homePath = '/supervisor';
+    else if (role === 'ADMIN') homePath = '/admin';
+    else if (role === 'ACCOUNTS') homePath = '/accountant';
+    else if (role === 'DELIVERY') homePath = '/delivery';
+    return <Navigate to={homePath} replace />;
   }
 
   return <>{children}</>;

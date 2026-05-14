@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutGrid, 
   Users, 
@@ -70,10 +71,12 @@ import {
   Briefcase
 } from 'lucide-react';
 import { Order, Transaction, Product, CartItem, ProductionLine, ProductionRecord, InventoryItem, DeliveryTask, Organization, OrderStatus, OrderCategory } from './types';
-import SalesDashboard from './components/dashboards/SalesDashboard';
-import AccountantDashboard from './components/dashboards/AccountantDashboard';
-import AdminDashboard from './components/dashboards/AdminDashboard';
-import SupervisorDashboard from './components/dashboards/SupervisorDashboard';
+import { ProtectedRoute } from './components/ProtectedRoute';
+
+const SalesDashboard = React.lazy(() => import('./components/dashboards/SalesDashboard'));
+const AccountantDashboard = React.lazy(() => import('./components/dashboards/AccountantDashboard'));
+const AdminDashboard = React.lazy(() => import('./components/dashboards/AdminDashboard'));
+const SupervisorDashboard = React.lazy(() => import('./components/dashboards/SupervisorDashboard'));
 import { AppStateProvider } from './contexts/AppStateContext';
 const StatusBadge = ({ status }: { status: string }) => {
   const colors: Record<string, string> = {
@@ -108,7 +111,7 @@ import {
 } from 'recharts';
 
 import { DataSync } from './components/admin/DataSync';
-import DeliveryDashboard from './components/dashboards/DeliveryDashboard';
+const DeliveryDashboard = React.lazy(() => import('./components/dashboards/DeliveryDashboard'));
 import ProfileModal from './components/ProfileModal';
 import { appConfig } from './config/appConfig';
 import { useAuth } from './contexts/AuthContext';
@@ -202,7 +205,15 @@ const OrderTracker = ({ status }: { status: OrderStatus }) => {
 
 import { useTracking } from './hooks/useTracking';
 
-export default function App() {
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
+
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, isLoading } = useAuth();
   useTracking();
   const [appView, setAppView] = useState<'selection' | 'login' | 'dashboard'>(appConfig.devMode ? 'selection' : 'login');
@@ -235,14 +246,17 @@ export default function App() {
            setSelectedDashboard(inferredDashboard);
            setAppView('dashboard');
            setLoginError(''); // Clear any pending errors on success
+           navigate(`/${inferredDashboard}`);
            return;
         }
       } else {
         // Only set error if we've finished loading and truly have no profile
-        setLoginError('User profile not found. Please contact administrator.');
+        if (location.pathname === '/login') {
+            setLoginError('User profile not found. Please contact administrator.');
+        }
       }
     }
-  }, [user, profile, isLoading, appView, isLoggingIn]);
+  }, [user, profile, isLoading, appView, isLoggingIn, navigate, location.pathname]);
 
   const handleEmailCheck = async () => {
     if (!loginEmail.trim()) {
@@ -570,19 +584,9 @@ export default function App() {
   }, [appView, profile, isLoading]);
 
   useEffect(() => {
-    let path = '/';
-    if (appView === 'dashboard' && selectedDashboard) {
-      path = `/${selectedDashboard}`;
-      if (selectedDashboard === 'admin') path += `/${adminTab.toLowerCase().replace(' ', '-')}`;
-      if (selectedDashboard === 'sales') path += `/${activeTab.toLowerCase().replace(' ', '-')}`;
-      if (selectedDashboard === 'supervisor') path += `/${supervisorTab.toLowerCase().replace(' ', '-')}`;
-      if (selectedDashboard === 'accountant') path += `/${accountantTab.toLowerCase().replace(' ', '-')}`;
-    } else if (appView === 'login') {
-      path = '/login';
-    }
-    
-    // Update URL without reloading the page
-    window.history.replaceState(null, '', path);
+    // We defer to React Router for routing changes rather than manual history replaceState.
+    // If the path corresponds to a selected dashboard and a tab, we sync it, but we let 
+    // the routes handle the primary component mounting mapping now.
   }, [appView, selectedDashboard, adminTab, activeTab, supervisorTab, accountantTab]);
 
   useEffect(() => {
@@ -643,6 +647,7 @@ export default function App() {
               onClick={() => { 
                 setSelectedDashboard('sales'); 
                 setAppView('dashboard'); 
+                navigate('/sales');
               }}
               className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -662,6 +667,7 @@ export default function App() {
               onClick={() => { 
                 setSelectedDashboard('supervisor'); 
                 setAppView('dashboard'); 
+                navigate('/supervisor');
               }}
               className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -681,6 +687,7 @@ export default function App() {
               onClick={() => { 
                 setSelectedDashboard('admin'); 
                 setAppView('dashboard'); 
+                navigate('/admin');
               }}
               className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-rose-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -700,6 +707,7 @@ export default function App() {
               onClick={() => { 
                 setSelectedDashboard('accountant'); 
                 setAppView('dashboard'); 
+                navigate('/accountant');
               }}
               className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -719,6 +727,7 @@ export default function App() {
               onClick={() => { 
                 setSelectedDashboard('delivery'); 
                 setAppView('dashboard'); 
+                navigate('/delivery');
               }}
               className="group relative bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all text-left flex items-center gap-4 overflow-hidden"
             >
@@ -912,20 +921,84 @@ export default function App() {
   const appState = { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, clientCategoryFilter, setClientCategoryFilter, activeOrdersStatusFilter, setActiveOrdersStatusFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, salesViewMode, setSalesViewMode, deliveryAgents, setDeliveryAgents, deliveryViewMode, setDeliveryViewMode, accountants, setAccountants, flipText, setFlipText, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData, renderSortIcon, addToCart, updateCartQuantity, cartCount, cartTotal, today, endOfNextWeek };
   return (
     <AppStateProvider state={appState}>
-    <AnimatePresence mode="wait">
-      {appView === 'selection' && <motion.div key="selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderSelection()}</motion.div>}
-      {appView === 'login' && <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>{renderLogin()}</motion.div>}
-      {appView === 'dashboard' && (
-        <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          {selectedDashboard === 'sales' && <SalesDashboard />}
-          {selectedDashboard === 'supervisor' && <SupervisorDashboard />}
-          {selectedDashboard === 'admin' && <AdminDashboard />}
-          {selectedDashboard === 'accountant' && <AccountantDashboard />}
-          {selectedDashboard === 'delivery' && <DeliveryDashboard onBack={handleSignOut} />}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  
+      <AnimatePresence mode="wait">
+        <Routes location={location}>
+          <Route path="/selection" element={
+            appConfig.devMode ? (
+              <motion.div key="selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {renderSelection()}
+              </motion.div>
+            ) : <Navigate to="/login" replace />
+          } />
+          
+          <Route path="/login" element={
+            <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {renderLogin()}
+            </motion.div>
+          } />
+          
+          <Route path="/sales/*" element={
+            <ProtectedRoute allowedRoles={['SALES', 'ADMIN']}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <motion.div key="sales" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <SalesDashboard />
+                </motion.div>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/supervisor/*" element={
+            <ProtectedRoute allowedRoles={['SUPERVISOR', 'ADMIN']}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <motion.div key="supervisor" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <SupervisorDashboard />
+                </motion.div>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/*" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <AdminDashboard />
+                </motion.div>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/accountant/*" element={
+            <ProtectedRoute allowedRoles={['ACCOUNTS', 'ADMIN']}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <motion.div key="accountant" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <AccountantDashboard />
+                </motion.div>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/delivery/*" element={
+            <ProtectedRoute allowedRoles={['DELIVERY', 'ADMIN']}>
+              <Suspense fallback={<LoadingSpinner />}>
+                <motion.div key="delivery" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <DeliveryDashboard onBack={handleSignOut} />
+                </motion.div>
+              </Suspense>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/" element={<Navigate to={appConfig.devMode ? "/selection" : "/login"} replace />} />
+          <Route path="*" element={<Navigate to={appConfig.devMode ? "/selection" : "/login"} replace />} />
+        </Routes>
+      </AnimatePresence>
     </AppStateProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
