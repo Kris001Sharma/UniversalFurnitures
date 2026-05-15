@@ -4,10 +4,10 @@ import { OrderProgress } from '../types';
 
 export const OrderTracker = ({ orderProgress }: { orderProgress: OrderProgress }) => {
   const steps = [
-    { title: 'Material Preparation', icon: Package, stage: 'Prep' },
-    { title: 'Manufacturing', icon: Box, stage: 'Manufacturing' },
-    { title: 'Quality Check', icon: CheckCircle2, stage: 'QC' },
-    { title: 'Ready for Dispatch', icon: Truck, stage: 'Dispatch' }
+    { title: 'Received', icon: Package, stage: 'Received' },
+    { title: 'In Production', icon: Box, stage: 'Production' },
+    { title: 'Packaging', icon: CheckCircle2, stage: 'Packaging' },
+    { title: 'Ready for Delivery', icon: Truck, stage: 'Ready' }
   ];
 
   return (

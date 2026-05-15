@@ -19,7 +19,57 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
 
   const SupervisorDashboard = ({ isAdminView = false }: { isAdminView?: boolean }) => {
   const { profile } = useAuth();
-  const { appView, setAppView, selectedDashboard, setSelectedDashboard, showPassword, setShowPassword, loginEmail, setLoginEmail, loginPassword, setLoginPassword, loginStep, setLoginStep, loginRole, setLoginRole, loginError, setLoginError, isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, supervisorTab, setSupervisorTab, adminTab, setAdminTab, selectedAdminSalesAgent, setSelectedAdminSalesAgent, selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, deliveryAgentDetailTab, setDeliveryAgentDetailTab, deliveryChatContext, setDeliveryChatContext, clientsSearchQuery, setClientsSearchQuery, clientsOrdersMainTab, setClientsOrdersMainTab, sortConfig, setSortConfig, selectedAdminOrderDetails, setSelectedAdminOrderDetails, selectedClientDetails, setSelectedClientDetails, clientDetailTab, setClientDetailTab, allClientsFilter, setAllClientsFilter, showClientsFilters, setShowClientsFilters, clientsSortBy, setClientsSortBy, selectedAdminAccountant, setSelectedAdminAccountant, accountantTab, setAccountantTab, activeTab, setActiveTab, catalogLevel, setCatalogLevel, selectedMainCategory, setSelectedMainCategory, view, setView, selectedOrg, setSelectedOrg, selectedOrder, setSelectedOrder, selectedProduct, setSelectedProduct, searchQuery, setSearchQuery, leadFilter, setLeadFilter, orderTab, setOrderTab, cart, setCart, cartClientId, setCartClientId, orders, setOrders, activeOrders, setActiveOrders, transactions, setTransactions, clients, setClients, products, setProducts, inventory, setInventory, productionLines, setProductionLines, productionLog, setProductionLog, salesAgents, setSalesAgents, deliveryAgents, setDeliveryAgents, accountants, setAccountants, isLoadingData, setIsLoadingData, handleSignOut, handleSort, sortData } = useAppState();
+  const { 
+    appView, setAppView, selectedDashboard, setSelectedDashboard, 
+    showPassword, setShowPassword, loginEmail, setLoginEmail, 
+    loginPassword, setLoginPassword, loginStep, setLoginStep, 
+    loginRole, setLoginRole, loginError, setLoginError, 
+    isLoggingIn, setIsLoggingIn, showSalesProfile, setShowSalesProfile, 
+    supervisorTab, setSupervisorTab, adminTab, setAdminTab, 
+    selectedAdminSalesAgent, setSelectedAdminSalesAgent, 
+    selectedAgentTile, setSelectedAgentTile, agentDetailTab, setAgentDetailTab, 
+    chatContext, setChatContext, selectedAdminDeliveryAgent, setSelectedAdminDeliveryAgent, 
+    selectedDeliveryAgentTile, setSelectedDeliveryAgentTile, 
+    deliveryAgentDetailTab, setDeliveryAgentDetailTab, 
+    deliveryChatContext, setDeliveryChatContext, 
+    clientsSearchQuery, setClientsSearchQuery, 
+    clientsOrdersMainTab, setClientsOrdersMainTab, 
+    sortConfig, setSortConfig, 
+    selectedAdminOrderDetails, setSelectedAdminOrderDetails, 
+    selectedClientDetails, setSelectedClientDetails, 
+    clientDetailTab, setClientDetailTab, 
+    allClientsFilter, setAllClientsFilter, 
+    showClientsFilters, setShowClientsFilters, 
+    clientsSortBy, setClientsSortBy, 
+    selectedAdminAccountant, setSelectedAdminAccountant, 
+    accountantTab, setAccountantTab, 
+    activeTab, setActiveTab, 
+    catalogLevel, setCatalogLevel, 
+    selectedMainCategory, setSelectedMainCategory, 
+    view, setView, 
+    selectedOrg, setSelectedOrg, 
+    selectedOrder, setSelectedOrder, 
+    selectedProduct, setSelectedProduct, 
+    searchQuery, setSearchQuery, 
+    leadFilter, setLeadFilter, 
+    orderTab, setOrderTab, 
+    cart, setCart, 
+    cartClientId, setCartClientId, 
+    orders, setOrders, 
+    activeOrders, setActiveOrders, 
+    transactions, setTransactions, 
+    clients, setClients, 
+    products, setProducts, 
+    inventory, setInventory, 
+    productionLines, setProductionLines, 
+    productionLog, setProductionLog, 
+    salesAgents, setSalesAgents, 
+    deliveryAgents, setDeliveryAgents, 
+    accountants, setAccountants, 
+    isLoadingData, setIsLoadingData, 
+    handleSignOut, handleSort, sortData, 
+    updateOrderStatus 
+  } = useAppState();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [selectedForDispatch, setSelectedForDispatch] = useState<string[]>([]);
     const [isDispatching, setIsDispatching] = useState(false);
@@ -33,6 +83,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
       return () => clearInterval(interval);
     }, []);
 
+    // Local getSLATime logic
     const getSLATime = (order: Order) => {
       if (!order.createdAt) return { time: '0d 0h', isDelayed: false };
       try {
@@ -56,33 +107,9 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
       }
     };
 
-    const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, note?: string) => {
-      // Mapping for database enum compatibility
-      const mapToDBStatus = (status: string): string => {
-        const mapping: Record<string, string> = {
-          'Queued': 'Received',
-          'Packaging': 'Active',
-          'Ready for Dispatch': 'Ready for Delivery',
-        };
-        return mapping[status] || status;
-      };
-
-      const dbStatus = mapToDBStatus(newStatus);
-
-      // Optimistic update for both orders and activeOrders
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-      setActiveOrders(prev => {
-        if (newStatus === 'Closed') {
-          return prev.filter(o => o.orderId === orderId ? false : true);
-        }
-        return prev.map(o => o.orderId === orderId ? { ...o, overallStage: newStatus, status: newStatus } : o);
-      });
-      
+    const handleUpdateStatus = async (orderId: string, newStatus: OrderStatus, note?: string) => {
       try {
-        await dataService.updateOrder(orderId, { 
-          status: dbStatus
-        });
-
+        await updateOrderStatus(orderId, newStatus, note);
         // Log Activity
         await dataService.logActivity({
           user_id: profile?.id || 'system',
@@ -96,9 +123,6 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
             details: `Order status moved to ${newStatus}. ${note ? `Note: ${note}` : ''}`
           }
         });
-
-        // if there's a real backend sync needed beyond optimistic
-        // await refreshData(); 
       } catch (err) {
         console.error('Error updating status:', err);
       }
@@ -110,22 +134,22 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
       const orderId = result.draggableId;
       const targetStatus = result.destination.droppableId as OrderStatus;
       
-      const order = orders.find(o => o.id === orderId);
+      const order = orders.find((o: any) => o.id === orderId);
       
       // Prevent moving orders that are already out for delivery or closed
       const terminalStatuses = ['Out for Delivery', 'Delivered', 'Closed'];
-      if (order && terminalStatuses.includes(order.status)) {
+      if (order && terminalStatuses.includes(order.status as string)) {
         return;
       }
 
       if (order && order.status !== targetStatus) {
-        updateOrderStatus(order.id, targetStatus);
+        handleUpdateStatus(order.id, targetStatus);
       }
     };
 
     const confirmMove = async () => {
       if (!movingOrder) return;
-      await updateOrderStatus(movingOrder.order.id, movingOrder.targetStatus, moveNote);
+      await handleUpdateStatus(movingOrder.order.id, movingOrder.targetStatus, moveNote);
       setMovingOrder(null);
       setMoveNote('');
     };
@@ -133,15 +157,15 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
   const renderAdminManufacturingView = () => {
     // Factory Pulse data (mock)
     const throughput = 45;
-    const wipItems = orders.filter(o => ['Queued', 'Received', 'In Production', 'Packaging', 'Active'].includes(o.status)).length;
+    const wipItems = orders.filter(o => ['Received', 'In Production', 'Packaging'].includes(o.status)).length;
     const avgCycleTime = '1.2 Days';
 
     // Funnel data
     const funnelStages = [
-      { name: 'Queued', count: orders.filter(o => ['Queued', 'Received'].includes(o.status)).length, color: 'bg-slate-100', bar: 'bg-slate-400' },
+      { name: 'Received', count: orders.filter(o => o.status === 'Received').length, color: 'bg-slate-100', bar: 'bg-slate-400' },
       { name: 'In Production', count: orders.filter(o => o.status === 'In Production').length, color: 'bg-indigo-100', bar: 'bg-indigo-500' },
-      { name: 'Packaging', count: orders.filter(o => ['Packaging', 'Active'].includes(o.status)).length, color: 'bg-amber-100', bar: 'bg-amber-500' },
-      { name: 'Ready for Dispatch', count: orders.filter(o => ['Ready for Dispatch', 'Ready for Delivery'].includes(o.status)).length, color: 'bg-emerald-100', bar: 'bg-emerald-500' }
+      { name: 'Packaging', count: orders.filter(o => o.status === 'Packaging').length, color: 'bg-amber-100', bar: 'bg-amber-500' },
+      { name: 'Ready for Delivery', count: orders.filter(o => o.status === 'Ready for Delivery').length, color: 'bg-emerald-100', bar: 'bg-emerald-500' }
     ];
     const maxFunnel = Math.max(...funnelStages.map(s => s.count), 1);
 
@@ -240,23 +264,14 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
   };
 
   const renderProductionBoard = () => {
-    const getOrdersByStatus = (status: string) => orders.filter(o => {
-      if (status === 'Queued') return o.status === 'Queued' || o.status === 'Received';
-      if (status === 'In Production') return o.status === 'In Production';
-      if (status === 'Packaging') return o.status === 'Packaging' || o.status === 'Active';
-      if (status === 'Ready for Dispatch') return o.status === 'Ready for Dispatch' || o.status === 'Ready for Delivery';
-      return false;
-    });
+    const getOrdersByStatus = (status: string) => orders.filter(o => o.status === status);
 
     const handleBulkDispatch = async (agentId: string) => {
       setIsDispatching(true);
-      // Optimistic update
-      setOrders(prev => prev.map(o => selectedForDispatch.includes(o.id) ? { ...o, status: 'Out for Delivery' } : o));
-      setActiveOrders(prev => prev.map(o => selectedForDispatch.includes(o.orderId) ? { ...o, overallStage: 'Out for Delivery', status: 'Out for Delivery' } : o));
-      
+      // Wait for all updates
       try {
         await Promise.all(selectedForDispatch.map(id => 
-          dataService.updateOrder(id, { status: 'Out for Delivery' })
+          updateOrderStatus(id, 'Out for Delivery')
         ));
         
         // Log bulk activity
@@ -288,10 +303,10 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
     };
 
     const columns = [
-      { id: 'Queued', label: 'Queued' },
+      { id: 'Received', label: 'Received' },
       { id: 'In Production', label: 'In Production' },
-      { id: 'Packaging', label: 'Packaging/QA' },
-      { id: 'Ready for Dispatch', label: 'Outbound Dock' }
+      { id: 'Packaging', label: 'Packaging' },
+      { id: 'Ready for Delivery', label: 'Ready for Delivery' }
     ];
 
     const todayTarget = 80;
@@ -339,7 +354,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                     </span>
                   </div>
 
-                  {col.id === 'Ready for Dispatch' && (
+                  {col.id === 'Ready for Delivery' && (
                     <div className="p-3 bg-emerald-50/50 border-b border-emerald-100">
                       <select 
                         className="w-full text-[11px] font-bold border border-emerald-200 rounded-lg p-2 bg-white outline-none disabled:opacity-50"
@@ -459,7 +474,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240 }, { name:
                                         <Clock size={10} />
                                         {time}
                                       </div>
-                                      {col.id === 'Ready for Dispatch' && (
+                                      {col.id === 'Ready for Delivery' && (
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();

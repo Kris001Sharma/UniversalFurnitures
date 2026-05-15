@@ -1018,7 +1018,7 @@ const AGENT_PERFORMANCE = [{ name: 'Agent A', sales: 400, target: 240, leads: 40
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
                       <div className="flex flex-wrap gap-2">
-                        {['All', 'Active', 'In Production', 'Packaging', 'Delivered'].map((status) => (
+                        {['All', 'Received', 'In Production', 'Packaging', 'Delivered'].map((status) => (
                           <button
                             key={status}
                             onClick={() => setActiveOrdersStatusFilter(status)}

@@ -7,7 +7,7 @@ DO $$ BEGIN CREATE TYPE public.user_role AS ENUM ('ADMIN', 'SALES', 'SUPERVISOR'
 DO $$ BEGIN CREATE TYPE public.org_status AS ENUM ('New', 'Priority', 'Active','Inactive'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.interaction_type AS ENUM ('Visit', 'Call'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.sentiment_type AS ENUM ('Low', 'Medium', 'High'); EXCEPTION WHEN duplicate_object THEN null; END $$;
-DO $$ BEGIN CREATE TYPE public.order_status AS ENUM ('Draft', 'Received', 'Active', 'In Production', 'Ready for Delivery', 'Out for Delivery', 'Delivered', 'Closed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE public.order_status AS ENUM ('Draft', 'Received', 'In Production', 'Packaging', 'Ready for Delivery', 'Out for Delivery', 'Delivered', 'Closed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.payment_status AS ENUM ('Pending', 'Partial', 'Paid'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.order_item_status AS ENUM ('Pending', 'In Production', 'Completed'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE public.production_stage AS ENUM ('Forging', 'Cutting', 'Assembly', 'Painting', 'Finishing'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -107,7 +107,8 @@ CREATE TABLE IF NOT EXISTS public.clients (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     address TEXT,
-    type TEXT,
+    client_type TEXT,
+    lead_source TEXT,
     contact_person TEXT,
     contact TEXT,
     email TEXT,
@@ -137,6 +138,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='next_follow_up') THEN
         ALTER TABLE public.clients ADD COLUMN next_follow_up DATE;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='client_type') THEN
+        ALTER TABLE public.clients ADD COLUMN client_type TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='clients' AND column_name='lead_source') THEN
+        ALTER TABLE public.clients ADD COLUMN lead_source TEXT;
+    END IF;
 END $$;
 
 CREATE TABLE IF NOT EXISTS public.contacts (
@@ -145,8 +152,26 @@ CREATE TABLE IF NOT EXISTS public.contacts (
     name TEXT NOT NULL,
     phone TEXT,
     email TEXT,
-    designation TEXT
+    role TEXT,
+    is_primary BOOLEAN DEFAULT false
 );
+
+-- Idempotent column management for Contacts
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='contacts' AND column_name='role') THEN
+        ALTER TABLE public.contacts ADD COLUMN role TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='contacts' AND column_name='is_primary') THEN
+        ALTER TABLE public.contacts ADD COLUMN is_primary BOOLEAN DEFAULT false;
+    END IF;
+    
+    -- Sync designation to role if needed (cleanup)
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='contacts' AND column_name='designation') THEN
+        UPDATE public.contacts SET role = designation WHERE role IS NULL;
+        -- ALTER TABLE public.contacts DROP COLUMN designation; -- Uncomment if you want to be strict
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.interactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

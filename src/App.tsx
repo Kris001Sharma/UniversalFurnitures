@@ -33,6 +33,7 @@ import { authService } from './services/auth.service';
 import { SystemProvider, useSystem } from './contexts/SystemContext';
 import { SalesProvider } from './contexts/SalesContext';
 import { InventoryProvider } from './contexts/InventoryContext';
+import { OrderProvider } from './contexts/OrderContext';
 
 const SalesDashboard = React.lazy(() => import('./components/dashboards/SalesDashboard'));
 const AccountantDashboard = React.lazy(() => import('./components/dashboards/AccountantDashboard'));
@@ -237,86 +238,88 @@ function AppContent() {
   );
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location}>
-        <Route path="/selection" element={<Navigate to="/login" replace />} />
-        
-        <Route path="/login" element={
-          <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {renderLogin()}
-          </motion.div>
-        } />
-        
-        <Route path="/sales/*" element={
-          <ProtectedRoute allowedRoles={['SALES', 'ADMIN']}>
-            <SalesProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <motion.div key="sales" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <SalesDashboard />
-                </motion.div>
-              </Suspense>
-            </SalesProvider>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/supervisor/*" element={
-          <ProtectedRoute allowedRoles={['SUPERVISOR', 'ADMIN']}>
-            <SalesProvider>
-            <InventoryProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <motion.div key="supervisor" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <SupervisorDashboard />
-                </motion.div>
-              </Suspense>
-            </InventoryProvider>
-            </SalesProvider>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/admin/*" element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
-            <SalesProvider>
-            <InventoryProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <AdminDashboard />
-                </motion.div>
-              </Suspense>
-            </InventoryProvider>
-            </SalesProvider>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/accountant/*" element={
-          <ProtectedRoute allowedRoles={['ACCOUNTS', 'ADMIN']}>
-            <InventoryProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <motion.div key="accountant" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <AccountantDashboard />
-                </motion.div>
-              </Suspense>
-            </InventoryProvider>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/delivery/*" element={
-          <ProtectedRoute allowedRoles={['DELIVERY', 'ADMIN']}>
-            <SalesProvider>
-            <InventoryProvider>
-              <Suspense fallback={<LoadingSpinner />}>
-                <motion.div key="delivery" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <DeliveryDashboard />
-                </motion.div>
-              </Suspense>
-            </InventoryProvider>
-            </SalesProvider>
-          </ProtectedRoute>
-        } />
+    <OrderProvider>
+      <AnimatePresence mode="wait">
+        <Routes location={location}>
+          <Route path="/selection" element={<Navigate to="/login" replace />} />
+          
+          <Route path="/login" element={
+            <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {renderLogin()}
+            </motion.div>
+          } />
+          
+          <Route path="/sales/*" element={
+            <ProtectedRoute allowedRoles={['SALES', 'ADMIN']}>
+              <SalesProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <motion.div key="sales" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <SalesDashboard />
+                  </motion.div>
+                </Suspense>
+              </SalesProvider>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/supervisor/*" element={
+            <ProtectedRoute allowedRoles={['SUPERVISOR', 'ADMIN']}>
+              <SalesProvider>
+              <InventoryProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <motion.div key="supervisor" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <SupervisorDashboard />
+                  </motion.div>
+                </Suspense>
+              </InventoryProvider>
+              </SalesProvider>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/*" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <SalesProvider>
+              <InventoryProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <AdminDashboard />
+                  </motion.div>
+                </Suspense>
+              </InventoryProvider>
+              </SalesProvider>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/accountant/*" element={
+            <ProtectedRoute allowedRoles={['ACCOUNTS', 'ADMIN']}>
+              <InventoryProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <motion.div key="accountant" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <AccountantDashboard />
+                  </motion.div>
+                </Suspense>
+              </InventoryProvider>
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/delivery/*" element={
+            <ProtectedRoute allowedRoles={['DELIVERY', 'ADMIN']}>
+              <SalesProvider>
+              <InventoryProvider>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <motion.div key="delivery" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <DeliveryDashboard />
+                  </motion.div>
+                </Suspense>
+              </InventoryProvider>
+              </SalesProvider>
+            </ProtectedRoute>
+          } />
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </AnimatePresence>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </AnimatePresence>
+    </OrderProvider>
   );
 }
 
